@@ -9,8 +9,10 @@ executable layer on top of the Kimi Swarm control-plane design.
 
 ## Status (2026-08-19)
 
-O **plano de correção pós-auditoria está completo** (80/81; resta apenas o gate
-humano de branch protection). A fundação cresceu para **234 testes**
+O **plano de correção pós-auditoria está completo (81/81)**, incluindo CI verde
+no GitHub e branch protection ativa em `main` (9 required checks, strict,
+PR obrigatório, linear history — ver `auditoria/DOD_VERIFICATION.md` item 16).
+A fundação cresceu para **234 testes**
 (`pytest tests/`) cobrindo as 12 fases: state machine com resume, retrieval de
 produção com adapters web, source trust chain viva, claim-evidence com
 contradições e falsificação, report swarm (council + section DAG + reviewers/

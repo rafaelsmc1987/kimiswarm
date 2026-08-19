@@ -1,8 +1,7 @@
 # Definition of Done — verificação final (F4 da Final Wave, 2026-08-19)
 
 Verificação item a item das 18 condições da seção 8 do plano
-(`.omo/plans/kdrx-correcao-auditoria.md`). Estado: 17/18 com evidência;
-1/18 com justificativa formal (gate de plataforma/ação humana).
+(`.omo/plans/kdrx-correcao-auditoria.md`). Estado: **18/18 com evidência**.
 
 | # | Condição | Veredito | Evidência |
 |---:|---|---|---|
@@ -21,16 +20,14 @@ Verificação item a item das 18 condições da seção 8 do plano
 | 13 | Final integrity bloqueia | ✅ | T-08-07: `runner._integrity` faz raise em verdict fail/blocked; `kdr verify` retorna não-zero; teste adultera relatório e prova o bloqueio (`test_integrity_blocks_pipeline_when_claim_omitted`). |
 | 14 | State/resume continua o DAG | ✅ | FASE 4 (`211dde8`): manifesto com transições persistidas, selo de hashes, resume que continua o DAG, delivery-manifest real (`test_phase4_resume.py`). |
 | 15 | Monitor não é placeholder | ✅ | T-10-01 (`1d67140`): `kdr monitor` real — snapshot sha256, delta added/changed/removed, saved queries com dedup; stub exit-3 removido e teste antigo atualizado. |
-| 16 | CI e branch protection estão ativos | ⚠️ **Justificativa formal F-16** | CI **definido** (`.github/workflows/ci.yml`: hygiene com gitleaks hard-block + forbidden-path, ruff check + format, pytest matrix py3.10–3.13, mypy advisory; `security.yml`: gitleaks + detect-secrets + pip-audit). Todos os comandos passam localmente: 234/234 testes, `ruff check` e `ruff format --check` limpos. **Ativação** exige `git remote` + push (repo não tem remote) — ação do proprietário — e branch protection é o gate humano T-09-04. Único item sem evidência plena; pendente de plataforma, não de código. |
+| 16 | CI e branch protection estão ativos | ✅ | **Ativado 2026-08-19** (T-09-04 fechado). Repo passou a público e a proteção foi aplicada via REST API: `main` exige 9 status checks (`hygiene (repo lint)`, `lint`, `pytest (py3.10–3.13)`, `secret scanning`, `dependency audit`, `forbidden-path test`) com `strict=true`, PR obrigatório (stale dismiss), `required_linear_history`, force-push e deletions bloqueados, conversation resolution; `enforce_admins=false` (admin solo sem lockout) — decisão registrada em ledger. CI **verde** no main: dois workflows `success` em `36b853c` (primeiro run falhou por (a) `uvx ruff` unpinned → puxou release com regras novas → fix: pin `ruff@0.15.8`; (b) clone shallow quebrava a range do gitleaks-action → fix: `fetch-depth: 0` no hygiene). |
 | 17 | Benchmarks de regressão passam | ✅ | FASE 9b (`2ccd5ab`): gate per-kind versionado (THRESHOLD_REGISTRY v1.1.0) com zero critical miss + calibration; `kdr eval` (all/gold/dev/heldout, multi-trial) exit 0; held-out run verde. |
 | 18 | Documentação não promete funcionalidades ausentes | ✅ | Monitor mudou de stub ("R12 fora do core") para delta-search real e docs de ajuda atualizados no mesmo commit; README/docs refletem adapters, gates duros, swarm e monitor implementados; a única ocorrência de "placeholder" remanescente está no documento histórico da auditoria original (estado à época), não na documentação promissora. |
 
 ## Sumário
 
-- **17/18 itens verificados com evidência executável** (testes em
+- **18/18 itens verificados com evidência executável** (testes em
   `tests/test_phase{1..10}_*.py`, `tests/test_repo_hygiene.py`,
-  `tests/test_plugin_cli.py`, saídas de `kdr doctor/demo/eval/monitor`).
-- **1/18 (item 16)** com justificativa formal: CI/branch protection são gates
-  de plataforma — dependem de ação humana no GitHub (T-09-04) e de push do
-  repo. Risco mitigado: todos os comandos dos workflows foram executados
-  localmente e passam.
+  `tests/test_plugin_cli.py`, saídas de `kdr doctor/demo/eval/monitor`,
+  runs verdes do CI no GitHub em `36b853c` e proteção de branch ativa
+  verificada via API).
