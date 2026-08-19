@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "ContradictionStatus": {
+      "enum": [
+        "open",
+        "resolved",
+        "irreducible",
+        "investigating"
+      ],
+      "title": "ContradictionStatus",
+      "type": "string"
+    },
+    "ContradictionType": {
+      "enum": [
+        "factual",
+        "numerical",
+        "temporal",
+        "definitional",
+        "population_sample",
+        "methodology",
+        "jurisdiction",
+        "version",
+        "scope_resolvable",
+        "irreducible"
+      ],
+      "title": "ContradictionType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A cluster of claims/sources that disagree (plan \u00a725).",
+  "properties": {
+    "contradiction_id": {
+      "title": "Contradiction Id",
+      "type": "string"
+    },
+    "claims": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Claims",
+      "type": "array"
+    },
+    "sources": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Sources",
+      "type": "array"
+    },
+    "atomic_disagreement": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Atomic Disagreement"
+    },
+    "contradiction_type": {
+      "$ref": "#/$defs/ContradictionType",
+      "default": "factual"
+    },
+    "possible_resolution": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Possible Resolution"
+    },
+    "new_searches_required": {
+      "items": {
+        "type": "string"
+      },
+      "title": "New Searches Required",
+      "type": "array"
+    },
+    "status": {
+      "$ref": "#/$defs/ContradictionStatus",
+      "default": "open"
+    },
+    "resolution_evidence": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Resolution Evidence",
+      "type": "array"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "contradiction_id"
+  ],
+  "title": "ContradictionCluster",
+  "type": "object"
+}

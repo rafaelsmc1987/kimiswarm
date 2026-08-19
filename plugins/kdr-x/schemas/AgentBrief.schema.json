@@ -1,0 +1,178 @@
+{
+  "$defs": {
+    "AcceptanceCriteria": {
+      "additionalProperties": false,
+      "properties": {
+        "criteria": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Criteria",
+          "type": "array"
+        },
+        "output_schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Schema"
+        },
+        "required_evidence_refs": {
+          "default": 0,
+          "title": "Required Evidence Refs",
+          "type": "integer"
+        }
+      },
+      "title": "AcceptanceCriteria",
+      "type": "object"
+    },
+    "AgentRole": {
+      "description": "The agent taxonomy (plan \u00a717), grouped by family.",
+      "enum": [
+        "intake_analyst",
+        "requirements_analyst",
+        "rq_formulator",
+        "methodology_architect",
+        "dimension_mapper",
+        "retrieval_strategist",
+        "risk_planner",
+        "dag_reviewer",
+        "dag_verifier",
+        "web_explorer",
+        "primary_source_finder",
+        "academic_searcher",
+        "official_docs_searcher",
+        "code_explorer",
+        "dataset_finder",
+        "news_searcher",
+        "local_language_searcher",
+        "multimodal_finder",
+        "archive_researcher",
+        "source_resolver",
+        "metadata_verifier",
+        "retraction_checker",
+        "venue_verifier",
+        "evidence_span_extractor",
+        "table_figure_extractor",
+        "entity_resolver",
+        "deduplicator",
+        "citation_context_verifier",
+        "data_verifier",
+        "claim_decomposer",
+        "contradiction_analyst",
+        "counterevidence_researcher",
+        "alternative_hypothesis_analyst",
+        "causal_reasoning_analyst",
+        "statistical_analyst",
+        "comparative_analyst",
+        "gap_analyst",
+        "uncertainty_calibrator",
+        "synthesis_agent",
+        "insight_extractor",
+        "outline_architect",
+        "section_writer",
+        "table_figure_designer",
+        "section_reviewer",
+        "transition_editor",
+        "executive_synthesis_writer",
+        "citation_manager",
+        "report_assembler",
+        "artifact_converter",
+        "devils_advocate",
+        "methodology_reviewer",
+        "source_verifier",
+        "claim_verifier",
+        "calculation_verifier",
+        "prompt_injection_auditor",
+        "final_integrity_auditor"
+      ],
+      "title": "AgentRole",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The brief handed to an agent for exactly one task.",
+  "properties": {
+    "brief_id": {
+      "title": "Brief Id",
+      "type": "string"
+    },
+    "task_id": {
+      "title": "Task Id",
+      "type": "string"
+    },
+    "role": {
+      "$ref": "#/$defs/AgentRole"
+    },
+    "mission": {
+      "title": "Mission",
+      "type": "string"
+    },
+    "inputs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Inputs",
+      "type": "array"
+    },
+    "outputs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Outputs",
+      "type": "array"
+    },
+    "skills": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Skills",
+      "type": "array"
+    },
+    "tools": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tools",
+      "type": "array"
+    },
+    "read_only": {
+      "default": true,
+      "title": "Read Only",
+      "type": "boolean"
+    },
+    "source_policy": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Policy"
+    },
+    "acceptance": {
+      "$ref": "#/$defs/AcceptanceCriteria"
+    },
+    "context": {
+      "additionalProperties": true,
+      "title": "Context",
+      "type": "object"
+    }
+  },
+  "required": [
+    "brief_id",
+    "task_id",
+    "role",
+    "mission"
+  ],
+  "title": "AgentBrief",
+  "type": "object"
+}

@@ -1,0 +1,311 @@
+{
+  "$defs": {
+    "AcceptanceCriteria": {
+      "additionalProperties": false,
+      "properties": {
+        "criteria": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Criteria",
+          "type": "array"
+        },
+        "output_schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Schema"
+        },
+        "required_evidence_refs": {
+          "default": 0,
+          "title": "Required Evidence Refs",
+          "type": "integer"
+        }
+      },
+      "title": "AcceptanceCriteria",
+      "type": "object"
+    },
+    "AgentRole": {
+      "description": "The agent taxonomy (plan \u00a717), grouped by family.",
+      "enum": [
+        "intake_analyst",
+        "requirements_analyst",
+        "rq_formulator",
+        "methodology_architect",
+        "dimension_mapper",
+        "retrieval_strategist",
+        "risk_planner",
+        "dag_reviewer",
+        "dag_verifier",
+        "web_explorer",
+        "primary_source_finder",
+        "academic_searcher",
+        "official_docs_searcher",
+        "code_explorer",
+        "dataset_finder",
+        "news_searcher",
+        "local_language_searcher",
+        "multimodal_finder",
+        "archive_researcher",
+        "source_resolver",
+        "metadata_verifier",
+        "retraction_checker",
+        "venue_verifier",
+        "evidence_span_extractor",
+        "table_figure_extractor",
+        "entity_resolver",
+        "deduplicator",
+        "citation_context_verifier",
+        "data_verifier",
+        "claim_decomposer",
+        "contradiction_analyst",
+        "counterevidence_researcher",
+        "alternative_hypothesis_analyst",
+        "causal_reasoning_analyst",
+        "statistical_analyst",
+        "comparative_analyst",
+        "gap_analyst",
+        "uncertainty_calibrator",
+        "synthesis_agent",
+        "insight_extractor",
+        "outline_architect",
+        "section_writer",
+        "table_figure_designer",
+        "section_reviewer",
+        "transition_editor",
+        "executive_synthesis_writer",
+        "citation_manager",
+        "report_assembler",
+        "artifact_converter",
+        "devils_advocate",
+        "methodology_reviewer",
+        "source_verifier",
+        "claim_verifier",
+        "calculation_verifier",
+        "prompt_injection_auditor",
+        "final_integrity_auditor"
+      ],
+      "title": "AgentRole",
+      "type": "string"
+    },
+    "Budget": {
+      "additionalProperties": false,
+      "properties": {
+        "tokens": {
+          "default": 0,
+          "title": "Tokens",
+          "type": "integer"
+        },
+        "queries": {
+          "default": 0,
+          "title": "Queries",
+          "type": "integer"
+        },
+        "wall_seconds": {
+          "default": 0,
+          "title": "Wall Seconds",
+          "type": "integer"
+        }
+      },
+      "title": "Budget",
+      "type": "object"
+    },
+    "Criticality": {
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "title": "Criticality",
+      "type": "string"
+    },
+    "RetryPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "max_retries": {
+          "default": 2,
+          "title": "Max Retries",
+          "type": "integer"
+        },
+        "backoff_seconds": {
+          "default": 0.0,
+          "title": "Backoff Seconds",
+          "type": "number"
+        },
+        "require_alternative_agent": {
+          "default": false,
+          "title": "Require Alternative Agent",
+          "type": "boolean"
+        }
+      },
+      "title": "RetryPolicy",
+      "type": "object"
+    },
+    "TaskStage": {
+      "description": "Stage a task belongs to, mapped to wave ordering.",
+      "enum": [
+        "intake",
+        "planning",
+        "retrieval",
+        "verification",
+        "analysis",
+        "synthesis",
+        "writing",
+        "review",
+        "delivery"
+      ],
+      "title": "TaskStage",
+      "type": "string"
+    },
+    "TaskStatus": {
+      "enum": [
+        "pending",
+        "ready",
+        "running",
+        "succeeded",
+        "failed",
+        "retrying",
+        "skipped",
+        "blocked",
+        "cancelled"
+      ],
+      "title": "TaskStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A single node in the DAG (plan \u00a715).\n\nThe DAG compiler enforces: one mission, one owner per output, no dependent\nin the same wave, reviewer != author, minimal tool scope.",
+  "properties": {
+    "task_id": {
+      "title": "Task Id",
+      "type": "string"
+    },
+    "stage": {
+      "$ref": "#/$defs/TaskStage"
+    },
+    "wave": {
+      "title": "Wave",
+      "type": "integer"
+    },
+    "role": {
+      "$ref": "#/$defs/AgentRole"
+    },
+    "mission": {
+      "title": "Mission",
+      "type": "string"
+    },
+    "dependencies": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Dependencies",
+      "type": "array"
+    },
+    "inputs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Inputs",
+      "type": "array"
+    },
+    "outputs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Outputs",
+      "type": "array"
+    },
+    "skills": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Skills",
+      "type": "array"
+    },
+    "tools": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tools",
+      "type": "array"
+    },
+    "read_only": {
+      "default": true,
+      "title": "Read Only",
+      "type": "boolean"
+    },
+    "source_policy": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Policy"
+    },
+    "acceptance": {
+      "$ref": "#/$defs/AcceptanceCriteria"
+    },
+    "retry_policy": {
+      "$ref": "#/$defs/RetryPolicy"
+    },
+    "budget": {
+      "$ref": "#/$defs/Budget"
+    },
+    "criticality": {
+      "$ref": "#/$defs/Criticality",
+      "default": "medium"
+    },
+    "status": {
+      "$ref": "#/$defs/TaskStatus",
+      "default": "pending"
+    },
+    "owner": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Owner"
+    },
+    "reviewer": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reviewer"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "task_id",
+    "stage",
+    "wave",
+    "role",
+    "mission"
+  ],
+  "title": "TaskSpec",
+  "type": "object"
+}

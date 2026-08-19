@@ -1,0 +1,31 @@
+{
+  "files": {
+    "ARQUITETURA_KDR_X.mmd": {
+      "size_bytes": 856,
+      "non_empty": true
+    },
+    "MATRIZ_COMPARATIVA_REPOS.csv": {
+      "size_bytes": 610,
+      "non_empty": true
+    },
+    "PLANO_SOTA_SUPER_DEEP_RESEARCH.md": {
+      "size_bytes": 44604,
+      "non_empty": true
+    },
+    "README.md": {
+      "size_bytes": 276,
+      "non_empty": true
+    },
+    "ROADMAP_SOTA_DEEP_RESEARCH.json": {
+      "size_bytes": 6543,
+      "non_empty": true
+    }
+  },
+  "checks": {
+    "report_contains_verdict": true,
+    "report_contains_roadmap": true,
+    "report_contains_security": true,
+    "report_contains_evals": true,
+    "utf8": true
+  }
+}

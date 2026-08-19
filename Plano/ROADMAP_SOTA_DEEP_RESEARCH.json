@@ -1,0 +1,199 @@
+{
+  "project": "KimiSwarm Deep Research vNext",
+  "working_name": "KDR-X",
+  "decision": {
+    "best_research_design": "Academic Research Skills (ARS)",
+    "best_permissive_runtime_base": "ECC",
+    "recommended_control_plane": "The user's existing KimiSwarm reconstruction",
+    "recommended_strategy": "Hybrid clean-room composition; do not fork one repository wholesale",
+    "license_note": "ARS is CC BY-NC 4.0; use concepts only in a clean-room reimplementation unless commercial permission is obtained."
+  },
+  "architecture_layers": [
+    "Control plane and DAG scheduler",
+    "Research-contract and route selection",
+    "Hybrid retrieval and corpus layer",
+    "Source identity and quality verification",
+    "Atomic claim/evidence graph",
+    "Contradiction, falsification and gap engine",
+    "Analytical computation and reproducibility",
+    "Calibrated synthesis and report production",
+    "Independent review and final integrity gates",
+    "Persistent provenance, observability and continuous learning"
+  ],
+  "phases": [
+    {
+      "id": "P0",
+      "name": "Legal, security and repository hygiene",
+      "deliverables": [
+        "LICENSE_MATRIX.md",
+        "THIRD_PARTY_NOTICES.md",
+        "clean-room boundary document",
+        "secret scan and history cleanup",
+        "read-only evidence snapshot"
+      ],
+      "gate": "No live secrets; provenance of every imported component known; ARS text/code not copied into commercial tree."
+    },
+    {
+      "id": "P1",
+      "name": "Canonical schemas and run state",
+      "deliverables": [
+        "ResearchRequest.schema.json",
+        "ResearchPlan.schema.json",
+        "TaskSpec.schema.json",
+        "SourceRecord.schema.json",
+        "EvidenceSpan.schema.json",
+        "Claim.schema.json",
+        "ClaimEdge.schema.json",
+        "GateDecision.schema.json",
+        "DeliveryManifest.schema.json"
+      ],
+      "gate": "Round-trip validation, migrations and fixture tests pass."
+    },
+    {
+      "id": "P2",
+      "name": "Deterministic orchestrator",
+      "deliverables": [
+        "plan-first workflow",
+        "DAG compiler",
+        "topological wave scheduler",
+        "ownership registry",
+        "retry/no-progress policies",
+        "event stream"
+      ],
+      "gate": "Synthetic DAG suite proves dependency, concurrency, retry and recovery behavior."
+    },
+    {
+      "id": "P3",
+      "name": "Retrieval and corpus subsystem",
+      "deliverables": [
+        "query graph",
+        "source adapters",
+        "canonical URL/DOI resolver",
+        "dedup/entity resolution",
+        "BM25+dense+graph hybrid retrieval",
+        "full-text cache",
+        "evidence saturation controller"
+      ],
+      "gate": "Retrieval benchmark beats naive web-search baseline on recall and source diversity."
+    },
+    {
+      "id": "P4",
+      "name": "Source and citation trust chain",
+      "deliverables": [
+        "source identity verifier",
+        "retraction/currency/COI checks",
+        "citation metadata audit",
+        "prompt-injection boundary",
+        "source-quality policy registry"
+      ],
+      "gate": "Fabricated, mismatched and manipulated citations are detected in seeded-defect tests."
+    },
+    {
+      "id": "P5",
+      "name": "Claim-evidence graph",
+      "deliverables": [
+        "atomic claim decomposition",
+        "evidence-span extraction",
+        "support/contradict/context relation classifier",
+        "independence graph",
+        "claim standing calculator",
+        "uncertainty and calibration ledger"
+      ],
+      "gate": "Every material report claim resolves to exact evidence spans and a standing verdict."
+    },
+    {
+      "id": "P6",
+      "name": "Falsification and contradiction swarm",
+      "deliverables": [
+        "counterevidence agent",
+        "alternative hypothesis agent",
+        "contradiction clusterer",
+        "targeted verifier",
+        "minimum-new-search rule",
+        "unresolved-claim registry"
+      ],
+      "gate": "Seeded contradictions and hard negatives are surfaced with reproducible evidence."
+    },
+    {
+      "id": "P7",
+      "name": "Analysis and reproducible computation",
+      "deliverables": [
+        "Python sandbox",
+        "dataset/table lineage",
+        "calculation checker",
+        "statistical analysis agent",
+        "chart/table trace",
+        "repro lock"
+      ],
+      "gate": "All quantitative claims can be recomputed from registered inputs."
+    },
+    {
+      "id": "P8",
+      "name": "Synthesis and report pipeline",
+      "deliverables": [
+        "outline council",
+        "chapter dependency graph",
+        "one-section-per-task writers",
+        "section reviewers",
+        "transition editor",
+        "citation manager",
+        "mechanical assembler"
+      ],
+      "gate": "Report passes coverage, entailment, contradiction, style and integrity checks."
+    },
+    {
+      "id": "P9",
+      "name": "ARA-style persistent research artifact",
+      "deliverables": [
+        "logic/claims",
+        "logic/experiments",
+        "evidence store",
+        "exploration DAG",
+        "decision/dead-end log",
+        "session provenance",
+        "artifact seal validators"
+      ],
+      "gate": "Cross-layer references are complete and no inferred history is presented as observed."
+    },
+    {
+      "id": "P10",
+      "name": "Hooks, security and hardening",
+      "deliverables": [
+        "PreToolUse guards",
+        "SubagentStop/TaskCompleted validators",
+        "Stop delivery gate",
+        "sandbox/egress policy",
+        "MCP allowlist",
+        "secret and prompt-injection tests"
+      ],
+      "gate": "Red-team suite cannot bypass path, credential, evidence or completion controls."
+    },
+    {
+      "id": "P11",
+      "name": "Evaluation harness",
+      "deliverables": [
+        "gold tasks",
+        "seeded-defect corpus",
+        "multi-trial runner",
+        "DeepResearch Bench adapters",
+        "custom Kimi replay benchmark",
+        "regression dashboard"
+      ],
+      "gate": "All release thresholds pass or regressions require explicit tracked acknowledgement."
+    },
+    {
+      "id": "P12",
+      "name": "Optimization and release",
+      "deliverables": [
+        "adaptive model routing",
+        "token/cost budgets",
+        "context compaction",
+        "evidence condensation",
+        "cache and staleness policy",
+        "plugin package",
+        "operator documentation"
+      ],
+      "gate": "Quality targets met at defined latency and cost ceilings."
+    }
+  ]
+}

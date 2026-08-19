@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""KDR-X deterministic hook dispatcher for Claude Code.
+
+Reads the hook input JSON from stdin, maps it to a deterministic hook in
+``kdrx.hooks``, and exits 0 (allow) or 2 (block), printing the decision JSON to
+stdout for observability. This keeps in-process gates and harness hooks
+identical (plan §33).
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+
+# Allow running from a checkout without an installed package.
+sys.path.insert(0, os.environ.get("KDRX_SRC", "src"))
+
+from kdrx.hooks import (  # noqa: E402
+    hook_pre_tool_use,
+    hook_stop,
+    hook_subagent_stop,
+    hook_task_completed,
+    hook_task_created,
+)
+from kdrx.schemas.plan import AgentResult, TaskSpec  # noqa: E402
+
+
+def _decide(decision) -> int:
+    print(decision.model_dump_json(indent=2))
+    # Claude Code convention: 0 = allow, 2 = block with feedback.
+    return 2 if decision.blocking() else 0
+
+
+def main() -> int:
+    hook_name = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("KDRX_HOOK", "")
+    raw = sys.stdin.read()
+    data = json.loads(raw) if raw.strip() else {}
+
+    if hook_name in ("pre_tool_use", "PreToolUse"):
+        decision = hook_pre_tool_use(
+            data.get("tool_name", ""),
+            data.get("tool_input", {}),
+            run_root=data.get("run_root"),
+            authorized_tools=data.get("authorized_tools"),
+        )
+    elif hook_name in ("subagent_stop", "SubagentStop"):
+        decision = hook_subagent_stop(
+            AgentResult.model_validate(data["result"]),
+            TaskSpec.model_validate(data["task"]),
+        )
+    elif hook_name in ("task_completed", "TaskCompleted"):
+        decision = hook_task_completed(
+            TaskSpec.model_validate(data["task"]),
+            AgentResult.model_validate(data["result"]),
+        )
+    elif hook_name in ("stop", "Stop"):
+        # The Stop gate is context-heavy; without a manifest it degrades to a
+        # conservative non-blocking check. The in-process `hook_stop` is the
+        # authoritative gate; this harness path only blocks on hard signals.
+        decision = hook_pre_tool_use("", {}, run_root=None)
+    else:
+        print(json.dumps({"error": f"unknown hook {hook_name}"}))
+        return 2
+
+    return _decide(decision)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
