@@ -30,6 +30,8 @@ class Locator(BaseModel):
     figure: str | None = None
     line_start: int | None = None
     line_end: int | None = None
+    char_start: int | None = None
+    char_end: int | None = None
     commit: str | None = None
     file: str | None = None
     uri_fragment: str | None = None

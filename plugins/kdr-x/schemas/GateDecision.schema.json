@@ -25,6 +25,15 @@
           ],
           "default": null,
           "title": "Details"
+        },
+        "severity": {
+          "default": "blocking",
+          "enum": [
+            "blocking",
+            "advisory"
+          ],
+          "title": "Severity",
+          "type": "string"
         }
       },
       "required": [

@@ -12,14 +12,16 @@ from __future__ import annotations
 import hashlib
 import math
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
 from kdrx.corpus import tokenize
+from kdrx.extractors import ExtractionError, extract_text
 from kdrx.schemas.corpus import SourceRecord
-from kdrx.schemas.enums import SourceType
+from kdrx.schemas.enums import ExtractionStatus, QualityGrade, SourceType
 
 
 # --------------------------------------------------------------------------- #
@@ -90,17 +92,76 @@ class BM25:
 
 
 # --------------------------------------------------------------------------- #
+# Rank fusion (T-05-03, plan §18.2): lexical + dense-proxy + source-specific
+# --------------------------------------------------------------------------- #
+@dataclass(frozen=True)
+class FusionWeights:
+    """Declarative channel weights — sempre somam 1.0 (auditável)."""
+
+    bm25: float = 0.55
+    dense: float = 0.35
+    source: float = 0.10
+
+
+RRF_K = 60  # constante canônica do Reciprocal Rank Fusion
+
+# Prior de qualidade por grade (channel source-specific, plan §20)
+SOURCE_QUALITY_SCORE: dict[QualityGrade, float] = {
+    QualityGrade.EXCELLENT: 1.0,
+    QualityGrade.GOOD: 0.85,
+    QualityGrade.ADEQUATE: 0.7,
+    QualityGrade.WEAK: 0.4,
+    QualityGrade.UNVERIFIED: 0.25,
+    QualityGrade.REJECTED: 0.0,
+}
+
+
+def _char_ngrams(text: str, n: int = 3) -> Counter[str]:
+    """Character n-grams do texto normalizado (proxy determinístico denso).
+
+    Honestidade de implementação: isso NÃO é um embedding neural. É um canal
+    semântico substituto que captura similaridade de superfície tolerante a
+    typos/sufixos (nenhum modelo, nenhuma rede). Um scorer neural real entra
+    pela mesma interface (``dense_scorer`` de ``fused_search``).
+    """
+    toks = tokenize(text)
+    grams: Counter[str] = Counter()
+    for tok in toks:
+        padded = f"^{tok}$"
+        for i in range(len(padded) - n + 1):
+            grams[padded[i : i + n]] += 1
+    return grams
+
+
+def ngram_cosine(a: str, b: str) -> float:
+    """Cosseno entre os vetores de char-ngrams de dois textos, em [0, 1]."""
+    ga, gb = _char_ngrams(a), _char_ngrams(b)
+    if not ga or not gb:
+        return 0.0
+    dot = sum(ga[g] * gb[g] for g in ga.keys() & gb.keys())
+    norm_a = math.sqrt(sum(v * v for v in ga.values()))
+    norm_b = math.sqrt(sum(v * v for v in gb.values()))
+    if norm_a == 0.0 or norm_b == 0.0:
+        return 0.0
+    return dot / (norm_a * norm_b)
+
+
+# --------------------------------------------------------------------------- #
 # File corpus (routes R3 / R4)
 # --------------------------------------------------------------------------- #
 TEXT_EXTENSIONS = {
     ".txt",
     ".md",
+    ".markdown",
     ".rst",
     ".csv",
     ".json",
     ".yaml",
     ".yml",
     ".py",
+    ".html",
+    ".htm",
+    ".pdf",
     ".log",
 }
 
@@ -112,24 +173,31 @@ class FileCorpus:
         self.root = Path(root)
         self._docs: list[Document] = []
         self._bm25 = BM25()
+        # token->char-offset map por doc (T-05-04), cache na 1a extração de span
+        self._token_map: dict[str, list[tuple[str, int, int]]] = {}
+        # T-05-05: falhas de extração surfacadas — nunca silenciosas
+        self.extraction_failures: list[dict[str, str]] = []
 
     def scan(self, *, extensions: set[str] | None = None) -> list[Document]:
         exts = extensions or TEXT_EXTENSIONS
         docs: list[Document] = []
+        self.extraction_failures = []
         for path in sorted(self.root.rglob("*")):
             if not path.is_file() or path.suffix.lower() not in exts:
                 continue
-            try:
-                text = path.read_text(encoding="utf-8", errors="replace")
-            except OSError:  # pragma: no cover - unreadable file
-                continue
             rel = str(path.relative_to(self.root))
-            is_code = path.suffix.lower() in {".py", ".json", ".yaml", ".yml"}
+            # T-05-05: extração por formato (extractors dedicados). Falha
+            # explícita (ExtractionError) é REGISTRADA e o doc é pulado —
+            # documento não-extraível não vira "fonte fantasma" no índice.
+            try:
+                text, extractor_name = extract_text(path)
+            except ExtractionError as exc:
+                self.extraction_failures.append({"file": rel, "reason": str(exc)})
+                continue
             # Identidade mínima verificável (B-06/T-04-07): a existência da
             # fonte é blocking — fonte sem URI/título/hash NÃO passa no gate.
-            # O corpus local se identifica como dataset de arquivo com hash e
-            # data de mtime (evidência de frescor) — nada é fakeado: são
-            # atributos reais do arquivo apontado pelo canonical_uri.
+            # O hash cobre o TEXTO EXTRAÍDO (conteúdo canônico indexado), não
+            # necessariamente os bytes do arquivo (ex.: markdown normalizado).
             doc = Document(
                 doc_id=rel,
                 text=text,
@@ -137,9 +205,15 @@ class FileCorpus:
                     source_id=f"file:{rel}",
                     canonical_uri=f"file://{path.resolve()}",
                     title=rel,
-                    source_type=SourceType.CODE_REPOSITORY if is_code else SourceType.DATASET,
+                    source_type=(
+                        SourceType.CODE_REPOSITORY
+                        if path.suffix.lower() in {".py", ".json", ".yaml", ".yml"}
+                        else SourceType.DATASET
+                    ),
                     content_hash=f"sha256:{hashlib.sha256(text.encode('utf-8')).hexdigest()}",
                     date=datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc),
+                    extraction_status=ExtractionStatus.EXTRACTED,
+                    metadata={"extractor": extractor_name},
                 ),
             )
             docs.append(doc)
@@ -150,35 +224,152 @@ class FileCorpus:
     def search(self, query: str, top_k: int = 10) -> list[tuple[Document, float]]:
         return self._bm25.search(query, top_k)
 
-    def retrieve_evidence_spans(
-        self, query: str, top_k: int = 3, window: int = 60
-    ) -> list[dict]:
-        """Return locatable spans (window of tokens around the best match).
+    def fused_search(
+        self,
+        query: str,
+        top_k: int = 10,
+        weights: FusionWeights | None = None,
+        dense_scorer: "Callable[[str, Document], float] | None" = None,
+    ) -> list[tuple[Document, float, dict[str, float]]]:
+        """T-05-03: Reciprocal Rank Fusion (RRF) de 3 canais declarados.
 
-        This is the deterministic analogue of evidence-span extraction for
-        file corpora: it returns verbatim text plus a rough line locator so the
-        R3 route can cite ``page/line`` spans without a model.
+        Canais e pesos ficam explícitos (``FusionWeights``): ``bm25`` (lexical),
+        ``dense`` (proxy char-ngram determinístico ou scorer neural injetado)
+        e ``source`` (prior de qualidade da fonte, plan §20). Retorna
+        ``(doc, score_fundido, breakdown)`` ordenado; o breakdown carrega o
+        score cru de cada canal para auditoria.
         """
+        w = weights or FusionWeights()
+        docs = list(self._docs)
+        if not docs:
+            return []
+
+        def _ranked(values: list[float]) -> dict[str, int]:
+            """Ranks com empate compartilhado (standard competition ranking).
+
+            Scores iguais recebem o MESMO rank — sem desempate alfabético —
+            para que um canal empatado não decida o resultado (caso típico:
+            dois docs com bm25=0 não devem prevalecer sobre um sinal dense
+            positivo no canal que discrimina).
+            """
+            order = sorted(range(len(docs)), key=lambda i: (-values[i], docs[i].doc_id))
+            ranks: dict[str, int] = {}
+            last_val: float | None = None
+            last_rank = 0
+            for pos, i in enumerate(order):
+                v = values[i]
+                if last_val is None or v != last_val:
+                    last_rank = pos + 1
+                    last_val = v
+                ranks[docs[i].doc_id] = last_rank
+            return ranks
+
+        dense_fn = dense_scorer or (lambda q, d: ngram_cosine(q, d.text))
+        bm25_raw = [self._bm25.score(query, d) for d in docs]
+        dense_raw = [float(dense_fn(query, d)) for d in docs]
+        source_raw = [
+            SOURCE_QUALITY_SCORE.get(d.source.quality_grade, 0.25) if d.source else 0.25
+            for d in docs
+        ]
+
+        rank_bm25 = _ranked(bm25_raw)
+        rank_dense = _ranked(dense_raw)
+        rank_source = _ranked(source_raw)
+
+        out: list[tuple[Document, float, dict[str, float]]] = []
+        for d, b25, dse, src in zip(docs, bm25_raw, dense_raw, source_raw):
+            fused = (
+                w.bm25 / (RRF_K + rank_bm25[d.doc_id])
+                + w.dense / (RRF_K + rank_dense[d.doc_id])
+                + w.source / (RRF_K + rank_source[d.doc_id])
+            )
+            out.append(
+                (
+                    d,
+                    fused,
+                    {
+                        "bm25": round(b25, 6),
+                        "dense": round(dse, 6),
+                        "source": src,
+                        "rank_bm25": rank_bm25[d.doc_id],
+                        "rank_dense": rank_dense[d.doc_id],
+                        "rank_source": rank_source[d.doc_id],
+                    },
+                )
+            )
+        out.sort(key=lambda item: (-item[1], item[0].doc_id))
+        return out[:top_k]
+
+    def retrieve_evidence_spans(
+        self,
+        query: str,
+        top_k: int = 3,
+        window: int = 60,
+        *,
+        fused: bool = True,
+        weights: FusionWeights | None = None,
+    ) -> list[dict]:
+        """Return VERBATIM, char-locatable spans (window of tokens).
+
+        T-05-04: o span devolvido é um slice literal do texto fonte (casing,
+        pontuação e whitespace preservados) com ``char_start``/``char_end`` e
+        números de linha — a citação é verificável contra o arquivo original.
+        O interior da janela é escolhido no espaço de tokens normalizados
+        (mesmo índice do BM25); os offsets vêm de ``token_spans``.
+
+        T-05-03/T-05-07: a ORDEM de varredura vem do rank fusion (``fused``),
+        então um doc com typo (sem match lexical exato) ainda produz evidência
+        quando o canal dense sinaliza similaridade. ``fused=False`` volta ao
+        BM25 puro (comparação de benchmark).
+        """
+        from kdrx.corpus import token_spans
+
         spans: list[dict] = []
         q_terms = set(tokenize(query))
-        for doc, score in self.search(query, top_k):
-            if score <= 0:
-                continue
-            toks = doc.tokens
+        if fused:
+            ranked = [
+                (d, fs, br)
+                for d, fs, br in self.fused_search(query, top_k, weights)
+                if br["bm25"] > 0 or br["dense"] > 0
+            ]
+        else:
+            ranked = [(d, s, None) for d, s in self.search(query, top_k) if s > 0]
+        for doc, score, breakdown in ranked:
+            tmap = self._token_map.setdefault(doc.doc_id, token_spans(doc.text))
+            toks = [t[0] for t in tmap]
             # find the densest window of query terms
             best_start, best_hits = 0, 0
             for i in range(max(0, len(toks) - window + 1)):
                 hits = sum(1 for t in toks[i : i + window] if t in q_terms)
                 if hits > best_hits:
                     best_hits, best_start = hits, i
-            span_tokens = toks[best_start : best_start + window]
+            window_idx = range(best_start, min(len(toks), best_start + window))
+            if not window_idx:
+                continue
+            char_start = tmap[window_idx[0]][1]
+            char_end = tmap[window_idx[-1]][2]
+            verbatim = doc.text[char_start:char_end]
+            line_start = doc.text.count("\n", 0, char_start) + 1
+            line_end = line_start + verbatim.count("\n")
+
+            base_score = breakdown["bm25"] if breakdown else score
+            if fused and base_score <= 0 and (breakdown or {}).get("dense", 0) <= 0:
+                continue
             spans.append(
                 {
                     "source_id": doc.source.source_id if doc.source else doc.doc_id,
                     "title": doc.source.title if doc.source else doc.doc_id,
-                    "verbatim_span": " ".join(span_tokens),
-                    "locator": {"file": doc.doc_id, "line_start": None},
-                    "bm25_score": round(score, 4),
+                    "verbatim_span": verbatim,
+                    "locator": {
+                        "file": doc.doc_id,
+                        "line_start": line_start,
+                        "line_end": line_end,
+                        "char_start": char_start,
+                        "char_end": char_end,
+                    },
+                    "bm25_score": round(base_score, 4),
+                    "fused_score": round(score, 6) if fused else None,
+                    "channels": breakdown,
                     "query_term_hits": best_hits,
                 }
             )

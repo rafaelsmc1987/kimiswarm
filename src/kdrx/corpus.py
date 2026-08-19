@@ -117,6 +117,23 @@ def tokenize(text: str) -> list[str]:
     return _tokens(text)
 
 
+def token_spans(text: str) -> list[tuple[str, int, int]]:
+    """(token_normalizado, char_start, char_end) sobre o texto ORIGINAL.
+
+    T-05-04: a EvidenceSpan precisa apontar para characters exatos do source
+    (casing/pontuação/whitespace preservados). O regex roda no texto cru e a
+    normalização (NFKC+lower) acontece por token, então a sequência de tokens
+    é idêntica a ``tokenize(text)`` e os offsets apontam para o conteúdo real.
+    Caracteres que o NFKC expande (raro, ex.: ligaturas) inflam no máximo o
+    final do token; o texto citado permanece o ORIGINAL entre os offsets.
+    """
+    out: list[tuple[str, int, int]] = []
+    for m in _WORD_RE.finditer(text):
+        tok = unicodedata.normalize("NFKC", m.group(0)).lower()
+        out.append((tok, m.start(), m.end()))
+    return out
+
+
 def jaccard_similarity(a: str, b: str) -> float:
     """Jaccard similarity over word tokens, in [0, 1]."""
     ta, tb = set(_tokens(a)), set(_tokens(b))

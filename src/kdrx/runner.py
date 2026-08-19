@@ -10,11 +10,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 from kdrx.claims import compute_standing, invert_families
-from kdrx.corpus import independence_families, tokenize
+from kdrx.corpus import independence_families, source_fingerprint, tokenize
 from kdrx.dag import compile_dag
 from kdrx.planner import plan_gate
 from kdrx.reporting import (
@@ -23,7 +24,13 @@ from kdrx.reporting import (
     citation_integrity_gate,
     split_sentences,
 )
-from kdrx.retrieval import FileCorpus
+from kdrx.retrieval import (
+    FileCorpus,
+    QueryGraph,
+    QueryNode,
+    SaturationState,
+    StoppingCriterion,
+)
 from kdrx.scheduler import WaveScheduler
 from kdrx.schemas.claims import Claim, ClaimEvidenceEdge
 from kdrx.schemas.corpus import EvidenceSpan, Locator, SourceRecord
@@ -54,6 +61,44 @@ from kdrx.security import security_gate
 from kdrx.state import RunState, run_id_from_plan
 
 
+def _build_query_graph(objective: str, max_children: int = 8) -> QueryGraph:
+    """Expande o objective em um query graph determinístico (T-05-02, plan §18.1).
+
+    O nó seed carrega o objective completo; cada cláusula separada por
+    ``and``/``,``/``;``/``.`` vira um nó filho com rationale rastreável.
+    As queries dirigem o loop de retrieval — nada de "flat list" solta.
+    """
+    graph = QueryGraph()
+    seed = graph.add(
+        QueryNode(
+            query=objective,
+            rationale="seed: objective completo",
+            expected_evidence="visão geral do objective",
+            node_id="Q-seed",
+        )
+    )
+    clauses = re.split(r"\s+and\s+|[;,.]", objective)
+    seen = {objective.strip().lower()}
+    for clause in clauses:
+        q = clause.strip()
+        if not q or not tokenize(q):
+            continue
+        key = q.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        if len(graph) - 1 >= max_children:
+            break
+        graph.child_of(
+            seed.node_id,
+            query=q,
+            rationale="cláusula derivada do objective",
+            expected_evidence=q,
+            node_id=f"Q-{len(graph)}",
+        )
+    return graph
+
+
 def _retrieval_tasks(corpus_size: int) -> list[TaskSpec]:
     """A small, well-formed retrieval/verification/synthesis DAG.
 
@@ -68,7 +113,12 @@ def _retrieval_tasks(corpus_size: int) -> list[TaskSpec]:
             wave=0,
             role=AgentRole.PRIMARY_SOURCE_FINDER,
             mission="search the corpus for evidence relevant to the objective",
-            outputs=["evidence/spans.jsonl", "corpus/sources.jsonl"],
+            outputs=[
+            "evidence/spans.jsonl",
+            "corpus/sources.jsonl",
+            "corpus/dedup.json",
+            "retrieval/query_graph.json",
+        ],
             tools=["search"],
             read_only=True,
             acceptance=acceptance("spans extracted"),
@@ -344,21 +394,114 @@ class _FileResearchExecutor:
 
     def _retrieve(self, brief: AgentBrief) -> AgentResult:
         docs = self.corpus.scan()
-        hits = self.corpus.retrieve_evidence_spans(self.objective, top_k=5, window=40)
-        self.sources = [d.source for d in docs if d.source is not None]
+        # T-05-06: dedup por fingerprint de conteúdo — cópias idênticas do
+        # mesmo texto colapsam para a fonte CANÔNICA (1a ocorrência). Spans das
+        # cópias citam a fonte canônica, então o standing mede independência
+        # real e o gate não sequer vê fontes-fantasma. O dedup é artifact do
+        # run (corpus/dedup.json), nunca apagamento silencioso.
+        canon_by_fp: dict[str, SourceRecord] = {}
+        duplicates: dict[str, str] = {}
+        for d in docs:
+            s = d.source
+            if s is None:
+                continue
+            fp = source_fingerprint(s)
+            canon = canon_by_fp.get(fp)
+            if canon is None:
+                canon_by_fp[fp] = s
+            else:
+                duplicates[s.source_id] = canon.source_id
+                d.source = canon
+        self.sources = list(canon_by_fp.values())
+        families = independence_families(self.sources)
+        self.state.write_text(
+            "corpus/dedup.json",
+            json.dumps(
+                {
+                    "duplicates": duplicates,
+                    "canonical_count": len(self.sources),
+                    "scanned_documents": len(docs),
+                    "families": {k: sorted(v) for k, v in families.items()},
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        # T-05-02/T-05-07: o QueryGraph dirige o loop de retrieval (seed +
+        # cláusulas do objective); o StoppingCriterion decide a parada por
+        # saturação de evidência — margens medidas por ganho REAL de
+        # fontes/termos (proxy determinístico de claims, plan §18.5).
+        graph = _build_query_graph(self.objective)
+        stopping = StoppingCriterion()
+        objective_terms = {t for t in tokenize(self.objective) if len(t) >= 4}
+
+        merged: list[dict] = []
+        seen_spans: set[tuple[str, object]] = set()
+        known_sources: set[str] = set()
+        covered_terms: set[str] = set()
+        queries_issued = 0
+        decision: dict = {"stop": False, "reason": "not_evaluated", "unmet": []}
+
+        for node in graph:
+            prior_sources = len(known_sources)
+            hits = self.corpus.retrieve_evidence_spans(
+                node.query, top_k=5, window=40
+            )
+            queries_issued += 1
+            node_results: list[str] = []
+            new_sources = 0
+            new_terms = 0
+            for h in hits:
+                src = h["source_id"]
+                node_results.append(src)
+                key = (src, h["locator"]["char_start"])
+                if key in seen_spans:
+                    continue
+                seen_spans.add(key)
+                merged.append(h)
+                if src not in known_sources:
+                    new_sources += 1
+                terms_here = set(tokenize(h["verbatim_span"])) & objective_terms
+                new_terms += len(terms_here - covered_terms)
+                covered_terms |= terms_here
+            node.results = sorted(set(node_results))
+            node.marginal_gain = float(new_sources)
+
+            gain_src = (
+                (1.0 if new_sources else 0.0)
+                if prior_sources == 0
+                else new_sources / prior_sources
+            )
+            gain_ev = new_terms / max(1, len(objective_terms))
+            known_sources |= set(node_results)
+            coverage = len(covered_terms) / max(1, len(objective_terms))
+            decision = stopping.evaluate(
+                SaturationState(
+                    critical_claim_coverage=coverage,
+                    marginal_source_gain=gain_src,
+                    marginal_evidence_gain=gain_ev,
+                    unresolved_blockers=0,
+                    diversity_sources=len(known_sources),
+                    queries_issued=queries_issued,
+                )
+            )
+            if decision["stop"]:
+                break
+
         self.spans = [
             EvidenceSpan(
                 evidence_id=f"EV-{i}",
                 source_id=h["source_id"],
-                locator=Locator(file=h["locator"]["file"]),
+                locator=Locator(**h["locator"]),
                 verbatim_span=h["verbatim_span"],
                 normalized_proposition=self.objective,
                 evidence_type=EvidenceType.VERBATIM,
-                extraction_method="bm25",
+                extraction_method="bm25+rrf",
                 extractor="file-corpus",
                 verified=True,
             )
-            for i, h in enumerate(hits)
+            for i, h in enumerate(merged)
         ]
         self.state.write_text(
             "corpus/sources.jsonl",
@@ -368,6 +511,30 @@ class _FileResearchExecutor:
             "evidence/spans.jsonl",
             "\n".join(s.model_dump_json() for s in self.spans) + "\n",
         )
+        # T-05-02: provenance do grafo e da decisão de parada é artifact do run
+        self.state.write_text(
+            "retrieval/query_graph.json",
+            json.dumps(
+                {
+                    "objective": self.objective,
+                    "queries_issued": queries_issued,
+                    "decision": decision,
+                    "nodes": [
+                        {
+                            "node_id": n.node_id,
+                            "query": n.query,
+                            "rationale": n.rationale,
+                            "parent": n.parent,
+                            "results": n.results,
+                            "marginal_gain": n.marginal_gain,
+                        }
+                        for n in graph
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
         self._extract_claims()
         return AgentResult(
             result_id="r-retrieve",
@@ -375,7 +542,10 @@ class _FileResearchExecutor:
             agent_role=brief.role,
             outputs_produced=brief.outputs,
             evidence_refs=[s.evidence_id for s in self.spans],
-            limitations=[f"file corpus only; {len(docs)} documents indexed"],
+            limitations=[
+                f"file corpus; {len(docs)} docs; graph {len(graph)} nodes / "
+                f"{queries_issued} queries ({decision['reason']})"
+            ],
             declared_tests=[],
             executed_tests=[],
         )
@@ -388,12 +558,19 @@ class _FileResearchExecutor:
         """
         objective_tokens = set(tokenize(self.objective))
         span_by_source = {sp.source_id: sp for sp in self.spans}
+        seen_claims: set[tuple[str, str]] = set()
         for doc in self.corpus._docs:
             source_id = doc.source.source_id if doc.source else doc.doc_id
             for sent in split_sentences(doc.text):
                 sent_tokens = set(tokenize(sent))
                 has_number = any(ch.isdigit() for ch in sent)
                 if len(sent_tokens & objective_tokens) >= 2 or has_number:
+                    # T-05-06: cópias colapsadas para a fonte canônica não
+                    # geram claims duplicados — (statement, source) é único.
+                    key = (sent.strip().lower(), source_id)
+                    if key in seen_claims:
+                        continue
+                    seen_claims.add(key)
                     ev = span_by_source.get(source_id)
                     cid = f"CL-{len(self.claims) + 1}"
                     self.claims.append(
