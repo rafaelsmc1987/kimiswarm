@@ -1,0 +1,165 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "report",
+        "docx",
+        "pdf",
+        "site",
+        "table",
+        "figure",
+        "dataset",
+        "script",
+        "manifest"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRecord": {
+      "additionalProperties": false,
+      "description": "One persisted artifact with provenance and a seal.",
+      "properties": {
+        "artifact_id": {
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "content_hash": {
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "seal_level": {
+          "$ref": "#/$defs/SealLevel",
+          "default": "level_1_hashed"
+        },
+        "produced_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Produced By"
+        },
+        "produced_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Produced At"
+        },
+        "inputs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "kind",
+        "path",
+        "content_hash"
+      ],
+      "title": "ArtifactRecord",
+      "type": "object"
+    },
+    "SealLevel": {
+      "description": "Provenance seal levels (Orchestra ARA-inspired).",
+      "enum": [
+        "none",
+        "level_1_hashed",
+        "level_2_signed",
+        "level_3_reproducible"
+      ],
+      "title": "SealLevel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "What a run actually delivers (plan \u00a731).",
+  "properties": {
+    "manifest_id": {
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRecord"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "final_integrity_pass": {
+      "default": false,
+      "title": "Final Integrity Pass",
+      "type": "boolean"
+    },
+    "secret_scan_clean": {
+      "default": false,
+      "title": "Secret Scan Clean",
+      "type": "boolean"
+    },
+    "artifact_open_test_passed": {
+      "default": false,
+      "title": "Artifact Open Test Passed",
+      "type": "boolean"
+    },
+    "unresolved_critical_claims": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unresolved Critical Claims",
+      "type": "array"
+    },
+    "delivered_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Delivered At"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "manifest_id",
+    "run_id"
+  ],
+  "title": "DeliveryManifest",
+  "type": "object"
+}

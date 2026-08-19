@@ -1,0 +1,98 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# KDR-X run artifacts
+.research/
+
+# --- Segredos e credenciais (B-01) ---
+*.har
+*.pfx
+*.p12
+*.pem
+*.key
+*.ppk
+*.kdbx
+id_rsa*
+id_ed25519*
+.agent-gw.json
+agent-gw.json
+.ssh/
+.ssh*
+*.pid
+.Xauthority
+
+# --- Dotfiles de ambiente ---
+.bashrc
+.bash_logout
+.profile
+.npmrc
+.gitconfig
+
+# --- Dump de sandbox (B-01) — ancorado na raiz ---
+/.config/
+/.dotnet/
+/.local/
+/.user/
+/.cli-tools/
+/.codegraph/
+/.drive9-health/
+/.ipython/
+/.tmp/
+/.websites-templates/
+/dbus/
+/s6/
+/s6-rc/
+/s6-rc_s6-rc-init_jLgjmf/
+/runit/
+/service/
+/sshd/
+/sudo/
+/systemd/
+/mount/
+/shm/
+/lock/
+/log/
+/logs/
+/temp/
+/upload/
+/user/
+/sendsigs.omit.d/
+/e2b/
+/skills/
+/pdf-viewer/
+/orchestrator/
+/deep-research/
+/deep-research-swarm/
+/kimi-project/
+/moonbox-project-template/
+/Plano/
+/correcao/
+
+# --- Corpus forense (vive fora do repo; ver evidence-manifest/) ---
+/extracted/
+/evidence/
+/auth/
+/prompts/
+/forensic-corpus/
+
+# --- Estado de orquestração local ---
+/.omo/
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.idea/
+.vscode/

@@ -1,0 +1,115 @@
+{
+  "$defs": {
+    "EdgeDirectness": {
+      "enum": [
+        "direct",
+        "indirect",
+        "inferred"
+      ],
+      "title": "EdgeDirectness",
+      "type": "string"
+    },
+    "EdgeRelation": {
+      "description": "Claim <-> evidence relations (plan \u00a723).",
+      "enum": [
+        "SUPPORTS",
+        "PARTIALLY_SUPPORTS",
+        "CONTRADICTS",
+        "QUALIFIES",
+        "CONTEXT_ONLY",
+        "IRRELEVANT",
+        "CANNOT_DETERMINE"
+      ],
+      "title": "EdgeRelation",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A directed relation between one claim and one evidence span (plan \u00a723).",
+  "properties": {
+    "edge_id": {
+      "title": "Edge Id",
+      "type": "string"
+    },
+    "claim_id": {
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "evidence_id": {
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "relation": {
+      "$ref": "#/$defs/EdgeRelation"
+    },
+    "directness": {
+      "$ref": "#/$defs/EdgeDirectness",
+      "default": "direct"
+    },
+    "entailment": {
+      "default": 0.0,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Entailment",
+      "type": "number"
+    },
+    "source_quality": {
+      "default": 0.0,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Source Quality",
+      "type": "number"
+    },
+    "independence": {
+      "default": 0.0,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Independence",
+      "type": "number"
+    },
+    "scope_match": {
+      "default": false,
+      "title": "Scope Match",
+      "type": "boolean"
+    },
+    "temporal_match": {
+      "default": false,
+      "title": "Temporal Match",
+      "type": "boolean"
+    },
+    "verifier": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Verifier"
+    },
+    "confidence": {
+      "default": 0.0,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    }
+  },
+  "required": [
+    "edge_id",
+    "claim_id",
+    "evidence_id",
+    "relation"
+  ],
+  "title": "ClaimEvidenceEdge",
+  "type": "object"
+}

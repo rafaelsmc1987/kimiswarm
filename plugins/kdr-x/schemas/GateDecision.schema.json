@@ -1,0 +1,126 @@
+{
+  "$defs": {
+    "GateCheck": {
+      "additionalProperties": false,
+      "description": "One individual deterministic check inside a gate.",
+      "properties": {
+        "check_id": {
+          "title": "Check Id",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "details": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Details"
+        }
+      },
+      "required": [
+        "check_id",
+        "description",
+        "passed"
+      ],
+      "title": "GateCheck",
+      "type": "object"
+    },
+    "GateKind": {
+      "enum": [
+        "plan",
+        "source",
+        "claim",
+        "citation",
+        "integrity",
+        "delivery",
+        "security"
+      ],
+      "title": "GateKind",
+      "type": "string"
+    },
+    "GateVerdict": {
+      "enum": [
+        "pass",
+        "fail",
+        "warn",
+        "blocked"
+      ],
+      "title": "GateVerdict",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The outcome of a deterministic gate.\n\nA gate *fails* when any required check fails, *warns* when only advisory\nchecks fail, and *passes* only when every check passes.",
+  "properties": {
+    "gate_id": {
+      "title": "Gate Id",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/GateKind"
+    },
+    "verdict": {
+      "$ref": "#/$defs/GateVerdict"
+    },
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/GateCheck"
+      },
+      "title": "Checks",
+      "type": "array"
+    },
+    "blocking_reasons": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Blocking Reasons",
+      "type": "array"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Id"
+    },
+    "timestamp": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Timestamp"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "gate_id",
+    "kind",
+    "verdict"
+  ],
+  "title": "GateDecision",
+  "type": "object"
+}

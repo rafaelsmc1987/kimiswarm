@@ -1,0 +1,115 @@
+{
+  "$defs": {
+    "TaskStatus": {
+      "enum": [
+        "pending",
+        "ready",
+        "running",
+        "succeeded",
+        "failed",
+        "retrying",
+        "skipped",
+        "blocked",
+        "cancelled"
+      ],
+      "title": "TaskStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Resumable run state (plan \u00a731, \u00a740 ``/kdr:resume``).",
+  "properties": {
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "plan_id": {
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "contract_id": {
+      "title": "Contract Id",
+      "type": "string"
+    },
+    "route": {
+      "title": "Route",
+      "type": "string"
+    },
+    "root_dir": {
+      "title": "Root Dir",
+      "type": "string"
+    },
+    "created_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created At"
+    },
+    "updated_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Updated At"
+    },
+    "status": {
+      "$ref": "#/$defs/TaskStatus",
+      "default": "pending"
+    },
+    "artifact_hashes": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Artifact Hashes",
+      "type": "object"
+    },
+    "completed_tasks": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Completed Tasks",
+      "type": "array"
+    },
+    "failed_tasks": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Failed Tasks",
+      "type": "array"
+    },
+    "gate_results": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Gate Results",
+      "type": "object"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "run_id",
+    "plan_id",
+    "contract_id",
+    "route",
+    "root_dir"
+  ],
+  "title": "RunManifest",
+  "type": "object"
+}

@@ -1,0 +1,30 @@
+MIT License
+
+Copyright (c) 2026 KDR-X contributors
+
+Escopo desta licença / Scope of this license:
+Esta licença MIT cobre exclusivamente o código-fonte original deste repositório
+(`src/kdrx/`, `plugins/kdr-x/`, `tests/`, `docs/`, `.claude/` e os arquivos de
+configuração da raiz). Material forense, dumps de ambiente, capturas HAR, dados
+de terceiros e o corpus de pesquisa que originou este projeto NÃO fazem parte
+deste repositório e NÃO são cobertos por esta licença — ver
+`docs/LICENSE_MATRIX.md`, `docs/THIRD_PARTY_NOTICES.md` e
+`docs/CLEAN_ROOM_RECORD.md`.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

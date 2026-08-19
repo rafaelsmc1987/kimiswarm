@@ -1,0 +1,165 @@
+{
+  "$defs": {
+    "ClaimImportance": {
+      "enum": [
+        "critical",
+        "major",
+        "minor"
+      ],
+      "title": "ClaimImportance",
+      "type": "string"
+    },
+    "ClaimType": {
+      "enum": [
+        "descriptive",
+        "comparative",
+        "causal",
+        "forecast",
+        "normative"
+      ],
+      "title": "ClaimType",
+      "type": "string"
+    },
+    "FalsificationCriteria": {
+      "additionalProperties": false,
+      "description": "What would count as evidence against a claim.",
+      "properties": {
+        "criterion": {
+          "title": "Criterion",
+          "type": "string"
+        },
+        "detector": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Detector"
+        },
+        "trigger_value": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Trigger Value"
+        }
+      },
+      "required": [
+        "criterion"
+      ],
+      "title": "FalsificationCriteria",
+      "type": "object"
+    },
+    "Standing": {
+      "description": "Claim standing verdict (plan \u00a724).",
+      "enum": [
+        "supported",
+        "mixed",
+        "weak",
+        "contradicted",
+        "unresolved"
+      ],
+      "title": "Standing",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "An atomic, falsifiable claim (plan \u00a722).\n\nCompound sentences are decomposed into multiple atomic claims before\nstanding is computed. ``scope`` constrains populations/samples/time/geography\nso support edges can be checked for scope match.",
+  "properties": {
+    "claim_id": {
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "statement": {
+      "title": "Statement",
+      "type": "string"
+    },
+    "scope": {
+      "additionalProperties": true,
+      "title": "Scope",
+      "type": "object"
+    },
+    "claim_type": {
+      "$ref": "#/$defs/ClaimType",
+      "default": "descriptive"
+    },
+    "importance": {
+      "$ref": "#/$defs/ClaimImportance",
+      "default": "major"
+    },
+    "falsification_criteria": {
+      "items": {
+        "$ref": "#/$defs/FalsificationCriteria"
+      },
+      "title": "Falsification Criteria",
+      "type": "array"
+    },
+    "support_edges": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Support Edges",
+      "type": "array"
+    },
+    "contradiction_edges": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Contradiction Edges",
+      "type": "array"
+    },
+    "dependencies": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Dependencies",
+      "type": "array"
+    },
+    "standing": {
+      "$ref": "#/$defs/Standing",
+      "default": "unresolved"
+    },
+    "confidence": {
+      "default": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "calibration_basis": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Calibration Basis"
+    },
+    "report_locations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Report Locations",
+      "type": "array"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "claim_id",
+    "statement"
+  ],
+  "title": "Claim",
+  "type": "object"
+}

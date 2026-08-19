@@ -1,0 +1,189 @@
+{
+  "$defs": {
+    "RiskLevel": {
+      "description": "HITL risk tiers (plan \u00a730).",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "regulated"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "Route": {
+      "description": "Research routes R0..R12 (plan \u00a713).",
+      "enum": [
+        "R0",
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5",
+        "R6",
+        "R7",
+        "R8",
+        "R9",
+        "R10",
+        "R11",
+        "R12"
+      ],
+      "title": "Route",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The materialized agreement that constrains all downstream agents (\u00a712).\n\nThe contract exists so that no agent can reinterpret the objective in an\nincompatible way. Every field is either filled by intake or defaulted to a\nsafe, explicit value \u2014 nothing is silently left open.",
+  "properties": {
+    "contract_id": {
+      "title": "Contract Id",
+      "type": "string"
+    },
+    "objective": {
+      "title": "Objective",
+      "type": "string"
+    },
+    "decision_context": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Decision Context"
+    },
+    "audience": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Audience"
+    },
+    "scope": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scope"
+    },
+    "in_scope": {
+      "items": {
+        "type": "string"
+      },
+      "title": "In Scope",
+      "type": "array"
+    },
+    "out_of_scope": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Out Of Scope",
+      "type": "array"
+    },
+    "time_window": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Time Window",
+      "type": "object"
+    },
+    "geography": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Geography",
+      "type": "array"
+    },
+    "languages": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Languages",
+      "type": "array"
+    },
+    "source_policy": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Policy"
+    },
+    "required_primary_sources": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Required Primary Sources",
+      "type": "array"
+    },
+    "prohibited_sources": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Prohibited Sources",
+      "type": "array"
+    },
+    "freshness": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Freshness",
+      "type": "object"
+    },
+    "output_format": {
+      "default": "markdown",
+      "title": "Output Format",
+      "type": "string"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/RiskLevel",
+      "default": "medium"
+    },
+    "route": {
+      "$ref": "#/$defs/Route",
+      "default": "R1"
+    },
+    "budget": {
+      "additionalProperties": true,
+      "title": "Budget",
+      "type": "object"
+    },
+    "human_checkpoints": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Human Checkpoints",
+      "type": "array"
+    },
+    "success_metrics": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Success Metrics",
+      "type": "array"
+    }
+  },
+  "required": [
+    "contract_id",
+    "objective"
+  ],
+  "title": "ResearchContract",
+  "type": "object"
+}

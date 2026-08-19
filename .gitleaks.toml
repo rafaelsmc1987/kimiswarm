@@ -1,0 +1,16 @@
+title = "KDR-X gitleaks config"
+
+# Regras default do gitleaks + allowlist de artefatos sanitizados.
+# Rodar localmente: gitleaks detect --source . --config .gitleaks.toml
+# CI: .github/workflows/security.yml (T-09-02)
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Artefatos sanitizados e baselines (paths + hashes, sem valores)"
+paths = [
+  '''^evidence-manifest/''',
+  '''^\.secrets\.baseline$''',
+  '''^\.gitleaks\.toml$''',
+]

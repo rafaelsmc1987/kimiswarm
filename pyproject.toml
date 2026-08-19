@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kdrx"
+version = "0.1.0"
+description = "KDR-X — KimiSwarm Deep Research eXtended: a claim-evidence operating system for SOTA deep research."
+readme = "docs/KDRX_README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "KDR-X contributors" }]
+dependencies = [
+    "pydantic>=2.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+]
+
+[project.scripts]
+kdr = "kdrx.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["error::DeprecationWarning:^kdrx"]
+
+[tool.coverage.run]
+source = ["kdrx"]
+omit = ["*/tests/*"]

@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-08-19T16:32:03.410750+00:00",
+  "repo": "C:\\kimiswarm",
+  "commit": "37ee7c4e10f7bbf6b2cbc288d16545fb1111f48b",
+  "classification": {
+    "product_prefixes": [
+      "src/",
+      "plugins/",
+      "tests/",
+      "docs/",
+      ".claude/"
+    ],
+    "product_files": [
+      ".gitattributes",
+      ".gitignore",
+      "README.md",
+      "pyproject.toml"
+    ]
+  },
+  "tracked_total": 4251,
+  "product_files": 113,
+  "non_product_files": 4138,
+  "non_product_bytes": 354529475,
+  "unreadable_or_missing": 0,
+  "sanitized": true,
+  "note": "Apenas paths, tamanhos e SHA256. Nenhum byte de conteudo copiado."
+}

@@ -1,0 +1,237 @@
+{
+  "$defs": {
+    "ExtractionStatus": {
+      "enum": [
+        "not_extracted",
+        "extracted",
+        "failed",
+        "paywalled"
+      ],
+      "title": "ExtractionStatus",
+      "type": "string"
+    },
+    "PrimarySecondary": {
+      "enum": [
+        "primary",
+        "secondary",
+        "unknown"
+      ],
+      "title": "PrimarySecondary",
+      "type": "string"
+    },
+    "QualityGrade": {
+      "description": "A source can be real yet weak along an independent dimension (plan \u00a720).",
+      "enum": [
+        "excellent",
+        "good",
+        "adequate",
+        "weak",
+        "unverified",
+        "rejected"
+      ],
+      "title": "QualityGrade",
+      "type": "string"
+    },
+    "RetractionStatus": {
+      "enum": [
+        "none",
+        "retracted",
+        "corrected",
+        "expressed_concern",
+        "unknown"
+      ],
+      "title": "RetractionStatus",
+      "type": "string"
+    },
+    "SourceType": {
+      "enum": [
+        "academic_paper",
+        "official_document",
+        "government",
+        "legal",
+        "news",
+        "blog",
+        "code_repository",
+        "dataset",
+        "wiki",
+        "forum",
+        "press_release",
+        "patent",
+        "book",
+        "video",
+        "image",
+        "unknown"
+      ],
+      "title": "SourceType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Canonical, normalized representation of one document (plan \u00a719).\n\nA ``SourceRecord`` is the identity anchor of the corpus layer. Every piece of\nevidence ultimately points back to one of these. Fields follow the JSON in\n\u00a719 verbatim so the schema, prompts and gate code agree.",
+  "properties": {
+    "source_id": {
+      "title": "Source Id",
+      "type": "string"
+    },
+    "canonical_uri": {
+      "title": "Canonical Uri",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "authors": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Authors",
+      "type": "array"
+    },
+    "publisher": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Publisher"
+    },
+    "date": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Date"
+    },
+    "retrieved_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Retrieved At"
+    },
+    "language": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Language"
+    },
+    "source_type": {
+      "$ref": "#/$defs/SourceType",
+      "default": "unknown"
+    },
+    "content_hash": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Content Hash"
+    },
+    "version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Version"
+    },
+    "primary_or_secondary": {
+      "$ref": "#/$defs/PrimarySecondary",
+      "default": "unknown"
+    },
+    "quality_policy": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Quality Policy"
+    },
+    "quality_grade": {
+      "$ref": "#/$defs/QualityGrade",
+      "default": "unverified"
+    },
+    "retraction_status": {
+      "$ref": "#/$defs/RetractionStatus",
+      "default": "unknown"
+    },
+    "conflicts_of_interest": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Conflicts Of Interest",
+      "type": "array"
+    },
+    "dependencies": {
+      "description": "source_ids this source syndicates from / relies on.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Dependencies",
+      "type": "array"
+    },
+    "access_path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Access Path"
+    },
+    "extraction_status": {
+      "$ref": "#/$defs/ExtractionStatus",
+      "default": "not_extracted"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "source_id",
+    "canonical_uri",
+    "title"
+  ],
+  "title": "SourceRecord",
+  "type": "object"
+}
