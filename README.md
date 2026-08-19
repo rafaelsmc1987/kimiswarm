@@ -4,7 +4,7 @@ Client-side SillyTavern extension implementing the
 [kimi-k3-jb patch](https://rentry.org/kimi-k3-jb) (`reasoning_content` thinking prefill for
 Kimi/Moonshot models) without modifying any server files.
 
-## What it does
+## What it doesf
 
 Hooks `CHAT_COMPLETION_SETTINGS_READY` and rewrites the outgoing request payload:
 
