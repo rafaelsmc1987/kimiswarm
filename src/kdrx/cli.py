@@ -52,11 +52,18 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_demo.add_argument("--out", default=".research", help="runs root directory")
 
-    p_run = sub.add_parser("run", help="execute a plan from a run dir")
-    p_run.add_argument("--run-dir", required=True)
-    p_run.add_argument(
-        "--corpus", default=None, help="file corpus for retrieval (optional)"
+    p_plan = sub.add_parser(
+        "plan", help="create contract + plan, run plan gate, scaffold run dir"
     )
+    p_plan.add_argument("--objective", required=True)
+    p_plan.add_argument("--corpus", default=None, help="file corpus dir (sizing only)")
+    p_plan.add_argument("--out", default=".research", help="runs root directory")
+    p_plan.add_argument("--run-id", default=None)
+    p_plan.add_argument("--json", action="store_true", help="emit JSON summary")
+
+    p_run = sub.add_parser("run", help="execute a persisted plan (see `kdr plan`)")
+    p_run.add_argument("--run-dir", required=True)
+    p_run.add_argument("--corpus", default=None, help="file corpus dir (offline path)")
 
     p_status = sub.add_parser("status", help="print run status")
     p_status.add_argument("--run-dir", required=True)
@@ -70,8 +77,46 @@ def _build_parser() -> argparse.ArgumentParser:
     p_report = sub.add_parser("report", help="assemble the report from a run dir")
     p_report.add_argument("--run-dir", required=True)
 
-    sub.add_parser("monitor", help="delta-search monitor (placeholder)")
+    sub.add_parser("monitor", help="delta-search monitor (R12: not in offline core)")
     return parser
+
+
+def cmd_plan(args: argparse.Namespace) -> int:
+    from kdrx.planner import plan_gate
+    from kdrx.runner import build_contract, build_plan, prepare_run_dir
+
+    corpus_size = 0
+    if args.corpus:
+        from kdrx.retrieval import FileCorpus
+
+        corpus_size = len(FileCorpus(args.corpus).scan())
+    contract = build_contract(args.objective)
+    plan = build_plan(contract, corpus_size)
+    gate = plan_gate(plan, contract)
+    if gate.blocking():
+        print("plan gate BLOCKED:", file=sys.stderr)
+        for reason in gate.blocking_reasons:
+            print(f"  - {reason}", file=sys.stderr)
+        return 1
+    state, manifest = prepare_run_dir(
+        plan, contract, runs_root=args.out, run_id=args.run_id
+    )
+    waves = sorted({t.wave for t in plan.tasks})
+    summary = {
+        "run_id": manifest.run_id,
+        "run_dir": str(state.run_dir),
+        "gate": gate.verdict.value,
+        "tasks": [t.task_id for t in plan.tasks],
+        "waves": waves,
+    }
+    if args.json:
+        print(json.dumps(summary, indent=2))
+    else:
+        print(f"run_id: {manifest.run_id}")
+        print(f"run_dir: {state.run_dir}")
+        print(f"plan gate: {gate.verdict.value}")
+        print(f"tasks: {len(plan.tasks)}  waves: {waves}")
+    return 0
 
 
 def cmd_schema(args: argparse.Namespace) -> int:
@@ -181,7 +226,8 @@ def cmd_hook(args: argparse.Namespace) -> int:
         raise SystemExit(f"unknown hook {args.name}")
 
     print(decision.model_dump_json(indent=2))
-    return 0 if not decision.blocking() else 1
+    # Claude Code hook convention: 0 = allow, 2 = block with feedback.
+    return 2 if decision.blocking() else 0
 
 
 def cmd_eval(args: argparse.Namespace) -> int:
@@ -214,6 +260,57 @@ def cmd_demo(args: argparse.Namespace) -> int:
     return summary.get("exit_code", 0)
 
 
+def cmd_run(args: argparse.Namespace) -> int:
+    from kdrx.planner import plan_gate
+    from kdrx.retrieval import FileCorpus
+    from kdrx.runner import execute_plan
+    from kdrx.schemas.plan import ResearchPlan
+    from kdrx.schemas.request import ResearchContract
+    from kdrx.state import RunState, load_manifest_from_dir
+
+    run_dir = Path(args.run_dir)
+    plan_path = run_dir / "plan.json"
+    contract_path = run_dir / "research_contract.json"
+    if not plan_path.exists() or not contract_path.exists():
+        print(
+            f"error: {run_dir} sem plan.json/research_contract.json — "
+            "crie o plano com `kdr plan` primeiro",
+            file=sys.stderr,
+        )
+        return 2
+    plan = ResearchPlan.model_validate_json(plan_path.read_text(encoding="utf-8"))
+    contract = ResearchContract.model_validate_json(
+        contract_path.read_text(encoding="utf-8")
+    )
+    gate = plan_gate(plan, contract)
+    if gate.blocking():
+        print("plan gate BLOCKED:", file=sys.stderr)
+        for reason in gate.blocking_reasons:
+            print(f"  - {reason}", file=sys.stderr)
+        return 1
+    if not args.corpus:
+        print(
+            "error: --corpus é obrigatório no caminho offline (R3/R4)", file=sys.stderr
+        )
+        return 2
+    manifest = load_manifest_from_dir(run_dir)
+    state = RunState(run_dir.parent, manifest.run_id)
+    corpus = FileCorpus(args.corpus)
+    docs = corpus.scan()
+    result, executor = execute_plan(plan, contract, corpus, state)
+    summary = {
+        "run_id": manifest.run_id,
+        "documents": len(docs),
+        "sources": len(executor.sources),
+        "spans": len(executor.spans),
+        "completed_tasks": result.completed,
+        "failed_tasks": result.failed,
+        "report": str(state.run_dir / "delivery" / "report.md"),
+    }
+    print(json.dumps(summary, indent=2))
+    return 0 if not result.failed else 1
+
+
 def cmd_status(args: argparse.Namespace) -> int:
     from kdrx.state import load_manifest_from_dir
 
@@ -239,29 +336,80 @@ def cmd_resume(args: argparse.Namespace) -> int:
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
-    from kdrx.state import load_manifest_from_dir
+    """Re-run source/claim/integrity gates over persisted run artifacts."""
+    from kdrx.reporting import citation_integrity_gate
+    from kdrx.schemas.claims import Claim
+    from kdrx.schemas.corpus import EvidenceSpan, SourceRecord
+    from kdrx.security import security_gate
+    from kdrx.verification import source_trust_gate
 
-    m = load_manifest_from_dir(args.run_dir)
-    print(f"verifying run {m.run_id} ... (gate re-run over persisted artifacts)")
-    print(f"gates: {m.gate_results or 'none recorded'}")
-    return 0
+    run_dir = Path(args.run_dir)
+
+    def _jsonl(path: Path, model: type) -> list:
+        return [
+            model.model_validate_json(line)
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+
+    sources_p = run_dir / "corpus" / "sources.jsonl"
+    spans_p = run_dir / "evidence" / "spans.jsonl"
+    claims_p = run_dir / "claims" / "claims.jsonl"
+    missing = [str(p) for p in (sources_p, spans_p) if not p.exists()]
+    if missing:
+        print(
+            f"error: artifacts ausentes {missing} — execute `kdr run` primeiro",
+            file=sys.stderr,
+        )
+        return 2
+    sources = _jsonl(sources_p, SourceRecord)
+    spans = _jsonl(spans_p, EvidenceSpan)
+    claims = _jsonl(claims_p, Claim) if claims_p.exists() else []
+
+    src_pass = all(not g.blocking() for g in (source_trust_gate(s) for s in sources))
+    report_p = run_dir / "delivery" / "report.md"
+    if report_p.exists():
+        report_text = report_p.read_text(encoding="utf-8")
+    else:
+        report_text = ""
+        print("warning: delivery/report.md ausente — citation gate sobre texto vazio")
+    citation = citation_integrity_gate(
+        report_text, sources=sources, claims=claims, spans=spans
+    )
+    security = security_gate(run_dir)
+    results = {
+        "source_trust": "pass" if src_pass else "fail",
+        "citation_integrity": citation.verdict.value,
+        "security": security.verdict.value,
+    }
+    print(json.dumps(results, indent=2))
+    all_pass = src_pass and not citation.blocking() and not security.blocking()
+    print(f"verify: {'PASS' if all_pass else 'FAIL'}")
+    return 0 if all_pass else 1
 
 
 def cmd_report(args: argparse.Namespace) -> int:
     run_dir = Path(args.run_dir)
     report_path = run_dir / "delivery" / "report.md"
-    if report_path.exists():
-        print(report_path.read_text(encoding="utf-8"))
-        return 0
-    print(f"no report at {report_path}")
-    return 1
+    if not report_path.exists():
+        print(
+            f"error: sem relatório em {report_path} — "
+            "execute `kdr run --run-dir <dir>` primeiro",
+            file=sys.stderr,
+        )
+        return 1
+    print(report_path.read_text(encoding="utf-8"))
+    return 0
 
 
 def cmd_monitor(args: argparse.Namespace) -> int:
+    """Delta-search (R12) is out of the offline core — explicit fail (FASE 8)."""
     print(
-        "monitor: delta-search requires a live source adapter; nothing to do offline."
+        "monitor: delta-search requer adapter de fonte live (rota R12) — "
+        "não implementado no core offline; ver FASE 8 do plano de correção.",
+        file=sys.stderr,
     )
-    return 0
+    return 3
 
 
 _CMDS = {
@@ -270,12 +418,13 @@ _CMDS = {
     "eval": cmd_eval,
     "hook": cmd_hook,
     "demo": cmd_demo,
+    "plan": cmd_plan,
     "status": cmd_status,
     "resume": cmd_resume,
     "verify": cmd_verify,
     "report": cmd_report,
     "monitor": cmd_monitor,
-    "run": cmd_demo,  # `run` reuses the offline file-research runner
+    "run": cmd_run,  # executa ResearchPlan persistido (T-01-06); demo = atalho one-shot
 }
 
 

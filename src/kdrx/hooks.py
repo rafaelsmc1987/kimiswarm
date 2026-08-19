@@ -8,6 +8,7 @@ logic into the harness (PreToolUse / Stop / SubagentStop) by shelling out to
 
 from __future__ import annotations
 
+import re
 from typing import Any, Iterable
 
 from kdrx.dag import CompiledDAG
@@ -23,6 +24,10 @@ _READ_TOOLS = {"read", "grep", "glob", "search", "fetch", "mcp__"}
 
 # Commands that are never allowed verbatim (plan §33).
 _FORBIDDEN_COMMANDS = ("curl | sh", "curl|sh", "wget | sh", "rm -rf /", ":(){ :|:& };:")
+# pipe-to-shell generalizado: "curl <url> | (sudo) (ba|z|da|k|fi)sh"
+_PIPE_TO_SHELL = re.compile(
+    r"\b(?:curl|wget)\b[^|`]*\|\s*(?:sudo\s+)?(?:ba|z|da|k|fi)?sh\b", re.IGNORECASE
+)
 
 
 def _check(
@@ -112,7 +117,9 @@ def hook_pre_tool_use(
 
     # Forbidden command patterns (always applies to shell-like tools)
     command = str(tool_input.get("command", ""))
-    if any(forbidden in command for forbidden in _FORBIDDEN_COMMANDS):
+    if any(
+        forbidden in command for forbidden in _FORBIDDEN_COMMANDS
+    ) or _PIPE_TO_SHELL.search(command):
         checks.append(
             _check(
                 "NO_CMD_INJECTION",

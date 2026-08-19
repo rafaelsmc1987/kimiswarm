@@ -31,18 +31,6 @@
     "skills/claim-graph",
     "skills/source-trust"
   ],
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Write|Edit|Bash|NotebookEdit",
-        "hooks": [{ "type": "command", "command": "python3 -m kdrx.cli hook pre_tool_use --json '{\"tool_name\":\"$CLAUDE_TOOL_NAME\",\"tool_input\":{}}'" }]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [{ "type": "command", "command": "python3 -m kdrx.cli hook stop --json '{}'" }]
-      }
-    ]
-  },
+  "hooks": "./hooks/hooks.json",
   "mcpServers": {}
 }

@@ -1,0 +1,41 @@
+{
+  "description": "KDR-X deterministic hooks (plan §33). Payload real do evento chega via stdin; decisões idênticas às de kdrx.hooks in-process. Convenção: exit 0 = allow, exit 2 = block com feedback no stderr/stdout.",
+  "hooks": {
+    "TaskCreated": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/kdr-hook\" task_created" }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|Bash|NotebookEdit",
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/kdr-hook\" pre_tool_use" }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/kdr-hook\" subagent_stop" }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/kdr-hook\" task_completed" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/kdr-hook\" stop" }
+        ]
+      }
+    ]
+  }
+}

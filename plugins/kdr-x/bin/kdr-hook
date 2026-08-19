@@ -1,0 +1,19 @@
+#!/bin/sh
+# KDR-X hook wrapper (T-01-03): self-contained hook entrypoint.
+# All paths resolve via ${CLAUDE_PLUGIN_ROOT} — no cwd or repo-layout
+# assumptions. kdrx must be importable: installed package, $KDRX_SRC, or a
+# checkout layout (plugins/kdr-x/../../src).
+set -eu
+
+ROOT="${CLAUDE_PLUGIN_ROOT:?CLAUDE_PLUGIN_ROOT is not set}"
+
+if [ -z "${KDRX_SRC:-}" ]; then
+  if [ -d "$ROOT/src/kdrx" ]; then
+    KDRX_SRC="$ROOT/src"
+  elif [ -d "$ROOT/../../src/kdrx" ]; then
+    KDRX_SRC="$ROOT/../../src"
+  fi
+fi
+export KDRX_SRC
+
+exec python3 "$ROOT/hooks/kdr-hook" "$@"

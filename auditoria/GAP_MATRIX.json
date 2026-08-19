@@ -1,0 +1,247 @@
+{
+  "audit_date": "2026-08-19",
+  "repository": "rafaelsmc1987/kimiswarm",
+  "branch": "main",
+  "commit": "37ee7c4e10f7bbf6b2cbc288d16545fb1111f48b",
+  "audit_type": "static_connected_github",
+  "tests_executed_by_auditor": false,
+  "full_plan_completion_percent": 35.3,
+  "offline_foundation_estimate_percent": 68,
+  "scorecard": [
+    {
+      "area": "Higiene e segurança do repositório",
+      "weight": 8,
+      "score_0_10": 2.0,
+      "status": "BLOCKER",
+      "summary": "Credenciais e artefatos sensíveis continuam versionados; dump da sandbox permanece na raiz; .gitignore insuficiente."
+    },
+    {
+      "area": "Licenças e clean-room",
+      "weight": 4,
+      "score_0_10": 7.5,
+      "status": "PARCIAL",
+      "summary": "Há matriz e registro clean-room, mas o repo mistura o pacote MIT com material extraído e não possui LICENSE raiz."
+    },
+    {
+      "area": "Schemas e contratos",
+      "weight": 8,
+      "score_0_10": 9.0,
+      "status": "FORTE",
+      "summary": "Os 15 schemas canônicos existem; falta guidance explícito no AgentBrief e estratégia de migração/versionamento."
+    },
+    {
+      "area": "Planner council e plano executável",
+      "weight": 8,
+      "score_0_10": 2.5,
+      "status": "INCOMPLETO",
+      "summary": "Existe gate e prompt, mas não há execução real dos cinco planners, reviewer, verifier e synthesizer."
+    },
+    {
+      "area": "DAG compiler",
+      "weight": 8,
+      "score_0_10": 7.5,
+      "status": "BOM",
+      "summary": "Valida ciclos, deps, owners e self-review; não valida ordem semântica, orçamento total ou ownership por subárvore."
+    },
+    {
+      "area": "Scheduler paralelo e subagents reais",
+      "weight": 12,
+      "score_0_10": 1.5,
+      "status": "AUSENTE",
+      "summary": "O scheduler é sequencial; max_workers é informativo; não há agent()/pipeline() nem Agent SDK."
+    },
+    {
+      "area": "Plugin/commands/hooks Claude Code",
+      "weight": 10,
+      "score_0_10": 2.5,
+      "status": "QUEBRADO",
+      "summary": "Manifesto aponta para commands inexistentes, não há workflows, hooks recebem contexto insuficiente e Stop não chama o gate final."
+    },
+    {
+      "area": "Retrieval e corpus",
+      "weight": 10,
+      "score_0_10": 3.5,
+      "status": "MVP OFFLINE",
+      "summary": "BM25 local e helpers existem; sem web/APIs/dense/PDF/multimodal/citation graph e sem R4 realmente augmentada."
+    },
+    {
+      "area": "Source trust e verificação de citações",
+      "weight": 8,
+      "score_0_10": 3.0,
+      "status": "PARCIAL",
+      "summary": "Checks locais existem; sem verificação viva de DOI/URL/metadata/retraction e falhas epistemológicas viram WARN."
+    },
+    {
+      "area": "Claim-evidence e contradições",
+      "weight": 8,
+      "score_0_10": 4.0,
+      "status": "PARCIAL",
+      "summary": "Modelos e standing existem; decomposição é heurística, scores são hard-coded e contradições exigem pares fornecidos."
+    },
+    {
+      "area": "Pipeline de relatório e revisão",
+      "weight": 6,
+      "score_0_10": 2.0,
+      "status": "INCOMPLETO",
+      "summary": "Há assembler simples; sem writers, rounds, reviewers, fixers, transition editor ou entailment semântico."
+    },
+    {
+      "area": "Estado persistente e resume",
+      "weight": 5,
+      "score_0_10": 4.0,
+      "status": "PARCIAL",
+      "summary": "Árvore e events existem; manifest não acompanha o run, hashes não são selados e resume não continua o DAG."
+    },
+    {
+      "area": "Compute reproduzível",
+      "weight": 3,
+      "score_0_10": 2.0,
+      "status": "SKELETON",
+      "summary": "Ledger existe, mas não está integrado e não mantém snapshots/commands/environment suficientes para reprodução."
+    },
+    {
+      "area": "Evals, CI e benchmarks",
+      "weight": 8,
+      "score_0_10": 2.0,
+      "status": "INCOMPLETO",
+      "summary": "Há toy cases; existe label leakage; não há CI, held-out, benchmarks ou required checks."
+    },
+    {
+      "area": "Monitoring e continuous learning",
+      "weight": 4,
+      "score_0_10": 0.5,
+      "status": "AUSENTE",
+      "summary": "monitor é placeholder; sem delta retrieval, staleness, alerts ou promotion gate."
+    }
+  ],
+  "blockers": [
+    {
+      "id": "B-01",
+      "severity": "CRITICAL",
+      "title": "Credenciais vivas e material sensível no Git",
+      "evidence": [
+        ".agent-gw.json",
+        "prompts/run_kimi_dir.py",
+        ".ssh/authorized_keys",
+        "HARs, dotfiles e dumps da sandbox"
+      ],
+      "impact": "Exposição de contas e impossibilidade de compartilhar/releasear o repo com segurança.",
+      "fix": [
+        "Revogar/rotacionar as credenciais antes de qualquer edição Git.",
+        "Transferir o corpus forense para armazenamento privado e criptografado fora do repo.",
+        "Remover os paths da árvore e de todo o histórico com git-filter-repo.",
+        "Invalidar clones antigos e habilitar push protection.",
+        "Adicionar gitleaks e detect-secrets localmente e em CI."
+      ]
+    },
+    {
+      "id": "B-02",
+      "severity": "CRITICAL",
+      "title": "Plugin KDR-X não é instalável como declarado",
+      "evidence": [
+        "plugin.json referencia commands/*.md",
+        "plugins/kdr-x/commands não existe",
+        "hooks dependem de cwd/src/Pydantic não garantidos"
+      ],
+      "impact": "Comandos namespaced e hooks podem não carregar ou falhar em outro projeto.",
+      "fix": [
+        "Criar commands/ no plugin ou migrar entrypoints para skills.",
+        "Criar workflows/ reais.",
+        "Usar ${CLAUDE_PLUGIN_ROOT} para todos os paths.",
+        "Fornecer wrapper/bin autocontido e plugin doctor E2E."
+      ]
+    },
+    {
+      "id": "B-03",
+      "severity": "CRITICAL",
+      "title": "Hooks de lifecycle não executam os gates prometidos",
+      "evidence": [
+        "TaskCreated e TaskCompleted não estão registrados",
+        ".claude Stop não tem state completo",
+        "kdr-hook Stop chama hook_pre_tool_use",
+        "SubagentStop espera objetos custom que não vêm no payload nativo"
+      ],
+      "impact": "Claude pode parar/entregar com DAG incompleto, claims não resolvidos e sem DeliveryManifest.",
+      "fix": [
+        "Criar hooks/hooks.json compatível com o payload oficial.",
+        "Consumir stdin real por evento.",
+        "Registrar TaskCreated, TaskCompleted, SubagentStop e Stop.",
+        "Descobrir o active run no Stop e executar hook_stop de verdade.",
+        "Testar o wrapper como subprocess com exit code 2."
+      ]
+    },
+    {
+      "id": "B-04",
+      "severity": "CRITICAL",
+      "title": "Não existe swarm paralelo executável",
+      "evidence": [
+        "WaveScheduler usa for sequencial",
+        "max_workers não despacha concorrência",
+        "não há workflows JavaScript",
+        "não há chamadas agent()/pipeline()"
+      ],
+      "impact": "Não reproduz a característica central do Kimi Swarm.",
+      "fix": [
+        "Implementar Dynamic Workflows JavaScript como control plane.",
+        "Usar Python para schemas/state/gates, não como substituto dos agents.",
+        "Separar workflow de plan e execute.",
+        "Executar cada wave com pipeline() e resultados estruturados."
+      ]
+    },
+    {
+      "id": "B-05",
+      "severity": "HIGH",
+      "title": "CLI principal possui comandos quebrados/no-op",
+      "evidence": [
+        "run é mapeado para cmd_demo com argumentos incompatíveis",
+        "verify só imprime",
+        "report só imprime",
+        "monitor é placeholder",
+        "plan não existe"
+      ],
+      "impact": "A superfície prometida na documentação não corresponde ao comportamento real.",
+      "fix": [
+        "Adicionar cmd_plan.",
+        "Implementar cmd_run carregando plan/manifest.",
+        "Implementar verify/report reais.",
+        "Implementar monitor ou removê-lo do release.",
+        "Adicionar testes subprocess para todos os commands."
+      ]
+    },
+    {
+      "id": "B-06",
+      "severity": "HIGH",
+      "title": "Gates epistemológicos não bloqueiam",
+      "evidence": [
+        "source_trust usa warn_is_pass=True",
+        "citation_integrity usa warn_is_pass=True",
+        "teste E2E aceita pass ou warn",
+        "empty corpus retorna sucesso"
+      ],
+      "impact": "Runs fracos ou sem evidência útil podem ser classificados como sucesso.",
+      "fix": [
+        "Adicionar severidade blocking/advisory por check.",
+        "Existência/identidade/span/claim material devem bloquear.",
+        "COI/currency podem ser advisory conforme risk policy.",
+        "Aplicar política por route e risk level."
+      ]
+    },
+    {
+      "id": "B-07",
+      "severity": "HIGH",
+      "title": "Sem CI, branch protection ou prova independente dos testes",
+      "evidence": [
+        "zero workflow runs associados ao commit",
+        "main sem proteção/required checks",
+        "commit unsigned e autoria placeholder"
+      ],
+      "impact": "Regressões e secrets entram diretamente em main.",
+      "fix": [
+        "Adicionar CI/security/plugin-e2e/evals workflows.",
+        "Habilitar branch protection e required checks.",
+        "Exigir PR/review.",
+        "Corrigir user.name/user.email e assinar commits quando possível."
+      ]
+    }
+  ]
+}

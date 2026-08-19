@@ -1,0 +1,23 @@
+{
+  "audit_commit": "37ee7c4e10f7bbf6b2cbc288d16545fb1111f48b",
+  "contains_secret_values": false,
+  "secret_values_redacted": true,
+  "files": {
+    "AUDITORIA_KIMISWARM_E_PLANO_DE_CORRECAO.md": {
+      "size_bytes": 22975,
+      "nonempty": true
+    },
+    "BLOCKERS_IMEDIATOS.md": {
+      "size_bytes": 2184,
+      "nonempty": true
+    },
+    "GAP_MATRIX.json": {
+      "size_bytes": 9326,
+      "nonempty": true
+    },
+    "ROADMAP_CORRECAO.json": {
+      "size_bytes": 8847,
+      "nonempty": true
+    }
+  }
+}

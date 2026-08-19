@@ -127,6 +127,67 @@ def _retrieval_tasks(corpus_size: int) -> list[TaskSpec]:
     ]
 
 
+def build_contract(
+    objective: str, route: Route = Route.FILE_AUGMENTED
+) -> ResearchContract:
+    """Research contract for the offline path (plan §12)."""
+    return ResearchContract(
+        contract_id="contract-1",
+        objective=objective,
+        route=route,
+        output_format="markdown",
+        languages=["en"],
+    )
+
+
+def build_plan(contract: ResearchContract, corpus_size: int = 0) -> ResearchPlan:
+    """Default research plan (offline shape; the planner council generalizes it)."""
+    return ResearchPlan(
+        plan_id=f"plan-{contract.contract_id}",
+        contract_id=contract.contract_id,
+        route=contract.route.value,
+        plan_md="# Plan\n",
+        tasks=_retrieval_tasks(corpus_size),
+    )
+
+
+def prepare_run_dir(
+    plan: ResearchPlan,
+    contract: ResearchContract,
+    runs_root: str | Path = ".research",
+    run_id: str | None = None,
+) -> tuple[RunState, RunManifest]:
+    """Scaffold the run dir and persist human- and machine-readable inputs."""
+    rid = run_id or run_id_from_plan(plan.plan_id)
+    state = RunState(runs_root, rid)
+    manifest = RunManifest(
+        run_id=rid,
+        plan_id=plan.plan_id,
+        contract_id=contract.contract_id,
+        route=contract.route.value,
+        root_dir="",
+    )
+    state.scaffold(manifest)
+    state.write_text("research_contract.yaml", _yaml_contract(contract))
+    state.write_text("research_contract.json", contract.model_dump_json(indent=2))
+    state.write_text("plan.md", plan.plan_md)
+    state.write_text("plan.json", plan.model_dump_json(indent=2))
+    return state, manifest
+
+
+def execute_plan(
+    plan: ResearchPlan,
+    contract: ResearchContract,
+    corpus: FileCorpus,
+    state: RunState,
+) -> tuple[Any, "_FileResearchExecutor"]:
+    """Run the wave scheduler over a persisted plan; return (result, executor)."""
+    dag = compile_dag(plan.tasks)
+    executor = _FileResearchExecutor(corpus, state, contract.objective)
+    result = WaveScheduler(executor, emit=state.append_event).run(dag)
+    return result, executor
+
+
 class _FileResearchExecutor:
     """Deterministic executor: real file-corpus retrieval + gate recording."""
 
@@ -256,6 +317,13 @@ class _FileResearchExecutor:
         self.state.write_text(
             "claims/edges.jsonl", "\n".join(json.dumps(e) for e in edges_out) + "\n"
         )
+        # T-01-07: repersist claims COM standing final — o arquivo escrito em
+        # _extract_claims tinha standing=UNRESOLVED default; sem isto o
+        # `kdr verify` (que relê do disco) diverge do gate in-memory.
+        self.state.write_text(
+            "claims/claims.jsonl",
+            "\n".join(c.model_dump_json() for c in self.claims) + "\n",
+        )
         return standings
 
     def _verify(self, brief: AgentBrief) -> AgentResult:
@@ -335,24 +403,9 @@ def run_file_research(
     corpus = FileCorpus(corpus_dir)
     docs = corpus.scan()
 
-    contract = ResearchContract(
-        contract_id="contract-1",
-        objective=objective,
-        route=Route.FILE_AUGMENTED,
-        output_format="markdown",
-        languages=["en"],
-    )
+    contract = build_contract(objective)
+    plan = build_plan(contract, len(docs))
 
-    tasks = _retrieval_tasks(len(docs))
-    plan = ResearchPlan(
-        plan_id=f"plan-{contract.contract_id}",
-        contract_id=contract.contract_id,
-        route=contract.route.value,
-        plan_md="# Plan\n",
-        tasks=tasks,
-    )
-
-    dag = compile_dag(tasks)
     gate = plan_gate(plan, contract)
     if gate.blocking():
         return {
@@ -362,26 +415,12 @@ def run_file_research(
             "exit_code": 1,
         }
 
-    rid = run_id or run_id_from_plan(plan.plan_id)
-    state = RunState(runs_root, rid)
-    manifest = RunManifest(
-        run_id=rid,
-        plan_id=plan.plan_id,
-        contract_id=contract.contract_id,
-        route=contract.route.value,
-        root_dir="",
-    )
-    state.scaffold(manifest)
-    state.write_text("research_contract.yaml", _yaml_contract(contract))
-    state.write_text("plan.md", plan.plan_md)
-
-    executor = _FileResearchExecutor(corpus, state, objective)
-    scheduler = WaveScheduler(executor, emit=state.append_event)
-    result = scheduler.run(dag)
+    state, _manifest = prepare_run_dir(plan, contract, runs_root, run_id)
+    result, executor = execute_plan(plan, contract, corpus, state)
 
     report_path = state.run_dir / "delivery" / "report.md"
     return {
-        "run_id": rid,
+        "run_id": state.run_dir.name,
         "route": contract.route.value,
         "objective": objective,
         "documents": len(docs),

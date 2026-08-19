@@ -5,16 +5,24 @@ Reads the hook input JSON from stdin, maps it to a deterministic hook in
 ``kdrx.hooks``, and exits 0 (allow) or 2 (block), printing the decision JSON to
 stdout for observability. This keeps in-process gates and harness hooks
 identical (plan §33).
+
+Path resolution (no cwd/repository assumptions): ``kdrx`` must be importable —
+installed package, ``$KDRX_SRC``, or a checkout layout detected by
+``bin/kdr-hook``.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import sys
+from pathlib import Path
 
-# Allow running from a checkout without an installed package.
-sys.path.insert(0, os.environ.get("KDRX_SRC", "src"))
+_KDRX_SRC = os.environ.get("KDRX_SRC")
+if _KDRX_SRC:
+    # Checkout/development mode: the wrapper detected src/ explicitly.
+    sys.path.insert(0, _KDRX_SRC)
 
 from kdrx.hooks import (  # noqa: E402
     hook_pre_tool_use,
@@ -23,7 +31,7 @@ from kdrx.hooks import (  # noqa: E402
     hook_task_completed,
     hook_task_created,
 )
-from kdrx.schemas.plan import AgentResult, TaskSpec  # noqa: E402
+from kdrx.schemas.plan import AgentResult, ResearchPlan, TaskSpec  # noqa: E402
 
 
 def _decide(decision) -> int:
@@ -32,12 +40,102 @@ def _decide(decision) -> int:
     return 2 if decision.blocking() else 0
 
 
+def _load_gate_passed(path: Path) -> bool:
+    """True iff a persisted gate decision ({...,"verdict": "pass"})."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except OSError:
+        return False
+    return data.get("verdict") == "pass"
+
+
+def _stop_decision(data: dict):
+    """Discover the active run under the run root and gate it for real (T-01-04).
+
+    If no kdr run exists, there is nothing to gate: allow with an explicit
+    note (a Stop event can fire in sessions that never ran kdr). With a run
+    present, this is the real ``hook_stop``: DAG validity, delivery manifest,
+    integrity/secret-scan verdicts and artifact open test.
+    """
+    from kdrx.dag import compile_dag
+    from kdrx.schemas.artifact import ArtifactRecord, DeliveryManifest
+    from kdrx.schemas.enums import ArtifactKind, GateKind
+    from kdrx.schemas.gate import GateCheck, GateDecision
+
+    run_root = Path(data.get("run_root") or ".research")
+    candidates = []
+    if run_root.is_dir():
+        candidates = sorted(
+            (p for p in run_root.iterdir() if (p / "plan.json").is_file()),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+    if not candidates:
+        return GateDecision.compose(
+            "hook:stop:no-active-run",
+            GateKind.DELIVERY,
+            [
+                GateCheck(
+                    check_id="ACTIVE_RUN",
+                    description="no active kdr run under run root; nothing to gate",
+                    passed=True,
+                    details=str(run_root),
+                )
+            ],
+        )
+    run_dir = candidates[0]
+    plan = ResearchPlan.model_validate_json(
+        (run_dir / "plan.json").read_text(encoding="utf-8")
+    )
+    dag = compile_dag(plan.tasks)
+
+    report_path = run_dir / "delivery" / "report.md"
+    artifacts = []
+    open_ok = False
+    if report_path.is_file():
+        try:
+            data_bytes = report_path.read_bytes()
+            open_ok = True
+            artifacts.append(
+                ArtifactRecord(
+                    artifact_id="report",
+                    kind=ArtifactKind.REPORT,
+                    path=str(report_path),
+                    content_hash=hashlib.sha256(data_bytes).hexdigest(),
+                    produced_by="kdr-hook:stop",
+                )
+            )
+        except OSError:
+            open_ok = False
+    integrity_ok = _load_gate_passed(run_dir / "verification" / "integrity.json")
+    security_ok = _load_gate_passed(run_dir / "verification" / "security.json")
+    delivery = DeliveryManifest(
+        manifest_id=f"dm-{run_dir.name}",
+        run_id=run_dir.name,
+        artifacts=artifacts,
+        final_integrity_pass=integrity_ok,
+        secret_scan_clean=security_ok,
+        artifact_open_test_passed=open_ok,
+        unresolved_critical_claims=[],
+    )
+    return hook_stop(
+        dag=dag,
+        delivery=delivery,
+        integrity_pass=integrity_ok,
+        secret_scan_clean=security_ok,
+        artifact_open_test=open_ok,
+        unresolved_critical=[],
+    )
+
+
 def main() -> int:
     hook_name = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("KDRX_HOOK", "")
     raw = sys.stdin.read()
     data = json.loads(raw) if raw.strip() else {}
 
-    if hook_name in ("pre_tool_use", "PreToolUse"):
+    if hook_name in ("task_created", "TaskCreated"):
+        decision = hook_task_created(TaskSpec.model_validate(data["task"]))
+    elif hook_name in ("pre_tool_use", "PreToolUse"):
         decision = hook_pre_tool_use(
             data.get("tool_name", ""),
             data.get("tool_input", {}),
@@ -55,10 +153,7 @@ def main() -> int:
             AgentResult.model_validate(data["result"]),
         )
     elif hook_name in ("stop", "Stop"):
-        # The Stop gate is context-heavy; without a manifest it degrades to a
-        # conservative non-blocking check. The in-process `hook_stop` is the
-        # authoritative gate; this harness path only blocks on hard signals.
-        decision = hook_pre_tool_use("", {}, run_root=None)
+        decision = _stop_decision(data)
     else:
         print(json.dumps({"error": f"unknown hook {hook_name}"}))
         return 2

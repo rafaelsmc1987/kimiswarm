@@ -1,0 +1,283 @@
+{
+  "repository": "rafaelsmc1987/kimiswarm",
+  "target": "KDR-X production-grade Kimi parity and SOTA deep research",
+  "prs": [
+    {
+      "pr": "PR-00",
+      "priority": "P0",
+      "name": "Emergency security and repository split",
+      "depends_on": [],
+      "goal": "Eliminar exposição e separar produto de evidência forense.",
+      "changes": [
+        "Revogar credenciais.",
+        "Arquivar material forense fora do repo.",
+        "Reescrever histórico com git-filter-repo.",
+        "Expandir .gitignore.",
+        "Adicionar README, LICENSE com escopo, SECURITY e secret scanners."
+      ],
+      "tests": [
+        "gitleaks no working tree e histórico",
+        "detect-secrets",
+        "forbidden-path test"
+      ],
+      "gate": "Zero secret; nenhum .ssh/.agent-gw/HAR/dump na árvore de produto."
+    },
+    {
+      "pr": "PR-01",
+      "priority": "P0",
+      "name": "Plugin packaging and CLI correctness",
+      "depends_on": [
+        "PR-00"
+      ],
+      "goal": "Fazer plugin e CLI corresponderem ao manifesto.",
+      "changes": [
+        "Criar commands/ ou converter para skills.",
+        "Adicionar bin/kdr-hook com CLAUDE_PLUGIN_ROOT.",
+        "Mover hooks para hooks/hooks.json.",
+        "Corrigir stdin/payload.",
+        "Adicionar cmd_plan e corrigir run/verify/report/monitor.",
+        "Criar plugin doctor."
+      ],
+      "tests": [
+        "manifest path test",
+        "CLI subprocess suite",
+        "hook stdin E2E",
+        "temp repo plugin smoke"
+      ],
+      "gate": "Plugin doctor sem warnings; todos os entrypoints funcionam ou falham explicitamente."
+    },
+    {
+      "pr": "PR-02",
+      "priority": "P0",
+      "name": "Real Claude Code Dynamic Workflows",
+      "depends_on": [
+        "PR-01"
+      ],
+      "goal": "Transformar Markdown em orquestração executável.",
+      "changes": [
+        "Adicionar kdr-plan.js, kdr-run.js, kdr-verify.js e kdr-deep-research.js.",
+        "Fan-out de cinco planners.",
+        "Waves com pipeline().",
+        "Schema em toda saída.",
+        "Retry/null/no-progress e gate entre waves.",
+        "Persistir paths e outputs reais."
+      ],
+      "tests": [
+        "workflow syntax",
+        "concorrência real",
+        "dependency ordering",
+        "null/retry/no-progress"
+      ],
+      "gate": "Demonstração com 4+ agents independentes, 2+ waves e gate final."
+    },
+    {
+      "pr": "PR-03",
+      "priority": "P1",
+      "name": "Agent library and Kimi contract parity",
+      "depends_on": [
+        "PR-02"
+      ],
+      "goal": "Adicionar papéis-base e briefing guidance/context/mission.",
+      "changes": [
+        "Adicionar general/coder/explore/plan/reviewer/verifier.",
+        "Adicionar especialistas de search/evidence/claims/writing.",
+        "Adicionar guidance ao AgentBrief.",
+        "Definir tools, disallowedTools, maxTurns, effort, skills e background.",
+        "Mover agents que exigem controles fortes para .claude/agents.",
+        "Usar worktree para editores de código."
+      ],
+      "tests": [
+        "frontmatter lint",
+        "read-only policy",
+        "role resolution",
+        "independent reviewer"
+      ],
+      "gate": "Toda TaskSpec resolve para agent existente e briefing autocontido."
+    },
+    {
+      "pr": "PR-04",
+      "priority": "P1",
+      "name": "State machine, resume and hard gates",
+      "depends_on": [
+        "PR-02",
+        "PR-03"
+      ],
+      "goal": "Persistir execução real e permitir retomada.",
+      "changes": [
+        "Padronizar .research/runs/<id>.",
+        "Atualizar manifest a cada transição.",
+        "Persistir attempts/results/gates/hashes.",
+        "Reconstruir ready queue.",
+        "Atomic writes/locks.",
+        "Criar DeliveryManifest e open test.",
+        "Separar advisory/blocking."
+      ],
+      "tests": [
+        "crash/restart por wave",
+        "hash mismatch",
+        "fault injection",
+        "Stop gate"
+      ],
+      "gate": "Resume não repete tasks fechadas e preserva provenance."
+    },
+    {
+      "pr": "PR-05",
+      "priority": "P1",
+      "name": "Production retrieval and corpus",
+      "depends_on": [
+        "PR-04"
+      ],
+      "goal": "Implementar R0–R4 de verdade.",
+      "changes": [
+        "Adapters WebSearch/WebFetch/GitHub/APIs oficiais/scholarly.",
+        "Integrar QueryGraph.",
+        "Rank fusion lexical+dense+source-specific.",
+        "Exact char spans e locators.",
+        "Extractors PDF/HTML/Markdown/code.",
+        "Integrar dedup/dependency families.",
+        "Usar evidence saturation."
+      ],
+      "tests": [
+        "retrieval benchmark",
+        "span fidelity",
+        "canonicalization",
+        "syndication collapse",
+        "route C/D"
+      ],
+      "gate": "Recall/diversidade superam BM25 baseline; spans são realmente verbatim."
+    },
+    {
+      "pr": "PR-06",
+      "priority": "P1",
+      "name": "Source trust chain",
+      "depends_on": [
+        "PR-05"
+      ],
+      "goal": "Verificar fontes externamente e com policies por domínio.",
+      "changes": [
+        "HTTP/DOI resolver.",
+        "Crossref/OpenAlex/Semantic Scholar e cache.",
+        "Retraction/version/date.",
+        "Policy registry.",
+        "COI/primaryness/directness/independence separados.",
+        "Incluir currency no gate.",
+        "Critical fail bloqueia."
+      ],
+      "tests": [
+        "fabricated DOI",
+        "DOI misdirection",
+        "metadata mismatch",
+        "retraction",
+        "stale cache",
+        "API outage"
+      ],
+      "gate": "Seeded citation defects atingem thresholds sem label leakage."
+    },
+    {
+      "pr": "PR-07",
+      "priority": "P1",
+      "name": "Semantic claims, contradictions and falsification",
+      "depends_on": [
+        "PR-06"
+      ],
+      "goal": "Remover heurísticas/scores arbitrários.",
+      "changes": [
+        "Claim decomposer estruturado.",
+        "Independent entailment verifier.",
+        "Todas as relações de edge.",
+        "Automatic contradiction discovery.",
+        "Falsification swarm.",
+        "Standing por edge auditável.",
+        "Unresolved registry/disclosure."
+      ],
+      "tests": [
+        "compound decomposition",
+        "partial support",
+        "scope/time mismatch",
+        "counterevidence",
+        "calibration"
+      ],
+      "gate": "Todo claim material possui edge auditável e julgamento independente."
+    },
+    {
+      "pr": "PR-08",
+      "priority": "P2",
+      "name": "Report swarm and final integrity",
+      "depends_on": [
+        "PR-07"
+      ],
+      "goal": "Implementar pipeline editorial completa.",
+      "changes": [
+        "Outline council.",
+        "Section DAG e one-section-per-task.",
+        "Evidence packs mínimos.",
+        "Section reviewers/fixers/transition editor.",
+        "Summary/conclusion tardios.",
+        "Citation manager/assembler.",
+        "Hard final integrity.",
+        "References só citadas."
+      ],
+      "tests": [
+        "chapter rounds",
+        "orphan/dangling citations",
+        "omitted material claim",
+        "unresolved disclosure",
+        "UTF-8/open test"
+      ],
+      "gate": "Relatório passa reviewer independente e Claim→Evidence→Source trace."
+    },
+    {
+      "pr": "PR-09",
+      "priority": "P1",
+      "name": "Evals, CI and branch protection",
+      "depends_on": [
+        "PR-01"
+      ],
+      "goal": "Provar qualidade e bloquear regressões.",
+      "changes": [
+        "Eliminar label leakage.",
+        "Gold/dev/held-out.",
+        "Precision/recall/F1/calibration por defect.",
+        "CI Python/lint/type/security/plugin/evals.",
+        "Adapters DeepResearch Bench II e replay Kimi.",
+        "Branch protection."
+      ],
+      "tests": [
+        "Python 3.10–3.13",
+        "multi-trial",
+        "held-out",
+        "regression baseline"
+      ],
+      "gate": "Main só recebe merge com checks e thresholds aprovados."
+    },
+    {
+      "pr": "PR-10",
+      "priority": "P2",
+      "name": "Monitoring and governed learning",
+      "depends_on": [
+        "PR-06",
+        "PR-09"
+      ],
+      "goal": "Implementar monitoramento e aprendizagem controlada.",
+      "changes": [
+        "Saved queries/delta retrieval.",
+        "Retraction/correction alerts.",
+        "Standing recompute.",
+        "Report diffs.",
+        "Observation→candidate→eval→approval→canary→promotion."
+      ],
+      "tests": [
+        "delta source",
+        "retraction invalidation",
+        "stale cache",
+        "promotion regression"
+      ],
+      "gate": "Atualizações externas afetam somente dependências e learning nunca promove sem eval."
+    }
+  ],
+  "milestones": {
+    "kimi_behavioral_parity_begins": "after PR-02",
+    "epistemic_superiority_begins": "after PR-07",
+    "provable_quality": "after PR-09"
+  }
+}
