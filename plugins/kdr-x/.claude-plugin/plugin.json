@@ -32,5 +32,6 @@
     "skills/source-trust"
   ],
   "hooks": "./hooks/hooks.json",
+  "workflows": "./workflows",
   "mcpServers": {}
 }

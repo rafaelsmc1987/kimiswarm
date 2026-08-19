@@ -72,7 +72,11 @@ kdr demo --corpus DIR --objective "..." --out .research   # offline run
 
 Claude Code surface: `/kdr:plan`, `/kdr:run`, `/kdr:resume`, `/kdr:status`,
 `/kdr:verify`, `/kdr:report`, `/kdr:monitor`, `/kdr:doctor`, `/kdr:eval`
-(`.claude/commands/kdr/`). Plugin package: `plugins/kdr-x/`.
+(`.claude/commands/kdr/`). Plugin package: `plugins/kdr-x/` — commands, agents,
+skills, hooks determinísticos (exit 0/2) e **workflows dinâmicos**
+(`workflows/kdr-plan.js`, `kdr-run.js`, `kdr-verify.js`, `kdr-deep-research.js`,
+Claude Code ≥ v2.1.154: `agent()`/`pipeline()` com fan-out real; Python mantém
+schemas/state/gates).
 
 ## Documentação
 
