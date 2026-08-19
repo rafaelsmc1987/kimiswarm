@@ -112,9 +112,7 @@ class RunState:
 
     def _atomic_write(self, path: Path, content: str) -> Path:
         self._tmp_counter += 1
-        tmp = path.with_name(
-            f".{path.name}.tmp-{os.getpid()}-{self._tmp_counter}"
-        )
+        tmp = path.with_name(f".{path.name}.tmp-{os.getpid()}-{self._tmp_counter}")
         try:
             tmp.write_text(content, encoding="utf-8")
             os.replace(tmp, path)  # atômico dentro do mesmo diretório

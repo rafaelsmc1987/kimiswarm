@@ -65,11 +65,14 @@ def test_saved_query_store_roundtrip(tmp_path):
     store = SavedQueryStore(tmp_path / "queries.json")
     assert store.load() == []
     store.add(SavedQuery(query="latency SLO", corpus_dir="corpusA", saved_at="t1"))
-    store.add(SavedQuery(query="latency SLO", corpus_dir="corpusA", saved_at="t2"))  # dup
+    store.add(
+        SavedQuery(query="latency SLO", corpus_dir="corpusA", saved_at="t2")
+    )  # dup
     store.add(SavedQuery(query="accuracy", corpus_dir="corpusA", saved_at="t3"))
     loaded = store.load()
     assert [(q.query, q.saved_at) for q in loaded] == [
-        ("latency SLO", "t1"), ("accuracy", "t3")
+        ("latency SLO", "t1"),
+        ("accuracy", "t3"),
     ]
 
 
@@ -82,22 +85,49 @@ def test_cli_monitor_full_flow(tmp_path, capsys):
     state = tmp_path / "monitor-state.json"
 
     # 1a chamada: tudo "added" (baseline)
-    assert main(["monitor", "--corpus", str(corpus), "--state", str(state),
-                 "--save-query", "watch accuracy", "--json"]) == 0
+    assert (
+        main(
+            [
+                "monitor",
+                "--corpus",
+                str(corpus),
+                "--state",
+                str(state),
+                "--save-query",
+                "watch accuracy",
+                "--json",
+            ]
+        )
+        == 0
+    )
     out = json.loads(capsys.readouterr().out)
     assert out["added"] == ["a.md"] and out["has_delta"] is True
     assert out["saved_queries"] == 1
 
     # 2a chamada sem mudança: sem delta; save-query duplicada não repete
-    assert main(["monitor", "--corpus", str(corpus), "--state", str(state),
-                 "--save-query", "watch accuracy", "--json"]) == 0
+    assert (
+        main(
+            [
+                "monitor",
+                "--corpus",
+                str(corpus),
+                "--state",
+                str(state),
+                "--save-query",
+                "watch accuracy",
+                "--json",
+            ]
+        )
+        == 0
+    )
     out = json.loads(capsys.readouterr().out)
     assert out["has_delta"] is False and out["saved_queries"] == 1
 
     # fonte nova => delta detecta
     (corpus / "b.md").write_text("beta\n", encoding="utf-8")
-    assert main(["monitor", "--corpus", str(corpus), "--state", str(state),
-                 "--json"]) == 0
+    assert (
+        main(["monitor", "--corpus", str(corpus), "--state", str(state), "--json"]) == 0
+    )
     out = json.loads(capsys.readouterr().out)
     assert out["added"] == ["b.md"]
     saved = json.loads(state.read_text(encoding="utf-8"))
@@ -145,8 +175,10 @@ def test_alert_only_fires_on_status_change():
     sources, claims, spans = _retraction_fixture()
     # snapshot anterior JÁ marcava retracted => sem alerta duplicado
     assert (
-        retraction_alerts(sources, claims, spans,
-                          prior_status={"S1": "retracted", "S2": "none"}) == []
+        retraction_alerts(
+            sources, claims, spans, prior_status={"S1": "retracted", "S2": "none"}
+        )
+        == []
     )
     # corrected também dispara
     sources2, _, _ = _retraction_fixture(status=RetractionStatus.CORRECTED)
@@ -167,8 +199,11 @@ def test_recompute_standings_detects_change_without_mutating():
             standing=Standing.UNRESOLVED,
             support_edges=["EV-A"],
         ),
-        Claim(claim_id="CL-ORPHAN", statement="Latency is 5 ms",
-              standing=Standing.SUPPORTED),
+        Claim(
+            claim_id="CL-ORPHAN",
+            statement="Latency is 5 ms",
+            standing=Standing.SUPPORTED,
+        ),
     ]
     spans = [
         EvidenceSpan(
@@ -178,9 +213,7 @@ def test_recompute_standings_detects_change_without_mutating():
         )
     ]
     sources = [
-        SourceRecord(
-            source_id="S-A", canonical_uri="file:///a.md", title="a.md"
-        )
+        SourceRecord(source_id="S-A", canonical_uri="file:///a.md", title="a.md")
     ]
     result = recompute_standings(claims, spans, sources)
     by_id = {r["claim_id"]: r for r in result}

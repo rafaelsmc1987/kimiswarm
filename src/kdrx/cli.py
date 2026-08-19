@@ -87,7 +87,9 @@ def _build_parser() -> argparse.ArgumentParser:
 
     p_resume = sub.add_parser("resume", help="verify hashes and reload manifest")
     p_resume.add_argument("--run-dir", required=True)
-    p_resume.add_argument("--corpus", default=None, help="file corpus dir (offline path)")
+    p_resume.add_argument(
+        "--corpus", default=None, help="file corpus dir (offline path)"
+    )
 
     p_verify = sub.add_parser("verify", help="re-run source/claim/integrity gates")
     p_verify.add_argument("--run-dir", required=True)
@@ -408,12 +410,16 @@ def cmd_resume(args: argparse.Namespace) -> int:
     rs = RunState(run_dir.parent, m.run_id)
     m = rs.resume()
     if m.metadata.get("hash_mismatch"):
-        print(f"hash mismatch detectado: {m.metadata['hash_mismatch']}", file=sys.stderr)
+        print(
+            f"hash mismatch detectado: {m.metadata['hash_mismatch']}", file=sys.stderr
+        )
         print("run não retomado (provenance comprometida)", file=sys.stderr)
         return 2
     corpus_arg = getattr(args, "corpus", None)
     if not corpus_arg:
-        print("error: resume offline exige --corpus <dir> (executor R4)", file=sys.stderr)
+        print(
+            "error: resume offline exige --corpus <dir> (executor R4)", file=sys.stderr
+        )
         return 2
     from kdrx.retrieval import FileCorpus
 
@@ -537,9 +543,7 @@ def cmd_monitor(args: argparse.Namespace) -> int:
             )
 
     state_path.parent.mkdir(parents=True, exist_ok=True)
-    state_path.write_text(
-        json.dumps(state, indent=2) + "\n", encoding="utf-8"
-    )
+    state_path.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
 
     out = {
         "corpus": corpus_key,
@@ -552,7 +556,9 @@ def cmd_monitor(args: argparse.Namespace) -> int:
         print(json.dumps(out, indent=2))
     else:
         print(f"monitor: {out['tracked_files']} tracked files in {corpus_key}")
-        print(f"  added={out['added']} changed={out['changed']} removed={out['removed']}")
+        print(
+            f"  added={out['added']} changed={out['changed']} removed={out['removed']}"
+        )
         print(f"  saved queries: {out['saved_queries']} (state: {state_path})")
         if not delta.has_delta:
             print("  no delta since last snapshot")

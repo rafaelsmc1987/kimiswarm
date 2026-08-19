@@ -108,7 +108,10 @@ def test_fabricated_doi_detected():
 def test_record_doi_extraction():
     assert record_doi(make_record()) == "10.1000/xyz"
     assert record_doi(make_record(canonical_uri="https://example.org/x")) is None
-    assert record_doi(make_record(metadata={"doi": "10.1/a"}, canonical_uri="http://x")) == "10.1/a"
+    assert (
+        record_doi(make_record(metadata={"doi": "10.1/a"}, canonical_uri="http://x"))
+        == "10.1/a"
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -181,11 +184,15 @@ def test_version_check_flags_content_change():
 
 
 def test_date_consistency_check():
-    meta = LiveMetadata(registry="crossref", date=datetime(2018, 1, 1, tzinfo=timezone.utc))
+    meta = LiveMetadata(
+        registry="crossref", date=datetime(2018, 1, 1, tzinfo=timezone.utc)
+    )
     from kdrx.verification import date_consistency_check
 
     assert date_consistency_check(make_record(), meta).passed is False
-    meta2 = LiveMetadata(registry="crossref", date=datetime(2017, 5, 1, tzinfo=timezone.utc))
+    meta2 = LiveMetadata(
+        registry="crossref", date=datetime(2017, 5, 1, tzinfo=timezone.utc)
+    )
     assert date_consistency_check(make_record(), meta2).passed is True
 
 
@@ -206,7 +213,9 @@ def test_domain_policy_drives_currency_window():
     rec_arxiv = make_record(
         canonical_uri="https://arxiv.org/abs/1706.03762", date=old_date
     )
-    rec_blog = make_record(canonical_uri="https://randoblog.example.com/post", date=old_date)
+    rec_blog = make_record(
+        canonical_uri="https://randoblog.example.com/post", date=old_date
+    )
     # 900d: dentro da janela arxiv (3650d), fora da default (730d)
     assert currency_check(rec_arxiv, policy_for_record(rec_arxiv).max_age_days).passed
     assert not currency_check(rec_blog, policy_for_record(rec_blog).max_age_days).passed
@@ -301,7 +310,12 @@ def test_pipeline_blocks_on_doi_misdirection(tmp_path):
     corpus.mkdir()
     (corpus / "a.md").write_text("Accuracy 88% on benchmark x with numbers 42.\n")
 
-    from kdrx.runner import _FileResearchExecutor, build_contract, build_plan, prepare_run_dir
+    from kdrx.runner import (
+        _FileResearchExecutor,
+        build_contract,
+        build_plan,
+        prepare_run_dir,
+    )
 
     contract = build_contract("accuracy")
     plan = build_plan(contract, 1)
@@ -319,9 +333,7 @@ def test_pipeline_blocks_on_doi_misdirection(tmp_path):
         FileCorpus(corpus), state, "accuracy", doi_resolver=_MisroutedResolver()
     )
     # fonte do corpus ganha DOI para ativar os checks vivos
-    executor.sources = [
-        make_record(source_id="file:a.md", title="a.md")
-    ]
+    executor.sources = [make_record(source_id="file:a.md", title="a.md")]
     from kdrx.scheduler import AgentBrief
 
     brief = AgentBrief(

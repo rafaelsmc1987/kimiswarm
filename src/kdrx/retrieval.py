@@ -359,7 +359,11 @@ class FileCorpus:
             line_end = line_start + verbatim.count("\n")
 
             base_score = breakdown["bm25"] if breakdown else score
-            if fused and base_score <= 0 and (breakdown or {}).get("dense", 0) < DENSE_RELEVANCE_FLOOR:
+            if (
+                fused
+                and base_score <= 0
+                and (breakdown or {}).get("dense", 0) < DENSE_RELEVANCE_FLOOR
+            ):
                 continue
             spans.append(
                 {

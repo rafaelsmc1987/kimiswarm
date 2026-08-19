@@ -86,9 +86,7 @@ def retraction_alerts(
     spans = spans or []
     prior_status = prior_status or {}
     evidence_source = {sp.evidence_id: sp.source_id for sp in spans}
-    status_by_id = {
-        s.source_id: s.retraction_status.value for s in sources
-    }
+    status_by_id = {s.source_id: s.retraction_status.value for s in sources}
 
     alerts: list[RetractionAlert] = []
     for s in sources:
@@ -103,7 +101,9 @@ def retraction_alerts(
         )
         for c in claims:
             supporting_sources = {
-                evidence_source.get(e, "") for e in c.support_edges if e in evidence_source
+                evidence_source.get(e, "")
+                for e in c.support_edges
+                if e in evidence_source
             }
             if s.source_id not in supporting_sources:
                 continue
@@ -115,7 +115,6 @@ def retraction_alerts(
                 alert.fully_invalidated_claims.append(c.claim_id)
         alerts.append(alert)
     return alerts
-
 
 
 # --------------------------------------------------------------------------- #
@@ -394,7 +393,11 @@ def _title_marker_retracted(title: str | None) -> bool:
     if not title:
         return False
     lowered = title.lower()
-    return lowered.startswith("retracted:") or "[retraction]" in lowered or "retraction notice" in lowered
+    return (
+        lowered.startswith("retracted:")
+        or "[retraction]" in lowered
+        or "retraction notice" in lowered
+    )
 
 
 def parse_csl_metadata(payload: dict, registry: str = "doi.org") -> LiveMetadata:
@@ -539,9 +542,15 @@ class DOIResolver:
         cached, stale = self.cache.get(doi, now)
         if cached is not None and not stale:
             return DOIResolution(
-                doi=doi, resolves=True, metadata=cached, from_cache=True, cache_stale=False
+                doi=doi,
+                resolves=True,
+                metadata=cached,
+                from_cache=True,
+                cache_stale=False,
             )
-        if not egress_allowed("doi.org", allowlist=self.allowlist, denylist=self.denylist):
+        if not egress_allowed(
+            "doi.org", allowlist=self.allowlist, denylist=self.denylist
+        ):
             raise AdapterError("egress bloqueado pela policy para host 'doi.org'")
         try:
             text = self.transport(
@@ -564,7 +573,11 @@ class DOIResolver:
         metadata.doi = metadata.doi or doi
         self.cache.put(doi, metadata, now)
         return DOIResolution(
-            doi=doi, resolves=True, metadata=metadata, from_cache=False, cache_stale=False
+            doi=doi,
+            resolves=True,
+            metadata=metadata,
+            from_cache=False,
+            cache_stale=False,
         )
 
 
@@ -584,7 +597,9 @@ def record_doi(record: SourceRecord) -> str | None:
 # --------------------------------------------------------------------------- #
 # Live checks (T-06-03/07)
 # --------------------------------------------------------------------------- #
-def live_resolution_checks(record: SourceRecord, resolution: DOIResolution) -> list[GateCheck]:
+def live_resolution_checks(
+    record: SourceRecord, resolution: DOIResolution
+) -> list[GateCheck]:
     """Blocking checks derived from a live resolution (DOI misrouting = critical)."""
     checks = [
         GateCheck(
@@ -594,7 +609,10 @@ def live_resolution_checks(record: SourceRecord, resolution: DOIResolution) -> l
             details=(
                 {"error": resolution.error, "from_cache": resolution.from_cache}
                 if resolution.error
-                else {"from_cache": resolution.from_cache, "cache_stale": resolution.cache_stale}
+                else {
+                    "from_cache": resolution.from_cache,
+                    "cache_stale": resolution.cache_stale,
+                }
             ),
             severity="blocking",
         )
@@ -729,7 +747,9 @@ def source_dimension_checks(record: SourceRecord) -> list[GateCheck]:
 
     # primaryness: campo tipado vs declaração em metadata
     claimed_p = meta.get("primary_or_secondary")
-    mismatch_p = claimed_p is not None and claimed_p != record.primary_or_secondary.value
+    mismatch_p = (
+        claimed_p is not None and claimed_p != record.primary_or_secondary.value
+    )
     checks.append(
         GateCheck(
             check_id="PRIMARYNESS",

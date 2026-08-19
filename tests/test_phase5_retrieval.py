@@ -211,9 +211,7 @@ def test_pipeline_collapses_duplicate_sources(tmp_path):
     assert summary["sources"] == 2, "copy.md não pode inflar a contagem de fontes"
 
     run_dir = tmp_path / "runs" / summary["run_id"]
-    dedup = _json.loads(
-        (run_dir / "corpus" / "dedup.json").read_text(encoding="utf-8")
-    )
+    dedup = _json.loads((run_dir / "corpus" / "dedup.json").read_text(encoding="utf-8"))
     assert dedup["scanned_documents"] == 3
     assert dedup["canonical_count"] == 2
     assert dedup["duplicates"] == {"file:copy.md": "file:a.md"}

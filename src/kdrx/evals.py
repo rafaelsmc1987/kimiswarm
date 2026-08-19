@@ -296,7 +296,9 @@ def regression_gate(
         if m.expected > 0 and m.recall < t["min_recall"]:
             reasons.append(f"{kind}: recall {m.recall:.2f} < {t['min_recall']}")
         if m.detected > 0 and m.precision < t["min_precision"]:
-            reasons.append(f"{kind}: precision {m.precision:.2f} < {t['min_precision']}")
+            reasons.append(
+                f"{kind}: precision {m.precision:.2f} < {t['min_precision']}"
+            )
         if m.expected > 0 and m.f1 < t["min_f1"]:
             reasons.append(f"{kind}: f1 {m.f1:.2f} < {t['min_f1']}")
         if (m.expected or m.detected) and m.calibration < t["min_calibration"]:
@@ -322,7 +324,9 @@ class MultiTrialResult:
     @property
     def mean_recall(self) -> float:
         return (
-            sum(t.recall for t in self.trials) / len(self.trials) if self.trials else 0.0
+            sum(t.recall for t in self.trials) / len(self.trials)
+            if self.trials
+            else 0.0
         )
 
     @property
@@ -421,11 +425,17 @@ class EvalHarness:
         self.cases.append(case)
 
     def run_all(self, split: str | None = None) -> list[EvalReport]:
-        cases = self.cases if split is None else [c for c in self.cases if c.split == split]
+        cases = (
+            self.cases if split is None else [c for c in self.cases if c.split == split]
+        )
         return [run_case(c) for c in cases]
 
-    def regression_gate(self, reports: list[EvalReport] | None = None) -> RegressionGate:
-        return regression_gate(reports if reports is not None else self.run_all(), self.thresholds)
+    def regression_gate(
+        self, reports: list[EvalReport] | None = None
+    ) -> RegressionGate:
+        return regression_gate(
+            reports if reports is not None else self.run_all(), self.thresholds
+        )
 
     def regression_pass(self, reports: list[EvalReport] | None = None) -> bool:
         # compat: delega ao gate per-kind versionado (T-09-06).
@@ -508,7 +518,9 @@ def deepresearch_bench_adapter(
     return cases
 
 
-def kimi_replay_adapter(events: list[dict], *, split: str = "heldout") -> list[EvalCase]:
+def kimi_replay_adapter(
+    events: list[dict], *, split: str = "heldout"
+) -> list[EvalCase]:
     """Replay de sessão Kimi (JSONL -> lista de eventos) como suite held-out.
 
     Tipos de evento: ``source`` (source_id/canonical_uri/title/retracted/
@@ -522,8 +534,13 @@ def kimi_replay_adapter(events: list[dict], *, split: str = "heldout") -> list[E
         g = grouped.setdefault(
             gid,
             {
-                "sources": [], "claims": [], "spans": [],
-                "retrieved_texts": [], "trusted_uris": [], "defects": [], "n": 0,
+                "sources": [],
+                "claims": [],
+                "spans": [],
+                "retrieved_texts": [],
+                "trusted_uris": [],
+                "defects": [],
+                "n": 0,
             },
         )
         t = ev.get("type")
@@ -807,13 +824,13 @@ class LearningPipeline:
     def propose(self, candidate_id: str, config: dict) -> None:
         if candidate_id in self.candidates:
             raise ValueError(f"candidate {candidate_id!r} already proposed")
-        rec = LearningRecord(candidate_id=candidate_id, stage="candidate", config=config)
+        rec = LearningRecord(
+            candidate_id=candidate_id, stage="candidate", config=config
+        )
         self.candidates[candidate_id] = rec
         self._record(candidate_id, "proposed", config=config)
 
-    def evaluate(
-        self, candidate_id: str, reports: list[EvalReport]
-    ) -> RegressionGate:
+    def evaluate(self, candidate_id: str, reports: list[EvalReport]) -> RegressionGate:
         rec = self._require(candidate_id)
         gate = regression_gate(reports, self.thresholds)
         rec.eval_passed = gate.passed

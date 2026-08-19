@@ -146,8 +146,10 @@ def numeric_disagreement(statement: str, other_text: str) -> bool:
     """Same-subject numeric disagreement proxy (claim numbers absent + other's present)."""
     claim_nums = _NUM_TOK_RE.findall(statement)
     other_nums = set(_NUM_TOK_RE.findall(other_text))
-    return bool(claim_nums) and bool(other_nums) and not any(
-        n in other_nums for n in claim_nums
+    return (
+        bool(claim_nums)
+        and bool(other_nums)
+        and not any(n in other_nums for n in claim_nums)
     )
 
 
@@ -190,9 +192,10 @@ def classify_edge_relation(
     mis-lida como contradição); scope/time mismatch em suporte cheio vira
     QUALIFIES — a evidência apoia com qualificação de escopo.
     """
-    if numeric_disagreement(claim.statement, span_text) and lexical_coverage(
-        claim.statement, span_text
-    ) >= 0.6:
+    if (
+        numeric_disagreement(claim.statement, span_text)
+        and lexical_coverage(claim.statement, span_text) >= 0.6
+    ):
         return EdgeRelation.CONTRADICTS
     if entailment >= 0.8:
         if not scope_match or not temporal_match:
@@ -256,7 +259,9 @@ def derive_edge(
     )
     quality = source_quality_score(source)
     independence = 1.0 / max(1, family_size)
-    extracted = source is not None and source.extraction_status == ExtractionStatus.EXTRACTED
+    extracted = (
+        source is not None and source.extraction_status == ExtractionStatus.EXTRACTED
+    )
     confidence = 1.0 if extracted and span.has_exact_span() else 0.5
     return ClaimEvidenceEdge(
         edge_id=f"E-{claim.claim_id}-{span.evidence_id}",
@@ -351,12 +356,16 @@ def search_counterevidence(
             continue
         if numeric_disagreement(claim.statement, doc.text):
             hits.append(
-                CounterevidenceHit(claim.claim_id, doc.doc_id, "numeric_disagreement", score)
+                CounterevidenceHit(
+                    claim.claim_id, doc.doc_id, "numeric_disagreement", score
+                )
             )
             continue
         doc_subject, doc_neg = _negation_normalized(doc.text)
         if claim_neg_subject == doc_subject and claim_neg != doc_neg:
-            hits.append(CounterevidenceHit(claim.claim_id, doc.doc_id, "polarity_flip", score))
+            hits.append(
+                CounterevidenceHit(claim.claim_id, doc.doc_id, "polarity_flip", score)
+            )
         if len(hits) >= top_k:
             break
     return hits[:top_k]

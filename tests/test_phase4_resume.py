@@ -182,9 +182,11 @@ def test_delivery_manifest_has_real_artifacts(tmp_path):
     assert dm["run_id"] == state.run_id
     assert dm["artifacts"], "delivery manifest deve listar artifacts reais"
     art = dm["artifacts"][0]
-    expected = __import__("hashlib").sha256(
-        (state.run_dir / "delivery" / "report.md").read_bytes()
-    ).hexdigest()
+    expected = (
+        __import__("hashlib")
+        .sha256((state.run_dir / "delivery" / "report.md").read_bytes())
+        .hexdigest()
+    )
     assert art["content_hash"] == expected
     assert (state.run_dir / "delivery" / "report.md").is_file()
 
@@ -204,7 +206,9 @@ def test_gate_severity_semantics():
     advisory_only = GateDecision.compose(
         gate_id="g2",
         kind=GateKind.SOURCE,
-        checks=[GateCheck(check_id="Y", description="a", passed=False, severity="advisory")],
+        checks=[
+            GateCheck(check_id="Y", description="a", passed=False, severity="advisory")
+        ],
     )
     assert advisory_only.verdict == "warn"
     assert not advisory_only.blocking(), "advisory-only não é blocking"

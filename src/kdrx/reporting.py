@@ -256,7 +256,9 @@ def citation_integrity_gate(
     unresolved = [c for c in material if c.standing == Standing.UNRESOLVED]
     lower_report = report_text.lower()
     not_disclosed = [
-        c.claim_id for c in unresolved if c.statement.strip().lower() not in lower_report
+        c.claim_id
+        for c in unresolved
+        if c.statement.strip().lower() not in lower_report
     ]
     checks.append(
         GateCheck(
@@ -283,9 +285,7 @@ def citation_integrity_gate(
     # T-08-07 (blocking): material claim OMITIDO do relatório = falha de
     # integridade (não basta estar no registry — o leitor precisa ver).
     omitted = [
-        c.claim_id
-        for c in material
-        if c.statement.strip().lower() not in lower_report
+        c.claim_id for c in material if c.statement.strip().lower() not in lower_report
     ]
     checks.append(
         GateCheck(
@@ -327,9 +327,7 @@ def citation_integrity_gate(
     uri_to_id = {s.canonical_uri: s.source_id for s in sources}
     cited_set = set(cited)
     dangling = [
-        uri_to_id.get(u, u)
-        for u in listed
-        if uri_to_id.get(u, u) not in cited_set
+        uri_to_id.get(u, u) for u in listed if uri_to_id.get(u, u) not in cited_set
     ]
     checks.append(
         GateCheck(
@@ -465,12 +463,15 @@ class OutlineCouncil:
         self.quorum = quorum
         self.max_rounds = max_rounds
 
-    def convene(self, claims: list[Claim]) -> tuple[list[OutlineSection], list[CouncilRound]]:
+    def convene(
+        self, claims: list[Claim]
+    ) -> tuple[list[OutlineSection], list[CouncilRound]]:
         rounds: list[CouncilRound] = []
         elected: list[str] = []
         for round_no in range(1, self.max_rounds + 1):
             proposals = {
-                name: sorted({fn(c) for c in claims}) for name, fn in self.councilors.items()
+                name: sorted({fn(c) for c in claims})
+                for name, fn in self.councilors.items()
             }
             votes: dict[str, int] = {}
             for themes in proposals.values():
@@ -478,7 +479,9 @@ class OutlineCouncil:
                     votes[theme] = votes.get(theme, 0) + 1
             new_elected = sorted(t for t, v in votes.items() if v >= self.quorum)
             rounds.append(
-                CouncilRound(round_no=round_no, proposals=proposals, elected=new_elected)
+                CouncilRound(
+                    round_no=round_no, proposals=proposals, elected=new_elected
+                )
             )
             if new_elected == elected:
                 break  # convergiu
@@ -489,12 +492,14 @@ class OutlineCouncil:
             members = [
                 c.claim_id
                 for c in claims
-                if theme
-                in {fn(c) for fn in self.councilors.values()}
+                if theme in {fn(c) for fn in self.councilors.values()}
             ]
             sections.append(
                 OutlineSection(
-                    section_id=f"S-{i}", title=theme.replace("_", " ").title(), theme=theme, claim_ids=members
+                    section_id=f"S-{i}",
+                    title=theme.replace("_", " ").title(),
+                    theme=theme,
+                    claim_ids=members,
                 )
             )
             assigned.update(members)
@@ -527,7 +532,9 @@ class SectionDAG:
         out: list[list[str]] = []
         remaining = dict(self.dependencies)
         while remaining:
-            ready = sorted(s for s, deps in remaining.items() if all(d in done for d in deps))
+            ready = sorted(
+                s for s, deps in remaining.items() if all(d in done for d in deps)
+            )
             if not ready:
                 raise ValueError("section DAG has a cycle")
             out.append(ready)
@@ -541,7 +548,9 @@ def build_section_dag(sections: list[OutlineSection]) -> SectionDAG:
     """Body sections não compartilham claims (partição) => wave única
     paralelizável; late sections fecham a DAG dependendo de todas as body."""
     body = [s.section_id for s in sections if not s.late]
-    deps: dict[str, list[str]] = {s.section_id: ([] if not s.late else list(body)) for s in sections}
+    deps: dict[str, list[str]] = {
+        s.section_id: ([] if not s.late else list(body)) for s in sections
+    }
     return SectionDAG(dependencies=deps)
 
 
@@ -630,7 +639,11 @@ class SectionFixer:
         self, section: OutlineSection, text: str, review: ReviewReport
     ) -> tuple[str, list[str]]:
         """Remove sentences sinalizadas como não-suportadas; registra os fixes."""
-        removed = [i.split("unsupported_numeric_sentence: ", 1)[1] for i in review.issues if i.startswith("unsupported_numeric_sentence")]
+        removed = [
+            i.split("unsupported_numeric_sentence: ", 1)[1]
+            for i in review.issues
+            if i.startswith("unsupported_numeric_sentence")
+        ]
         fixes: list[str] = []
         out_lines = []
         for line in text.split("\n"):
@@ -644,7 +657,9 @@ class SectionFixer:
 class TransitionEditor:
     role = "transition_editor"
 
-    def edit(self, ordered: list[tuple[OutlineSection, str]]) -> list[tuple[OutlineSection, str]]:
+    def edit(
+        self, ordered: list[tuple[OutlineSection, str]]
+    ) -> list[tuple[OutlineSection, str]]:
         """Adiciona frase de transição AO FINAL de cada seção (exceto a última),
         sem números (não dispara o detector de unsupported)."""
         out: list[tuple[OutlineSection, str]] = []
@@ -676,7 +691,9 @@ class CitationManager:
         by_id = {s.source_id: s for s in self.sources}
         return [by_id[c] for c in extract_citations(text) if c in by_id]
 
-    def dangling_references(self, text: str, references: list[SourceRecord]) -> list[str]:
+    def dangling_references(
+        self, text: str, references: list[SourceRecord]
+    ) -> list[str]:
         cited = set(extract_citations(text))
         return [r.source_id for r in references if r.source_id not in cited]
 
@@ -723,7 +740,9 @@ def run_report_swarm(
         )
     # late sections por último (T-08-05)
     n = len(sections)
-    sections.append(OutlineSection(f"S-{n + 1}", "Executive Summary", "summary", late=True))
+    sections.append(
+        OutlineSection(f"S-{n + 1}", "Executive Summary", "summary", late=True)
+    )
     sections.append(OutlineSection(f"S-{n + 2}", "Conclusion", "conclusion", late=True))
 
     dag = build_section_dag(sections)

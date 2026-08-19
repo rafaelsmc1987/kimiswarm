@@ -70,7 +70,10 @@ class _TextHTMLParser(HTMLParser):
             self._parts.append("\n")
 
     def handle_endtag(self, tag: str) -> None:
-        if tag in {"script", "style", "noscript", "template", "head"} and self._skip_depth:
+        if (
+            tag in {"script", "style", "noscript", "template", "head"}
+            and self._skip_depth
+        ):
             self._skip_depth -= 1
 
     def handle_data(self, data: str) -> None:

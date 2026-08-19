@@ -148,7 +148,8 @@ class OpenAlexAdapter(BaseAdapter):
                     canonical_uri=item.get("doi") or item.get("id", ""),
                     title=item.get("title") or "untitled",
                     authors=[a for a in authors if a],
-                    publisher=(item.get("primary_location") or {}).get("source", {})
+                    publisher=(item.get("primary_location") or {})
+                    .get("source", {})
                     .get("display_name"),
                     date=self._parse_date(item.get("publication_date")),
                     source_type=SourceType.ACADEMIC_PAPER,
@@ -212,9 +213,11 @@ class ArxivAdapter(BaseAdapter):
             raise AdapterError(f"arXiv Atom parse falhou: {exc}") from exc
         out: list[SourceRecord] = []
         for entry in root.findall("a:entry", self.NS):
-            raw_id = (entry.findtext("a:id", default="", namespaces=self.NS) or "")
+            raw_id = entry.findtext("a:id", default="", namespaces=self.NS) or ""
             arxiv_id = raw_id.rsplit("/abs/", 1)[-1]
-            title = re.sub(r"\s+", " ", entry.findtext("a:title", default="", namespaces=self.NS)).strip()
+            title = re.sub(
+                r"\s+", " ", entry.findtext("a:title", default="", namespaces=self.NS)
+            ).strip()
             published = entry.findtext("a:published", default="", namespaces=self.NS)
             authors = [
                 (a.findtext("a:name", default="", namespaces=self.NS) or "").strip()

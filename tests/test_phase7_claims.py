@@ -96,15 +96,27 @@ def test_entailment_numeric_mismatch_capped():
 # T-07-03: vocabulário completo de edge relations
 # --------------------------------------------------------------------------- #
 def test_classify_full_support_and_qualifies():
-    claim = Claim(claim_id="c", statement="Accuracy was 88 percent in 2021", scope={"time": "2021"})
+    claim = Claim(
+        claim_id="c",
+        statement="Accuracy was 88 percent in 2021",
+        scope={"time": "2021"},
+    )
     rel = classify_edge_relation(
-        claim, "Accuracy was 88 percent in 2021", entailment=1.0, scope_match=True, temporal_match=True
+        claim,
+        "Accuracy was 88 percent in 2021",
+        entailment=1.0,
+        scope_match=True,
+        temporal_match=True,
     )
     assert rel == EdgeRelation.SUPPORTS
 
 
 def test_scope_mismatch_yields_qualifies():
-    claim = Claim(claim_id="c", statement="Accuracy was 88 percent in 2021", scope={"time": "2021"})
+    claim = Claim(
+        claim_id="c",
+        statement="Accuracy was 88 percent in 2021",
+        scope={"time": "2021"},
+    )
     span = "Accuracy was 88 percent overall"
     rel = classify_edge_relation(
         claim, span, entailment=0.9, scope_match=False, temporal_match=False
@@ -115,16 +127,32 @@ def test_scope_mismatch_yields_qualifies():
 def test_numeric_disagreement_with_overlap_contradicts():
     claim = Claim(claim_id="c", statement="Accuracy was 88 percent on benchmark")
     rel = classify_edge_relation(
-        claim, "Accuracy was 82 percent on benchmark", entailment=0.7, scope_match=True, temporal_match=True
+        claim,
+        "Accuracy was 82 percent on benchmark",
+        entailment=0.7,
+        scope_match=True,
+        temporal_match=True,
     )
     assert rel == EdgeRelation.CONTRADICTS
 
 
 def test_low_entailment_context_or_irrelevant():
     claim = Claim(claim_id="c", statement="Accuracy was 88 percent")
-    rel = classify_edge_relation(claim, "some vague text mentioning accuracy", entailment=0.2, scope_match=True, temporal_match=True)
+    rel = classify_edge_relation(
+        claim,
+        "some vague text mentioning accuracy",
+        entailment=0.2,
+        scope_match=True,
+        temporal_match=True,
+    )
     assert rel == EdgeRelation.CONTEXT_ONLY
-    rel2 = classify_edge_relation(claim, "totally unrelated words here", entailment=0.0, scope_match=True, temporal_match=True)
+    rel2 = classify_edge_relation(
+        claim,
+        "totally unrelated words here",
+        entailment=0.0,
+        scope_match=True,
+        temporal_match=True,
+    )
     assert rel2 == EdgeRelation.IRRELEVANT
 
 
@@ -148,12 +176,18 @@ def test_discovery_finds_numeric_and_polarity_pairs():
 def test_pipeline_discovers_contradictions_end_to_end(tmp_path):
     corpus = tmp_path / "corpus"
     corpus.mkdir()
-    (corpus / "a.md").write_text("The system latency is 5 ms under load with 42 nodes.\n")
-    (corpus / "b.md").write_text("The system latency is 9 ms under load with 42 nodes.\n")
+    (corpus / "a.md").write_text(
+        "The system latency is 5 ms under load with 42 nodes.\n"
+    )
+    (corpus / "b.md").write_text(
+        "The system latency is 9 ms under load with 42 nodes.\n"
+    )
     summary = run_file_research(corpus, "system latency under load", tmp_path / "runs")
     assert summary["exit_code"] == 0
     run_dir = tmp_path / "runs" / summary["run_id"]
-    contra = json.loads((run_dir / "claims" / "contradictions.json").read_text(encoding="utf-8"))
+    contra = json.loads(
+        (run_dir / "claims" / "contradictions.json").read_text(encoding="utf-8")
+    )
     assert contra, "descoberta automática deveria achar o par 5ms vs 9ms"
     cluster = contra[0]
     assert len(cluster["claims"]) == 2
@@ -196,7 +230,10 @@ def test_counterevidence_artifact_written(tmp_path):
 # --------------------------------------------------------------------------- #
 def test_derived_scores_vary_with_inputs():
     span = make_span("Accuracy improves by 12 percent on the benchmark dataset")
-    claim = Claim(claim_id="c", statement="Accuracy improves by 12 percent on the benchmark dataset")
+    claim = Claim(
+        claim_id="c",
+        statement="Accuracy improves by 12 percent on the benchmark dataset",
+    )
     weak = make_source(quality_grade=QualityGrade.WEAK)
     strong = make_source(
         quality_grade=QualityGrade.EXCELLENT,
@@ -238,7 +275,9 @@ def test_unresolved_registry_and_report_disclosure(tmp_path):
     summary = run_file_research(corpus, "accuracy benchmark", tmp_path / "runs")
     assert summary["exit_code"] == 0
     run_dir = tmp_path / "runs" / summary["run_id"]
-    registry = json.loads((run_dir / "claims" / "unresolved.json").read_text(encoding="utf-8"))
+    registry = json.loads(
+        (run_dir / "claims" / "unresolved.json").read_text(encoding="utf-8")
+    )
     assert registry, "claim sem span deveria ir para o registry"
     entry = [r for r in registry if "latency" in r["statement"].lower()]
     if entry:

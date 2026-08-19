@@ -101,9 +101,10 @@ def test_council_generates_outline_in_rounds():
 
 
 def test_council_converges_and_logs_each_round():
-    _, rounds = OutlineCouncil().convene(make_claims() + [
-        Claim(claim_id="CL-4", statement="Accuracy improved again in 2024")
-    ])
+    _, rounds = OutlineCouncil().convene(
+        make_claims()
+        + [Claim(claim_id="CL-4", statement="Accuracy improved again in 2024")]
+    )
     rounds_no = [r.round_no for r in rounds]
     assert rounds_no == list(range(1, len(rounds) + 1))  # sequencial
     assert all(r.proposals for r in rounds)  # cada rodada tem propostas
@@ -115,8 +116,8 @@ def test_council_converges_and_logs_each_round():
 def test_section_dag_parallelizes_body_and_serializes_late():
     sections, _ = OutlineCouncil().convene(make_claims())
     n = len(sections)
-    sections.append(OutlineSection(f"S-{n+1}", "Summary", "summary", late=True))
-    sections.append(OutlineSection(f"S-{n+2}", "Conclusion", "conclusion", late=True))
+    sections.append(OutlineSection(f"S-{n + 1}", "Summary", "summary", late=True))
+    sections.append(OutlineSection(f"S-{n + 2}", "Conclusion", "conclusion", late=True))
     dag = build_section_dag(sections)
     waves = dag.waves()
     body_wave = waves[0]
@@ -141,7 +142,9 @@ def test_section_packs_are_minimal():
         valid = {e for c in pack.claims for e in c.support_edges}
         assert {sp.evidence_id for sp in pack.evidence_spans} <= valid
         # fontes do pack: somente as dos spans incluídos
-        assert {s.source_id for s in pack.sources} <= {sp.source_id for sp in pack.evidence_spans}
+        assert {s.source_id for s in pack.sources} <= {
+            sp.source_id for sp in pack.evidence_spans
+        }
         assert "file:unused.md" not in {s.source_id for s in pack.sources}
 
 
@@ -178,7 +181,7 @@ def test_late_sections_generated_last():
     result = run_report_swarm("objective", make_claims(), make_sources(), make_spans())
     order = result.generation_order
     late_ids = [s.section_id for s in result.outline if s.late]
-    assert order[-len(late_ids):] == late_ids, "summary/conclusion escritos por último"
+    assert order[-len(late_ids) :] == late_ids, "summary/conclusion escritos por último"
     body_ids = [s.section_id for s in result.outline if not s.late]
     assert order[: len(body_ids)] == body_ids
 
@@ -200,7 +203,9 @@ def test_orphan_and_dangling_detected():
     manager = CitationManager(make_sources())
     assert manager.orphan_citations("see [cite:file:ghost.md]") == ["file:ghost.md"]
     refs = [make_sources()[2]]  # unused.md listada mas não citada
-    assert manager.dangling_references("see [cite:file:a.md]", refs) == ["file:unused.md"]
+    assert manager.dangling_references("see [cite:file:a.md]", refs) == [
+        "file:unused.md"
+    ]
 
 
 # --------------------------------------------------------------------------- #
@@ -235,7 +240,9 @@ def test_citation_entailment_checked_in_gate():
     assert check.passed is True
     # span corrompido => entailment quebra => FAIL
     bad_spans = [
-        EvidenceSpan(evidence_id="EV-1", source_id="file:a.md", verbatim_span="zzz qqq"),
+        EvidenceSpan(
+            evidence_id="EV-1", source_id="file:a.md", verbatim_span="zzz qqq"
+        ),
         *make_spans()[1:],
     ]
     gate2 = _gate_for(result.report_text, spans=bad_spans)
@@ -245,7 +252,10 @@ def test_citation_entailment_checked_in_gate():
 def test_dangling_reference_fails_gate():
     # relatório com reference NÃO citada no corpo
     assembler = ReportAssembler("t")
-    assembler.add_section("Findings", "- **CL-1** (supported, 0.90) — Accuracy was 88 percent on the benchmark [cite:file:a.md]")
+    assembler.add_section(
+        "Findings",
+        "- **CL-1** (supported, 0.90) — Accuracy was 88 percent on the benchmark [cite:file:a.md]",
+    )
     report = assembler.assemble(make_sources())  # TODAS as fontes listadas
     gate = _gate_for(report)
     check = [c for c in gate.checks if c.check_id == "REFERENCES_ONLY_CITED"][0]
@@ -271,7 +281,9 @@ def test_integrity_blocks_pipeline_when_claim_omitted(tmp_path):
     # adultera: remove claim do corpo => re-verify no disco deve BLOQUEAR
     report = (run_dir / "delivery" / "report.md").read_text(encoding="utf-8")
     (run_dir / "delivery" / "report.md").write_text(
-        report.replace("Latency is 5 ms under heavy load conditions", "Latency is fine"),
+        report.replace(
+            "Latency is 5 ms under heavy load conditions", "Latency is fine"
+        ),
         encoding="utf-8",
     )
     from kdrx.cli import main
@@ -288,11 +300,17 @@ def test_swarm_artifacts_persisted(tmp_path):
     summary = run_file_research(corpus, "accuracy benchmark", tmp_path / "runs")
     assert summary["exit_code"] == 0, json.dumps(summary)
     run_dir = tmp_path / "runs" / summary["run_id"]
-    outline = json.loads((run_dir / "delivery" / "outline.json").read_text(encoding="utf-8"))
+    outline = json.loads(
+        (run_dir / "delivery" / "outline.json").read_text(encoding="utf-8")
+    )
     assert outline["council_rounds"] and outline["sections"]
-    dag = json.loads((run_dir / "delivery" / "section_dag.json").read_text(encoding="utf-8"))
+    dag = json.loads(
+        (run_dir / "delivery" / "section_dag.json").read_text(encoding="utf-8")
+    )
     assert dag["waves"]
-    log = json.loads((run_dir / "delivery" / "swarm_log.json").read_text(encoding="utf-8"))
+    log = json.loads(
+        (run_dir / "delivery" / "swarm_log.json").read_text(encoding="utf-8")
+    )
     assert log["generation_order"][-2:] == [
         s["section_id"] for s in outline["sections"] if s["late"]
     ]

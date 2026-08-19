@@ -121,11 +121,11 @@ def _retrieval_tasks(corpus_size: int) -> list[TaskSpec]:
             role=AgentRole.PRIMARY_SOURCE_FINDER,
             mission="search the corpus for evidence relevant to the objective",
             outputs=[
-            "evidence/spans.jsonl",
-            "corpus/sources.jsonl",
-            "corpus/dedup.json",
-            "retrieval/query_graph.json",
-        ],
+                "evidence/spans.jsonl",
+                "corpus/sources.jsonl",
+                "corpus/dedup.json",
+                "retrieval/query_graph.json",
+            ],
             tools=["search"],
             read_only=True,
             acceptance=acceptance("spans extracted"),
@@ -299,7 +299,9 @@ def _verdict_of(state: RunState, rel: str) -> str:
     if not path.is_file():
         return "missing"
     try:
-        return str(json.loads(path.read_text(encoding="utf-8")).get("verdict", "unknown"))
+        return str(
+            json.loads(path.read_text(encoding="utf-8")).get("verdict", "unknown")
+        )
     except (OSError, json.JSONDecodeError):
         return "unknown"
 
@@ -316,7 +318,9 @@ def _sealable_hashes(state: RunState) -> dict[str, str]:
     }
 
 
-def _emit_delivery_manifest(state: RunState, manifest: RunManifest, result: Any) -> None:
+def _emit_delivery_manifest(
+    state: RunState, manifest: RunManifest, result: Any
+) -> None:
     """DeliveryManifest persistido (plan §31); o open test é abrir o report."""
     from kdrx.schemas.artifact import ArtifactRecord, DeliveryManifest
     from kdrx.schemas.enums import ArtifactKind
@@ -351,7 +355,9 @@ def _emit_delivery_manifest(state: RunState, manifest: RunManifest, result: Any)
     state.write_text("delivery-manifest.json", dm.model_dump_json(indent=2))
 
 
-def resume_run(state: RunState, corpus: FileCorpus) -> tuple[Any, "_FileResearchExecutor"]:
+def resume_run(
+    state: RunState, corpus: FileCorpus
+) -> tuple[Any, "_FileResearchExecutor"]:
     """Continua um run existente sem repetir tasks fechadas (T-04-04).
 
     Reconstrói o DAG do plan.json persistido, marca as tasks já SUCCEEDED
@@ -460,9 +466,7 @@ class _FileResearchExecutor:
 
         for node in graph:
             prior_sources = len(known_sources)
-            hits = self.corpus.retrieve_evidence_spans(
-                node.query, top_k=5, window=40
-            )
+            hits = self.corpus.retrieve_evidence_spans(node.query, top_k=5, window=40)
             queries_issued += 1
             node_results: list[str] = []
             new_sources = 0
@@ -629,16 +633,22 @@ class _FileResearchExecutor:
             contra_claims.setdefault(b_id, []).append(a_id)
         self.state.write_text(
             "claims/contradictions.json",
-            json.dumps([c.model_dump(mode="json") for c in contradiction_clusters], indent=2)
+            json.dumps(
+                [c.model_dump(mode="json") for c in contradiction_clusters], indent=2
+            )
             + "\n",
         )
 
         # T-07-05: busca ativa de counterevidence (falsification swarm executado)
         counter_hits = []
         for c in self.claims:
-            own_span = next((span_by_id[e] for e in c.support_edges if e in span_by_id), None)
+            own_span = next(
+                (span_by_id[e] for e in c.support_edges if e in span_by_id), None
+            )
             own_doc = (
-                own_span.source_id.removeprefix("file:") if own_span is not None else None
+                own_span.source_id.removeprefix("file:")
+                if own_span is not None
+                else None
             )
             counter_hits.extend(
                 search_counterevidence(c, self.corpus, own_source_id=own_doc)
@@ -687,7 +697,11 @@ class _FileResearchExecutor:
                         )
                     )
             res = compute_standing(
-                c, sup, contra, evidence_source=evidence_source, source_family=source_family
+                c,
+                sup,
+                contra,
+                evidence_source=evidence_source,
+                source_family=source_family,
             )
             c.standing = res.standing
             c.confidence = res.confidence
@@ -717,7 +731,9 @@ class _FileResearchExecutor:
                 "claim_id": c.claim_id,
                 "statement": c.statement,
                 "reason": (
-                    "no_evidence_span" if not c.support_edges else "score_below_threshold"
+                    "no_evidence_span"
+                    if not c.support_edges
+                    else "score_below_threshold"
                 ),
                 "calibration_basis": c.calibration_basis,
             }
@@ -754,9 +770,7 @@ class _FileResearchExecutor:
             "verification/source_gates.json", json.dumps(gates, indent=2)
         )
         if blocking_failures:
-            raise RuntimeError(
-                f"source trust gate FAILED: {blocking_failures}"
-            )
+            raise RuntimeError(f"source trust gate FAILED: {blocking_failures}")
         return AgentResult(
             result_id="r-verify",
             task_id=brief.task_id,
@@ -851,9 +865,7 @@ class _FileResearchExecutor:
                 f"final integrity gate FAILED: {citation.blocking_reasons}"
             )
         if security.blocking():
-            raise RuntimeError(
-                f"security gate FAILED: {security.blocking_reasons}"
-            )
+            raise RuntimeError(f"security gate FAILED: {security.blocking_reasons}")
         return AgentResult(
             result_id="r-integrity",
             task_id=brief.task_id,
@@ -904,7 +916,9 @@ def run_file_research(
         doi_resolver = DOIResolver()
 
     state, _manifest = prepare_run_dir(plan, contract, runs_root, run_id)
-    result, executor = execute_plan(plan, contract, corpus, state, doi_resolver=doi_resolver)
+    result, executor = execute_plan(
+        plan, contract, corpus, state, doi_resolver=doi_resolver
+    )
 
     report_path = state.run_dir / "delivery" / "report.md"
     return {
