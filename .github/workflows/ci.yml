@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # historico completo: o gitleaks-action calcula a range do push (before..after); shallow quebra o gate
 
       - name: Setup Python
         uses: actions/setup-python@v5
