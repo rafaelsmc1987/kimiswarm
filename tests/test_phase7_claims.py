@@ -244,5 +244,5 @@ def test_unresolved_registry_and_report_disclosure(tmp_path):
     if entry:
         assert entry[0]["reason"] == "no_evidence_span"
     report = (run_dir / "delivery" / "report.md").read_text(encoding="utf-8")
-    assert "Unresolved claims" in report
+    assert "Unresolved Claims" in report
     assert "claims/unresolved.json" in report

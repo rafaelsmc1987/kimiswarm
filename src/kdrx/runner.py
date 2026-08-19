@@ -27,9 +27,8 @@ from kdrx.corpus import independence_families, source_fingerprint, tokenize
 from kdrx.dag import compile_dag
 from kdrx.planner import plan_gate
 from kdrx.reporting import (
-    ReportAssembler,
-    build_evidence_pack,
     citation_integrity_gate,
+    run_report_swarm,
     split_sentences,
 )
 from kdrx.retrieval import (
@@ -769,32 +768,55 @@ class _FileResearchExecutor:
 
     def _synthesize(self, brief: AgentBrief) -> AgentResult:
         self._compute_standings()  # persiste standings/edges do run
-        pack = build_evidence_pack("pack-1", self.claims, self.sources, self.spans)
-        assembler = ReportAssembler(self.objective)
-        span_by_evidence = {sp.evidence_id: sp for sp in self.spans}
-        lines = []
-        for c in self.claims:
-            cites = [
-                f"[cite:{span_by_evidence[e].source_id}]"
-                for e in c.support_edges
-                if e in span_by_evidence
-            ]
-            cite_txt = " ".join(cites) if cites else "[sem evidence span — UNRESOLVED]"
-            lines.append(f"- **{c.claim_id}** ({c.standing.value}, {c.confidence:.2f}) — {c.statement} {cite_txt}")
-        body = "\n\n".join(lines)
-        assembler.add_section("Findings", body or "_no claims extracted_")
-        # T-07-07: disclosure explícito dos claims UNRESOLVED no report —
-        # o registry (claims/unresolved.json) é referenciado no texto.
-        unresolved = [c for c in self.claims if c.standing == Standing.UNRESOLVED]
-        if unresolved:
-            ids = ", ".join(c.claim_id for c in unresolved)
-            assembler.add_section(
-                "Unresolved claims",
-                f"{len(unresolved)} claim(s) remain UNRESOLVED and are disclosed "
-                f"in `claims/unresolved.json`: {ids}.",
-            )
-        self.report_text = assembler.assemble(self.sources)
+        # T-08-01..06: o report nasce do SWARM — council de outline, section
+        # DAG (uma task por seção), packs mínimos, writer/reviewer/fixer/
+        # transition editor separados, summary/conclusion tardios e citation
+        # manager (references = só citadas).
+        swarm = run_report_swarm(self.objective, self.claims, self.sources, self.spans)
+        self.report_text = swarm.report_text
         self.state.write_text("delivery/report.md", self.report_text)
+        self.state.write_text(
+            "delivery/outline.json",
+            json.dumps(
+                {
+                    "council_rounds": [
+                        {
+                            "round_no": r.round_no,
+                            "proposals": r.proposals,
+                            "elected": r.elected,
+                        }
+                        for r in swarm.council_rounds
+                    ],
+                    "sections": [
+                        {
+                            "section_id": s.section_id,
+                            "title": s.title,
+                            "theme": s.theme,
+                            "late": s.late,
+                            "claims": s.claim_ids,
+                        }
+                        for s in swarm.outline
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+        self.state.write_text(
+            "delivery/section_dag.json",
+            json.dumps({"waves": swarm.section_waves}, indent=2) + "\n",
+        )
+        self.state.write_text(
+            "delivery/swarm_log.json",
+            json.dumps(
+                {
+                    "generation_order": swarm.generation_order,
+                    "reviews": swarm.review_log,
+                },
+                indent=2,
+            )
+            + "\n",
+        )
         return AgentResult(
             result_id="r-synthesize",
             task_id=brief.task_id,
@@ -804,7 +826,11 @@ class _FileResearchExecutor:
             limitations=["synthesis is deterministic; no LLM writer attached"],
             declared_tests=[],
             executed_tests=[],
-            payload={"pack_id": pack.pack_id, "claims": len(self.claims)},
+            payload={
+                "sections": len(swarm.outline),
+                "claims": len(self.claims),
+                "references": len(swarm.references),
+            },
         )
 
     def _integrity(self, brief: AgentBrief) -> AgentResult:
@@ -818,6 +844,16 @@ class _FileResearchExecutor:
         self.state.write_text(
             "verification/security.json", security.model_dump_json(indent=2)
         )
+        # T-08-07: integridade final é HARD — um gate de citação/segurança
+        # falho BLOQUEIA a entrega (antes era só registro com WARN).
+        if citation.blocking():
+            raise RuntimeError(
+                f"final integrity gate FAILED: {citation.blocking_reasons}"
+            )
+        if security.blocking():
+            raise RuntimeError(
+                f"security gate FAILED: {security.blocking_reasons}"
+            )
         return AgentResult(
             result_id="r-integrity",
             task_id=brief.task_id,
