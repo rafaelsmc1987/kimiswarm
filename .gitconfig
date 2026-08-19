@@ -1,0 +1,5 @@
+[user]
+	email = agent@example.com
+	name = agent
+[safe]
+	directory = *

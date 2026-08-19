@@ -1,0 +1,33 @@
+#!/bin/bash
+# drive9 探活 watchdog:连续 3 次探活失败(间隔 15s)判定假死并杀 daemon,由 s6 重启。
+# readdir 只列专用小目录 .drive9-health,不扫项目根(大目录 readdir 会触发预取回源)。
+MNT='/mnt/agents'
+LOG='/tmp/kimi-project-drive9.log'
+HEALTH_DIR="$MNT/.drive9-health"
+failures=0
+while true; do
+  sleep 15
+  identity="$(findmnt -rn --mountpoint "$MNT" -o SOURCE,FSTYPE 2>/dev/null || true)"
+  case "$identity" in
+    "drive9 fuse" | "drive9 fuse.drive9") ;;
+    *) continue ;;  # 未挂载(首次挂载进行中)或非 drive9 挂载:不干预
+  esac
+  if timeout -k 2 5 stat "$MNT/." >/dev/null 2>&1 && timeout -k 2 10 ls -U "$HEALTH_DIR" >/dev/null 2>&1; then
+    failures=0
+    continue
+  fi
+  # 探活失败先补救:探活目录缺失时 mkdir 可自愈(本轮不计数);
+  # daemon 真挂死时 mkdir 同样超时,不会误放。
+  if timeout -k 2 5 mkdir -p "$HEALTH_DIR" 2>/dev/null; then
+    failures=0
+    continue
+  fi
+  failures=$((failures + 1))
+  echo "drive9-watchdog: probe failed consecutive=$failures/3" >> "$LOG"
+  if [ "$failures" -ge 3 ]; then
+    echo "drive9-watchdog: ALERT killing unresponsive daemon for s6 restart" >> "$LOG"
+    pkill -9 -x drive9 || true
+    failures=0
+    sleep 30
+  fi
+done

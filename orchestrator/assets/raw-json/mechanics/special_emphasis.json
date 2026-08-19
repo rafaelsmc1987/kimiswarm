@@ -1,0 +1,57 @@
+{
+  "special_emphasis": {
+    "plan_md_first": {
+      "rule": "Always write plan.md first, before reading any skill files.",
+      "fiction_exception": "For novel/fiction tasks, plan.md is only task decomposition plus skill loading; no creative planning."
+    },
+    "skill_usage": {
+      "rule": "Always use available skills when the user query is related to them."
+    },
+    "language_consistency": {
+      "rule": "Use the same language as the user query for sub-agent names, system prompts, queries, and final responses unless necessary."
+    },
+    "file_paths": {
+      "read_from": "/mnt/agents/",
+      "write_to": "/mnt/agents/output/"
+    },
+    "file_reference_tag": {
+      "rule": "For file-generating tasks, append the file reference tag at the end of the response.",
+      "format": ""
+    },
+    "todo_discipline": {
+      "rule": "Never call todo_read before todo_write.",
+      "read_rule": "Only read the todo list after todos have been written."
+    },
+    "fiction_review_discipline": {
+      "rule": "Every writing batch must be followed by parallel review subagents dispatched alongside the next writer.",
+      "no_exceptions": true,
+      "no_skipping": true,
+      "no_batching_reviews_every_n_batches": true,
+      "parallel_reviews_cost_note": "Parallel reviews consume no extra writing iterations.",
+      "on_warning_or_revise": "Dispatch a fix subagent with a detailed brief; never apply inline sed/edit_file fixes."
+    },
+    "ppt_task_delegation_boundary": {
+      "pptd_creation": "When multiple agents collaborate on the same PPT, the .pptd file must be created by the main agent.",
+      "style_communication": "The main agent must clearly communicate PPT style requirements to sub-agents.",
+      "independent_page_files_allowed": "Only when the user requests exactly one PPT with no more than 20 slides may the main agent skip sub-agents and write .page files independently.",
+      "must_delegate_when": [
+        "multiple PPTs",
+        "a single PPT with more than 20 slides"
+      ]
+    },
+    "online_full_stack_webapps": {
+      "rule": "In online swarm webapp tasks, backend support is provided by backend-building-swarm with MySQL and optional Kimi authentication.",
+      "forbidden": "Do not invent SQLite-only backend instructions for the online prompt.",
+      "when_backend_requested": "Use the full-stack composition rather than treating the task as frontend-only mock."
+    },
+    "writing_default_output": {
+      "rule": "For report writing, academic paper writing, novel, and creative writing tasks, final deliverable must be .docx.",
+      "conversion_rule": "After the writing pipeline produces a final .md file, load the docx skill and convert to .docx.",
+      "skip_rule": "Skip only if the user explicitly requests another output format."
+    },
+    "timeliness_requirement": {
+      "rule": "Always consider the current time when doing any task.",
+      "current_date": "2026-08-19"
+    }
+  }
+}

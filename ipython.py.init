@@ -1,0 +1,74 @@
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+import numpy as np
+from IPython.display import display
+%matplotlib inline
+
+# 设置 matplotlib 中文字体支持
+plt.style.use('default')
+plt.rcParams['figure.figsize'] = [8, 6]
+plt.rcParams['figure.dpi'] = 100
+plt.rcParams['savefig.dpi'] = 100
+plt.rcParams['font.size'] = 10
+plt.rcParams['axes.grid'] = True
+plt.rcParams['figure.facecolor'] = 'white'
+plt.rcParams['axes.facecolor'] = 'white'
+plt.rcParams['savefig.facecolor'] = 'white'
+plt.rcParams['savefig.edgecolor'] = 'none'
+
+# 配置中文字体
+# 强制重新初始化字体管理器以识别新安装的字体
+fm.fontManager.__init__()
+
+# 适配中文字体
+cjk_list = ['CJK', 'Han', 'CN', 'TW', 'JP']
+cjk_fonts = [f.name for f in fm.fontManager.ttflist if any(s.lower() in f.name.lower() for s in cjk_list)]
+plt.rcParams['font.family'] = ['DejaVu Sans'] + cjk_fonts
+plt.rcParams['axes.unicode_minus'] = False
+
+plt.rcParams.update(
+    {
+        "axes.prop_cycle": matplotlib.cycler(
+            color=[
+                "#A1C9F4",
+                "#FFB3BA",
+                "#FFDFBA",
+                "#BAFFC9",
+                "#BAE1FF",
+                "#A8E6CF",
+                "#DCEDC1",
+                "#FFD3A5",
+                "#FFA8A8",
+                "#B5B5FF",
+                "#FFB3E6",
+                "#C7CEEA",
+                "#FFABAB",
+            ]
+        ),
+        "figure.figsize": (10, 6),
+        "axes.facecolor": "#FEFEFE",
+        "figure.facecolor": "white",
+        "axes.edgecolor": "#D0D0D0",
+        "axes.unicode_minus": False,
+        "axes.linewidth": 1,
+        "axes.grid": True,
+        "grid.color": "#E8E8E8",
+        "grid.alpha": 0.6,
+        "grid.linewidth": 0.8,
+        "font.size": 11,
+        "axes.titlesize": 14,
+        "axes.labelsize": 12,
+        "legend.fontsize": 10,
+        "xtick.labelsize": 10,
+        "ytick.labelsize": 10,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "axes.spines.left": True,
+        "axes.spines.bottom": True,
+    }
+)
+
+# PIL image show return image
+from PIL import ImageShow
+ImageShow.register(ImageShow.IPythonViewer, 0)

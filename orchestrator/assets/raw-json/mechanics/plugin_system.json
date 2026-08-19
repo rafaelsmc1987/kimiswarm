@@ -1,0 +1,109 @@
+{
+  "plugin_system": {
+    "definition": "A plugin is an installable bundle that adds reusable skills and external MCP tools to the session.",
+    "availability_model": {
+      "type": "append-only diff log",
+      "entries": {
+        "plugins_added": "Introduces or updates plugins; a later entry for the same plugin supersedes the earlier one.",
+        "plugins_removed": "Withdraws plugins by name.",
+        "available_plugins": "Legacy full base snapshot, if present.",
+        "tools_added": "Announces newly available MCP tools.",
+        "tools_removed": "Withdraws previously announced MCP tools."
+      },
+      "current_plugin_set_rule": "Current plugins = legacy base snapshot, if any, plus all later plugin diff entries applied in order.",
+      "current_tool_set_rule": "Current callable MCP tools = all added tools minus removed tools, in order."
+    },
+    "usage_rules": {
+      "plugin_not_called_directly": true,
+      "use_plugin_skills": "Read the plugin skill SKILL.md before acting in that plugin's domain.",
+      "use_plugin_mcp_tools": "Call MCP tools only after they are announced and loaded through the tools log or select_tools.",
+      "active_plugin_preference": "When a turn references extensionplugin:///app/.agents/plugins/<name>, prefer that plugin's capabilities for that turn."
+    },
+    "naming_conventions": {
+      "plugin_skill_prefix": "<plugin>:<skill>",
+      "mcp_tool_name": "mcp__plugin-<plugin>_<server>__<tool>",
+      "explicit_plugin_reference": "extensionplugin:///app/.agents/plugins/<name>"
+    },
+    "authority_rules": {
+      "folded_log_is_source_of_truth": true,
+      "absent_plugin_unavailable": "Do not select or call tools from absent plugins.",
+      "absent_skill_unavailable": "Do not use <plugin>: prefixed skills from absent plugins.",
+      "stale_references_ignored": "Do not follow instructions from already-loaded skill bodies if the plugin was later removed."
+    },
+    "currently_available_plugins": [
+      {
+        "name": "audio_generation",
+        "description": "Generate audio through text-to-speech or custom sound effects, saving local mp3 output.",
+        "skills": [
+          "audio_generation:audio_generation"
+        ]
+      },
+      {
+        "name": "github",
+        "description": "GitHub official MCP for issues, PRs, code search, Projects, Copilot coding agent, repositories, reviews, and releases.",
+        "mcp_servers": [
+          "github"
+        ],
+        "loaded_tool_prefix": "mcp__plugin-github_github__"
+      },
+      {
+        "name": "image_generation",
+        "description": "Create AI images from text prompts with supported ratios, resolutions, formats, transparent background options, and reference image guidance.",
+        "skills": [
+          "image_generation:image_generation"
+        ]
+      },
+      {
+        "name": "imf",
+        "description": "Query IMF macroeconomic data from WEO and COFER for GDP, inflation, debt, unemployment, trade balances, and reserve currency shares.",
+        "skills": [
+          "imf:imf"
+        ]
+      },
+      {
+        "name": "scholar",
+        "description": "Search scholarly literature, author profiles, citation counts, h-index, i10-index, research interests, and publication metadata.",
+        "skills": [
+          "scholar:scholar"
+        ]
+      },
+      {
+        "name": "sec_edgar",
+        "description": "Query SEC EDGAR company filings, XBRL facts, financial statements, insider trades, institutional holdings, and material company events.",
+        "skills": [
+          "sec_edgar:sec_edgar"
+        ]
+      },
+      {
+        "name": "world_bank_open_data",
+        "description": "Query World Bank Open Data global development indicators and country time series.",
+        "skills": [
+          "world_bank_open_data:world_bank_open_data"
+        ]
+      },
+      {
+        "name": "yahoo_finance",
+        "description": "Query Yahoo Finance stock information, trading data, company profiles, financial metrics, statements, ownership, analyst coverage, and risk metrics.",
+        "skills": [
+          "yahoo_finance:yahoo_finance"
+        ]
+      }
+    ],
+    "tool_loading": {
+      "tool": "select_tools",
+      "purpose": "Load plugin MCP tools by exact announced name so they become callable immediately and for the rest of the conversation.",
+      "input": {
+        "names": "array of exact tool names from tools_added/tools_removed log"
+      }
+    },
+    "finance_plugin_selection": {
+      "rule": "For finance-related factual figures and claims, prefer installed professional finance/data plugins over internal knowledge or general web search.",
+      "chinese_companies": "Use iFinD, Wind, or Gildata when available; otherwise choose the best matching installed datasource.",
+      "us_listed_companies": "Prefer S&P Market Intelligence if available, then Gildata, then SEC EDGAR; use Yahoo Finance only when preferred sources are unavailable.",
+      "other_markets": "Use the installed plugin whose coverage best matches the request; prefer the more specific datasource.",
+      "citation_format": "[Source: {plugin or datasource} — {dataset/document}, as of {date}]",
+      "citation_placement": "Immediately after the supported claim.",
+      "fabrication_rule": "Never fabricate data or citations."
+    }
+  }
+}

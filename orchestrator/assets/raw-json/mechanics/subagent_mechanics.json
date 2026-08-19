@@ -1,0 +1,122 @@
+{
+  "subagent_mechanics": {
+    "purpose": "Rules for creating, running, messaging, waiting on, validating, reusing, and deleting subagents.",
+    "agent_types": {
+      "create_agent_type": "Registers a reusable custom async subagent role with a unique name and system prompt.",
+      "spawn_subagent": "Starts one subagent instance from a preset or custom role.",
+      "preset_roles": [
+        "general",
+        "coder",
+        "explore",
+        "plan",
+        "reviewer",
+        "verifier"
+      ],
+      "role_selection": [
+        "Reuse a fitting created role when one exists.",
+        "Create a new role when domain expertise, persistent stance, or a fixed rubric is required.",
+        "Use a preset agent_type when no narrower custom role fits."
+      ]
+    },
+    "spawn_contract": {
+      "prompt_is_complete_briefing": true,
+      "subagent_cannot_see_original_task_unless_included": true,
+      "required_prompt_content": [
+        "guidance",
+        "context",
+        "mission"
+      ],
+      "expected_output_must_be_stated": true,
+      "tool_inheritance": "Subagents inherit task tools except subagent-management tools.",
+      "description_field": "Short label for status/logging, ideally 3-8 words.",
+      "language_rule": "Match the user's language for descriptions and prompts."
+    },
+    "foreground_vs_background": {
+      "default": "foreground",
+      "foreground": {
+        "run_in_background": false,
+        "behavior": "Blocks until the subagent sends its first message, idles without a message, or terminates.",
+        "use_when": "The result is needed before proceeding.",
+        "parallel_use": "When using foreground, maximize the number of subagents that can make useful contributions."
+      },
+      "background": {
+        "run_in_background": true,
+        "behavior": "Runs autonomously after launch and occupies one alive subagent slot until deleted.",
+        "use_when": [
+          "Other required work does not depend on the subagent result and must be done before waiting.",
+          "The role will be reused later in the workflow."
+        ]
+      }
+    },
+    "capacity": {
+      "max_alive_background_subagents": 16,
+      "max_parallel_background_spawn_soft_limit": 8,
+      "over_8_rule": "If more than 8 concurrent subagents are needed, use foreground subagents instead.",
+      "slot_freeing": "Use delete_subagent to free slots only after the subagent result has been received."
+    },
+    "result_delivery": {
+      "automatic_delivery": true,
+      "no_polling_rule": "Never poll check_subagent_status in a loop.",
+      "no_idle_wait_rule": "Never idle-wait for a result that is not needed yet.",
+      "background_completion": "When a background subagent finishes, its final report is delivered automatically as a message in the next tool result."
+    },
+    "messaging": {
+      "send_message": {
+        "purpose": "Assign follow-up work to an existing background subagent or answer its question.",
+        "wake_behavior": "Sending to an idle subagent wakes it with the message as follow-up work.",
+        "recipients": [
+          "specific agent_id",
+          "lead",
+          "all"
+        ]
+      },
+      "cross_agent_limit": "Subagents can only message the lead; they cannot talk to each other.",
+      "context_routing_rule": "The orchestrator must route any cross-agent context manually."
+    },
+    "waiting_rules": {
+      "wait_for_message": "Wait until at least one subagent message arrives.",
+      "use_sparingly": true,
+      "allowed_when": [
+        "No other required work can proceed without the pending result.",
+        "The next critical-path step is blocked on that result.",
+        "An immediate reply or short exchange is expected.",
+        "Finalizing and an unresolved relevant background subagent remains."
+      ],
+      "forbidden_when": "Any other required work can proceed without the pending result.",
+      "timeout_rule": "Optional timeout must not exceed the local tool execution timeout; maximum 1800 seconds."
+    },
+    "status_checks": {
+      "tool": "check_subagent_status",
+      "purpose": "Roster snapshot with agent_id, status, last task description, agent_type, steps_completed, and alive subagent usage.",
+      "use_for": [
+        "inspecting before deciding",
+        "investigating a suspected hang",
+        "evaluating takeover"
+      ],
+      "not_for": "routine waiting or polling loops"
+    },
+    "reuse_rules": {
+      "before_spawning": "Check whether a matching subagent is already spawned.",
+      "reuse_if": "The existing subagent has a fitting role and still-relevant context.",
+      "method": "send_message to the existing subagent instead of spawning a duplicate.",
+      "avoid": "Duplicate specialists that waste tokens and fragment state."
+    },
+    "deletion_rules": {
+      "delete_after_result_received": true,
+      "delete_when": [
+        "The role is done.",
+        "No follow-up is expected.",
+        "The user did not state persistence intent.",
+        "The orchestrator is taking over the task."
+      ],
+      "do_not_delete_working_subagent": "Deleting a working subagent truncates its in-flight output.",
+      "keep_idle_when": "The role may be reused later or its context remains valuable.",
+      "context_loss_warning": "Deleting an idle subagent destroys loaded context."
+    },
+    "task_takeover": {
+      "allowed_when": "The subagent has repeatedly failed and further delegation is not viable.",
+      "required_first_step": "delete_subagent the redundant subagent before taking over.",
+      "reason": "Prevents duplicate delivery to the user."
+    }
+  }
+}

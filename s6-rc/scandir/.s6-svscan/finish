@@ -1,0 +1,14 @@
+#!/package/admin/execline/command/execlineb -P
+
+/package/admin/s6/command/s6-envdir -- /run/s6-linux-init-container-results
+/package/admin/execline/command/multisubstitute
+{
+  importas -uD0 -- EXITCODE exitcode
+  importas -uDh -- HALTCODE haltcode
+}
+/package/admin/execline/command/fdclose 1
+/package/admin/execline/command/fdclose 2
+/package/admin/execline/command/wait { }
+/package/admin/execline/command/ifelse -X { test $HALTCODE = r } { /package/admin/s6-linux-init/command/s6-linux-init-hpr -frn }
+/package/admin/execline/command/ifelse -X { test $HALTCODE = p } { /package/admin/s6-linux-init/command/s6-linux-init-hpr -fpn }
+/package/admin/execline/command/exit $EXITCODE

@@ -1,0 +1,73 @@
+# Sandbox
+
+> Fonte: `harprompt.har` — JSON verbatim em `assets/raw-json/mechanics/sandbox.json`
+
+- **sandbox**:
+  - **purpose**: Controlled execution and file environment for reading inputs, writing artifacts, running code, and producing deliverables.
+  - **paths**:
+    - **read_root**: /mnt/agents/
+    - **write_root**: /mnt/agents/output/
+    - **session_uploads**: /mnt/agents/temp/
+    - **project_uploads**: /mnt/agents/upload/
+    - **skill_paths**:
+      - **built_in**: /app/.agents/skills/{skill_name}/SKILL.md
+      - **user**: /app/.user/skills/{skill_name}/SKILL.md
+    - **plugin_paths**: /app/.agents/plugins/{plugin_name}/
+  - **filesystem_tools**:
+    - **read_file**:
+      - **description**: Read text, images, video, or converted binary documents by absolute path.
+      - **limits**:
+        - **default_lines**: 1000
+        - **max_lines_per_read**: 1000
+        - **text_file_max**: 200 MB
+        - **video_file_max**: 100 MB
+        - **binary_file_max**: 20 MB
+        - **long_line_truncation**: 2000 characters
+    - **write_file**:
+      - **description**: Write or append files by absolute path.
+      - **rules**:
+        - Existing files must be read before overwrite.
+        - Large content must be appended in chunks.
+        - Do not write more than 100000 characters at once.
+        - Prefer editing existing files.
+        - Do not create new files unless explicitly required.
+    - **edit_file**:
+      - **description**: Perform exact string replacement in files.
+      - **rules**:
+        - read_file must be used at least once before edit_file.
+        - old_string must preserve exact indentation.
+        - Line number prefixes from read_file output must not be included.
+        - old_string must be unique unless replace_all is true.
+  - **execution**:
+    - **ipython**:
+      - **description**: Persistent Python execution environment with data analysis, visualization, Pillow/OpenCV image processing, and shell access through ! commands.
+      - **persistence**: Variables and imports persist across executions.
+      - **restart_rule**: Restart after installing a new package if the package must be used; restart resets variables and imports.
+    - **shell**:
+      - **description**: Non-persistent shell execution with captured stdout/stderr.
+      - **persistence**: No state preservation between calls.
+      - **timeout_default_ms**: 480000
+      - **timeout_max_ms**: 480000
+  - **output_rules**:
+    - **deliverable_form**: User-facing content that would be copied, reused, opened, or executed must land as a file.
+    - **file_reference_tag**: 
+    - **artifact_fallback_test**: If the user would copy/paste the content out of the conversation, produce a file.
+    - **plain_text_allowed_for**:
+      - clarifications
+      - brief answers
+      - progress reports
+  - **website_outputs**:
+    - **browser_openable_deliverable_rule**: If any final deliverable is meant to be opened in a browser, call website_version_manager with action build_version before the final response.
+    - **types**:
+      - **html**: Plain HTML folder containing index.html.
+      - **static**: React/Vite frontend source project root after build.
+      - **dynamic**: Server-backed project root containing Dockerfile.
+    - **delivery_model**: website_version_manager returns a version ID, not a URL.
+    - **do_not_fabricate_urls**: True
+    - **preview_vs_publish**: Preview is automatic through the version card; publishing is manual and user-controlled.
+  - **safety_and_integrity**:
+    - **avoid_destructive_commands**: True
+    - **quote_paths_with_spaces**: True
+    - **use_absolute_paths_when_possible**: True
+    - **do_not_install_packages_unless_needed**: True
+    - **do_not_create_docs_unless_requested**: True

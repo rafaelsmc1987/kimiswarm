@@ -1,0 +1,90 @@
+{
+  "task_execution_framework": {
+    "description": "Universal execution framework for all tasks, with or without skills.",
+    "stages": [
+      {
+        "stage": 1,
+        "name": "Plan",
+        "rules": [
+          "Write plan.md first, before reading any skill files.",
+          "Analyze the query and identify which Capability Skills apply.",
+          "Design a staged workflow as the execution blueprint.",
+          "Specify what to do at each stage.",
+          "Specify which skills to load at that stage.",
+          "Specify what each sub-agent receives.",
+          "Only include skills needed for each stage."
+        ],
+        "planning_rules": {
+          "progressive_loading": "Consider progressive loading when designing the plan; load a skill only when its stage begins.",
+          "skill_matching": "For each subtask, check whether a matching Skill exists. If yes, mark it for loading at the appropriate stage. If no, the Orchestrator designs the approach and delivers custom guidance directly.",
+          "research_writing_separation": "Never merge research and writing into one stage or one agent. Research agents search, collect, and verify; writer agents draft prose from provided materials.",
+          "file_propagation": "All outputs from a stage must be passed explicitly to the next stage."
+        }
+      },
+      {
+        "stage": 2,
+        "name": "Execute",
+        "rules": [
+          "Process subtasks stage by stage.",
+          "At the start of each stage, read only the skill files needed for that stage.",
+          "Do not pre-read skills for later stages.",
+          "Only load skills needed for the current stage, not earlier stages."
+        ],
+        "subagent_input_contract": [
+          {
+            "input": "guidance",
+            "description": "Skill instructions or Orchestrator-designed instructions."
+          },
+          {
+            "input": "context",
+            "description": "Relevant upstream outputs."
+          },
+          {
+            "input": "mission",
+            "description": "Clear, specific objectives."
+          }
+        ],
+        "skill_delivery": {
+          "rule": "Sub-agents do not self-discover skills. The Orchestrator scopes the skill down to the aspects the mission needs.",
+          "inline": {
+            "description": "Read SKILL.md and paste only the mission-relevant sections into the task prompt.",
+            "best_for": "Short skills or when annotations are needed."
+          },
+          "by_reference": {
+            "description": "Tell the sub-agent the skill path and describe in prose which aspects to follow or skip.",
+            "best_for": "Large skills or when keeping the Orchestrator context clean."
+          },
+          "no_matching_skill": "The Orchestrator designs the guidance itself, defining approach, constraints, and quality criteria directly in the spawn_subagent prompt."
+        }
+      },
+      {
+        "stage": 3,
+        "name": "Validate & Iterate",
+        "rules": [
+          "Check each stage's output before proceeding.",
+          "Treat validation as a strict binary gate: pass or fail.",
+          "No partial credit.",
+          "On failure, refine instructions, provide missing context, and redelegate immediately.",
+          "Repeat until the result meets high-quality standards."
+        ]
+      },
+      {
+        "stage": 4,
+        "name": "Integrate",
+        "rules": [
+          "Merge all outputs into the final deliverable.",
+          "Ensure alignment with the original requirements.",
+          "If the result requires a formatted artifact, load the corresponding Artifact Skill at this stage.",
+          "Delegate artifact production when appropriate.",
+          "Deliver files, version cards, or runnable instructions as required by the output type."
+        ]
+      }
+    ],
+    "cross_stage_rules": {
+      "stage_gate": "Strictly validate the output of one stage before triggering the next.",
+      "parallel_limit": "Parallel tasks cannot see each other's output; do not parallelize dependent tasks.",
+      "artifact_awareness": "Capability Skills define what to do; Artifact Skills define what to produce. On conflict, Artifact Skill technical constraints win.",
+      "language_consistency": "Use the same language as the user query for sub-agent names, system prompts, queries, and final responses unless necessary."
+    }
+  }
+}

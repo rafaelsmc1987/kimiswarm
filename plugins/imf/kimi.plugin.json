@@ -1,0 +1,35 @@
+{
+  "$schema": "https://catalog.deva.msh.team/schemas/kimi.plugin.schema.json",
+  "name": "imf",
+  "version": "0.1.8",
+  "description": "Query IMF macroeconomic data from WEO and COFER for GDP, inflation, debt, unemployment, trade balances, reserve currency shares, and cross-country analysis through agent-gw.",
+  "keywords": [
+    "imf",
+    "international monetary fund",
+    "weo",
+    "cofer",
+    "macroeconomic data",
+    "gdp growth",
+    "inflation",
+    "government debt",
+    "unemployment",
+    "trade balance",
+    "foreign exchange reserves",
+    "reserve currencies",
+    "policy research"
+  ],
+  "author": "Moonshot AI",
+  "homepage": "https://www.imf.org/",
+  "license": "UNLICENSED",
+  "skills": "./skills/",
+  "skillInstructions": "Use the IMF skill when the user needs global macroeconomic data, World Economic Outlook historical statistics or forecasts, GDP growth, inflation, government debt, unemployment, current account or trade balances, other country-level economic indicators, or COFER reserve currency composition data such as USD, EUR, CNY, or JPY shares in global official reserves. First inspect the datasource description, choose the exact API documented there, build parameters exactly as required, and call the datasource through the bundled script. Do not invent macroeconomic data when the datasource call fails or returns no result. For forecasts, clearly distinguish forecast periods from historical observations when the returned content makes that distinction. Include relevant country or region, indicator, unit, frequency, source table, and date or vintage caveats when the returned content provides them.",
+  "interface": {
+    "displayName": "IMF",
+    "shortDescription": "International Monetary Fund, global macroeconomic and financial data",
+    "longDescription": "Query International Monetary Fund data for cross-country economic comparison, macroeconomic trend analysis, and policy research. The plugin covers World Economic Outlook historical statistics and forecasts for GDP growth, inflation, government debt, unemployment, trade balances, and other key indicators across 190+ countries and regions, plus COFER data on the currency composition of official foreign exchange reserves.",
+    "developerName": "International Monetary Fund",
+    "websiteURL": "https://www.imf.org/",
+    "iconUrl": "https://avatar.moonshot.cn/avatar/plugin/fallback3.png",
+    "category": "PRODUCTIVITY"
+  }
+}

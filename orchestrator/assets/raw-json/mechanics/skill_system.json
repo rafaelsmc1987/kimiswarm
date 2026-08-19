@@ -1,0 +1,149 @@
+{
+  "skill_system": {
+    "definition": "Skills encode best practices, tech stacks, and execution patterns for specific domains. They improve quality and consistency but are not prerequisites for execution.",
+    "taxonomy": {
+      "capability_skills": [
+        "deep-research-swarm",
+        "report-writing",
+        "paper-writing",
+        "general-writing",
+        "vibecoding-general-swarm",
+        "vibecoding-webapp-swarm",
+        "batch-download"
+      ],
+      "artifact_skills": [
+        "docx",
+        "pdf",
+        "xlsx",
+        "kimi-slides",
+        "webapp-building-swarm",
+        "backend-building-swarm"
+      ],
+      "supporting_skills": [
+        "swarm-workspace",
+        "skill-creator-swarm",
+        "kimi-help-center"
+      ]
+    },
+    "paths": {
+      "built_in": "/app/.agents/skills/{skill_name}/SKILL.md",
+      "user": "/app/.user/skills/{skill_name}/SKILL.md"
+    },
+    "loading_rules": {
+      "progressive_loading": "Load only the skills needed for the current stage; never load all skills upfront.",
+      "plan_first": "Write plan.md before reading skill files for complex or skill-related tasks.",
+      "stage_scoped_reading": "At the start of each stage, read only the skill files needed for that stage.",
+      "composition": "When a step needs both Capability and Artifact skills, load both. On conflict, Artifact Skill technical constraints win.",
+      "full_stack_web_composition": "For web UI tasks that need backend APIs, auth, persistence, or database-backed server state, load vibecoding-webapp-swarm first, compose with webapp-building-swarm and backend-building-swarm, and use swarm-workspace for worktree setup.",
+      "override_rule": "Skill instructions override conflicting defaults in the base system prompt."
+    },
+    "priority_rules": {
+      "user_skill_hit": "If the user query hits a skill for which a user skill exists, use the user's skill exclusively and do not read or follow the built-in agent skill for that capability.",
+      "no_user_skill_hit": "If the query does not hit any user skill, do not use user skills.",
+      "no_skill_match": "If the query is not related to any skills, design and select the workflow autonomously."
+    },
+    "delivery_guidance": {
+      "subagents_do_not_self_discover_skills": true,
+      "orchestrator_scopes_skill_content": true,
+      "inline_skill_delivery": "Read SKILL.md and paste only mission-relevant sections into the subagent prompt; best for short skills or when annotations are needed.",
+      "reference_skill_delivery": "Tell the subagent the skill path and describe which aspects to follow or skip; best for large skills."
+    },
+    "available_built_in_skills": [
+      {
+        "name": "report-writing",
+        "type": "capability",
+        "description": "End-to-end long-form report creation from outline design through multi-chapter content writing to final assembly. Use for industry research reports, market analysis, policy briefs, technical reports, consulting deliverables, white papers, and structured professional documents."
+      },
+      {
+        "name": "paper-writing",
+        "type": "capability",
+        "description": "End-to-end academic paper creation with methodology sections, literature positioning, rigorous citation, and peer-review-grade structure. Use for surveys, empirical research, technical papers, case studies, literature reviews, theses, and conference or journal submissions."
+      },
+      {
+        "name": "deep-research-swarm",
+        "type": "capability",
+        "description": "Multi-agent deep research orchestration with adaptive routing for wide search, focused search, file-only research, and file-augmented research. Use for comprehensive evidence-backed investigation, competitive intelligence, market analysis, controversy investigation, policy evaluation, academic landscape review, risk assessment, and cross-verified findings."
+      },
+      {
+        "name": "general-writing",
+        "type": "capability",
+        "description": "General writing skill covering fiction, fanfiction, poetry, lyrics, drama, screenplay, essay, game writing, murder mystery, TRPG scenarios, letters, and other creative genres. Routes to genre-specific sub-skills."
+      },
+      {
+        "name": "kimi-slides",
+        "type": "artifact",
+        "description": "Create and edit presentations in PPTX format using a .pptd intermediate format. Required for any task involving generation or editing of PPTX files; can also read uploaded PPTX files and convert PPTX documents into images."
+      },
+      {
+        "name": "webapp-building-swarm",
+        "type": "artifact",
+        "description": "Build modern React webapps with TypeScript, Tailwind CSS, and shadcn/ui. Best suited for applications with complex UI components and state management."
+      },
+      {
+        "name": "vibecoding-webapp-swarm",
+        "type": "capability",
+        "description": "Build web-based projects including websites, landing pages, web apps, dashboards, browser games, portfolios, and interactive experiences. Design-first React workflow. Skip for non-React frameworks or non-web-UI tasks."
+      },
+      {
+        "name": "vibecoding-general-swarm",
+        "type": "capability",
+        "description": "General-purpose coding orchestration. Mandatory for coding tasks not covered by vibecoding-webapp-swarm; skip only for vibecoding-webapp-swarm matches or entirely non-coding tasks."
+      },
+      {
+        "name": "backend-building-swarm",
+        "type": "artifact",
+        "description": "Swarm-aware backend building that grafts tRPC, Drizzle ORM, and Hono onto an existing webapp-building-swarm frontend. Supports incremental features such as database and auth, plus fullstack-template provisioning."
+      },
+      {
+        "name": "swarm-workspace",
+        "type": "supporting",
+        "description": "Foundation for swarm coding workflows: shared coordination git repo plus fast per-subagent git worktrees, with setup-local.sh for isolated local checkouts."
+      },
+      {
+        "name": "batch-download",
+        "type": "capability",
+        "description": "Multi-agent batch download and data collection orchestration for discovering, validating, and downloading multiple files, datasets, or resources from web pages or multiple sources."
+      },
+      {
+        "name": "skill-creator-swarm",
+        "type": "supporting",
+        "description": "Guide for creating or updating skills that extend agent capabilities with specialized knowledge, workflows, tool usage, or reusable resources. Also supports swarm-style evaluation, baseline comparisons, grading, and analysis."
+      },
+      {
+        "name": "docx",
+        "type": "artifact",
+        "description": "Create and edit Word documents using C# plus OpenXML SDK for creation and WIR engine for editing, comments, tracked changes, footnotes, TOC, and Markdown-to-Word conversion."
+      },
+      {
+        "name": "pdf",
+        "type": "artifact",
+        "description": "Create professional PDFs using HTML plus Paged.js and process existing PDFs using Python. Supports KaTeX math formulas, Mermaid diagrams, three-line tables, citations, reading, extraction, merge, split, and form filling."
+      },
+      {
+        "name": "xlsx",
+        "type": "artifact",
+        "description": "Advanced spreadsheet manipulation, analysis, and creation for XLSX, XLSM, and CSV formats. Supports formula deployment, complex formatting, automatic currency formatting, data visualization, and mandatory post-processing recalculation."
+      },
+      {
+        "name": "kimi-help-center",
+        "type": "supporting",
+        "description": "Kimi Product Help Center for questions about Kimi product features, membership, pricing, credits, billing, invoices, login/account issues, Kimi Code, API, PPT, Deep Research, Kimi Claw, and related help articles."
+      }
+    ],
+    "user_skills": {
+      "path": "/app/.user/skills/{skill_name}/SKILL.md",
+      "currently_listed": []
+    },
+    "skill_create_edit_download_policy": {
+      "create_or_edit": "Read skill-creator-swarm SKILL.md first and follow its instructions.",
+      "download_via_url": "Download the entire parent folder containing SKILL.md, then package it as a .skill file named after the skill-name defined in SKILL.md.",
+      "download_via_command_line": "Download the package, copy it from the downloads folder, and repackage it as a .skill file.",
+      "save_location": "/mnt/agents/output/",
+      "required_response_tag": "",
+      "naming_rules": {
+        "create": "Check /app/.user/skills and /app/.agents/skills to avoid name conflicts; rename if needed.",
+        "edit_or_download": "Keep the original name unless the user explicitly asks to rename it."
+      }
+    }
+  }
+}

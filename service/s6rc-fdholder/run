@@ -1,0 +1,17 @@
+#!/package/admin/execline/command/execlineb -P
+/package/admin/execline/command/pipeline -dw --
+{
+  /package/admin/execline/command/if --
+  {
+    /package/admin/execline/command/forstdin -x0 -- i
+      /package/admin/execline/command/exit 0
+  }
+  /package/admin/execline/command/if -nt --
+  {
+    /package/admin/execline/command/redirfd -r 0 ./data/autofilled
+    /package/admin/s6/command/s6-ipcclient -l0 -- s
+    /package/admin/s6-rc/command/s6-rc-fdholder-filler -1 --
+  }
+  /package/admin/s6/command/s6-svc -t .
+}
+/package/admin/s6/command/s6-fdholder-daemon -1 -i data/rules -- s

@@ -1,0 +1,10 @@
+#!/package/admin/execline/command/execlineb -P
+
+/package/admin/execline/command/foreground
+{
+  /package/admin/execline/command/fdmove -c 1 2
+  /package/admin/s6-linux-init/command/s6-linux-init-echo -- "s6-svscan crashed. Killing everything and exiting."
+}
+/package/admin/execline/command/foreground { /package/admin/s6-linux-init/command/s6-linux-init-nuke }
+/package/admin/execline/command/wait { }
+/package/admin/s6-linux-init/command/s6-linux-init-hpr -fnp

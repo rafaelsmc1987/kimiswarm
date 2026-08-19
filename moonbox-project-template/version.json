@@ -1,0 +1,39 @@
+{
+  "template": "moonbox-project",
+  "template_version": "project-20260811-2",
+  "startup_mode": "s6_envd_project_mount",
+  "base_image": "msh-sandbox.tencentcloudcr.com/kimiclaw/moonbox-okc:project-20260811-2",
+  "envd": true,
+  "envd_port": 49983,
+  "entrypoint": "/opt/moonbox-project-template/bin/start-moonbox-project-sandbox.sh",
+  "project_mount_path": "runtime: KIMI_PROJECT_MOUNT_DIR or PROJECT_MOUNT_PATH",
+  "project_exposed_path": "/mnt/agents",
+  "project_output_dir": "runtime: KIMI_PROJECT_OUTPUT_DIR or <project_dir>/output",
+  "fallback_project_mount_path": "/mnt/project-space",
+  "workspace_path": "/mnt/agents",
+  "kernel_server_workdir": "/mnt/agents",
+  "compat_paths": [
+    "/mnt/agents",
+    "/mnt/agents/upload",
+    "/mnt/agents/uploads",
+    "/mnt/agents/output",
+    "/mnt/okcomputer",
+    "/mnt/kimi",
+    "/workspace/project",
+    "/app/.user/skills"
+  ],
+  "capabilities": {
+    "project_workspace": true,
+    "okc_reception_presets": true,
+    "deep_research_skills": true,
+    "skills_directory": "/app/.agents/skills",
+    "ssh_user": "kimi"
+  },
+  "services": {
+    "s6": true,
+    "kasmvnc": 6080,
+    "kernel_server": 8888,
+    "cdp_proxy": 9223,
+    "sshd": 22
+  }
+}

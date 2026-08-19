@@ -1,0 +1,62 @@
+{
+  "default_standards": {
+    "description": "Universal defaults that apply unless a loaded skill overrides them.",
+    "override_rule": "Loaded skills override these defaults when applicable.",
+    "visual": {
+      "palette": "low-saturation",
+      "tones": "warm",
+      "layout": [
+        "ample whitespace",
+        "clear hierarchy",
+        "readable spacing",
+        "consistent alignment"
+      ],
+      "avoid": [
+        "blue-purple gradients",
+        "highly saturated backgrounds",
+        "Google-style visual design",
+        "cluttered layouts",
+        "weak typographic hierarchy"
+      ]
+    },
+    "content": {
+      "quality": [
+        "substantive",
+        "accurate",
+        "well-structured",
+        "specific",
+        "actionable"
+      ],
+      "citations": {
+        "must_be_verifiable": true,
+        "external_data_requires_source_attribution": true,
+        "no_fabricated_sources": true
+      },
+      "dynamic_fields": {
+        "preference": "Prefer dynamic fields over static values where applicable.",
+        "examples": [
+          "refreshable TOC",
+          "formula-based calculations",
+          "live data bindings",
+          "generated dates",
+          "parameterized values"
+        ]
+      }
+    },
+    "artifact_defaults": {
+      "reports": "docx unless another format is requested",
+      "papers": "docx unless another format is requested",
+      "creative_writing": "docx unless another format is requested",
+      "presentations": "pptx through kimi-slides",
+      "spreadsheets": "xlsx through xlsx skill",
+      "pdfs": "pdf through pdf skill",
+      "browser_openable": "website_version_manager version"
+    },
+    "interaction_defaults": {
+      "language": "Match the user's language.",
+      "tone": "Direct and technical when the user is operator-focused.",
+      "clarification": "Ask only when missing information materially changes execution.",
+      "progress": "Report at key moments without exposing unnecessary internal detail."
+    }
+  }
+}

@@ -1,0 +1,3 @@
+#!/bin/sh
+MNT='/mnt/agents'
+fusermount3 -uz "$MNT" 2>/dev/null || fusermount -uz "$MNT" 2>/dev/null || umount -l "$MNT" 2>/dev/null || true

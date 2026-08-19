@@ -1,0 +1,19 @@
+#!/bin/bash
+# s6 托管的 drive9 fuse 挂载;每次(重)启动前先清掉残留死挂载,否则 mount 会被阻塞
+MNT='/mnt/agents'
+SVC_DIR='/run/service/drive9-fuse'
+identity="$(findmnt -rn --mountpoint "$MNT" -o SOURCE,FSTYPE 2>/dev/null || true)"
+case "$identity" in
+  "" | "drive9 fuse" | "drive9 fuse.drive9")
+    fusermount3 -uz "$MNT" 2>/dev/null || fusermount -uz "$MNT" 2>/dev/null || umount -l "$MNT" 2>/dev/null || true
+    ;;
+  *)
+    echo "drive9-fuse: refuse to clean unexpected mount: $identity" >&2
+    exit 1
+    ;;
+esac
+now=$(date +%s); last=$(cat "$SVC_DIR/.last_start" 2>/dev/null || echo 0)
+[ $((now - last)) -lt 2 ] && sleep 1
+echo "$now" > "$SVC_DIR/.last_start"
+set -a; . '/run/service/drive9-fuse/env'; set +a
+exec '/usr/local/bin/drive9' 'mount' '--foreground' '--mode=fuse' '-allow-other' '-readdir-prefetch' '--parallel-read-concurrency' '8' '--read-concurrency' '48' '--server' 'http://10.213.5.144' '--profile' 'kimi-project' '--durability' 'close-sync' ':/projects/1a018d03-4912-8c4a-8000-0e904f72d0cb' '/mnt/agents' >> '/tmp/kimi-project-drive9.log' 2>&1

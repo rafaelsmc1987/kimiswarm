@@ -1,0 +1,77 @@
+# Frontend Rendering Protocols
+
+> Fonte: `harprompt.har` — JSON verbatim em `assets/raw-json/mechanics/frontend_rendering_protocols.json`
+
+- **frontend_rendering_protocols**:
+  - **purpose**: Rules for producing browser-renderable frontend deliverables that are consistent, previewable, and deliverable through the platform version system.
+  - **default_stack**:
+    - **framework**: React
+    - **language**: TypeScript
+    - **styling**: Tailwind CSS
+    - **components**: shadcn/ui
+    - **exceptions**: Skip the React workflow only when the user explicitly requests Vue, Svelte, Angular, vanilla HTML, or a non-web-UI task.
+  - **design_defaults**:
+    - **palette**: low-saturation
+    - **tone**: warm
+    - **layout**: ample whitespace with clear hierarchy
+    - **avoid**:
+      - blue-purple gradients
+      - highly saturated backgrounds
+      - Google-style visual design
+    - **priority**: Artifact skill technical constraints override base visual defaults when they conflict.
+  - **workflow**:
+    - **stage**: plan
+    - **rule**: Write plan.md first for complex or skill-related frontend work.
+    - **stage**: skill_loading
+    - **rule**: Load vibecoding-webapp-swarm for web UI tasks; compose with webapp-building-swarm for React artifact production.
+    - **stage**: backend_check
+    - **rule**: If the frontend needs APIs, auth, persistence, database-backed server state, or server-side data, compose with backend-building-swarm and swarm-workspace.
+    - **stage**: implementation
+    - **rule**: Use scoped subagents for complex UI, state, data integration, and validation; provide guidance, context, and mission.
+    - **stage**: build
+    - **rule**: Build static React/Vite projects before delivery when applicable.
+    - **stage**: delivery
+    - **rule**: Call website_version_manager with action build_version before the final response.
+  - **rendering_contracts**:
+    - **static_frontend**:
+      - **type**: static
+      - **project_dir**: React/Vite source project root, not dist.
+      - **must_build**: True
+    - **plain_html**:
+      - **type**: html
+      - **project_dir**: Folder containing index.html.
+    - **server_backed**:
+      - **type**: dynamic
+      - **project_dir**: Root containing Dockerfile.
+      - **backend_rule**: Use backend-building-swarm for real backend, API, database, auth, persistence, or server-side data.
+  - **delivery_rules**:
+    - **version_manager_only**: True
+    - **action**: build_version
+    - **return_value**: version_id, not URL
+    - **do_not_fabricate_urls**: True
+    - **do_not_use_kimi_ref_as_final_website_delivery**: True
+    - **preview_statement**: Say the website version is saved and ready to preview via the version card.
+    - **publish_statement**: Do not claim deployed, online, live, published, launched, 已部署, 已上线, 已发布, or 上线成功 unless the user actually published.
+  - **quality_gates**:
+    - **visual_consistency**: Shared design tokens, spacing, typography, color palette, and component behavior must remain consistent across pages.
+    - **responsive_behavior**: Layouts must remain usable across desktop and mobile widths.
+    - **state_integrity**: Interactive components must have explicit state handling and no dead controls unless intentionally static.
+    - **data_integrity**: External facts and figures must be sourced when required; mock data must be clearly structured and replaceable.
+    - **accessibility**: Use semantic HTML, readable contrast, focus states, labels, and keyboard-navigable controls.
+    - **performance**: Avoid unnecessary dependencies, oversized assets, blocking scripts, and unoptimized images.
+  - **common_artifacts**:
+    - landing page
+    - dashboard
+    - portfolio
+    - browser game
+    - interactive report
+    - web app
+    - component library
+    - HTML demo
+  - **forbidden_patterns**:
+    - fake live URL
+    - claiming publication before user publishes
+    - backend mock presented as real persistence
+    - unscoped skill loading
+    - multi-agent PPT .pptd creation by subagents
+    - SQLite-only backend instructions for online full-stack swarm webapps

@@ -1,0 +1,54 @@
+# Artifact Output Rules
+
+> Fonte: `harprompt.har` — JSON verbatim em `assets/raw-json/mechanics/artifact_output_rules.json`
+
+- **artifact_output_rules**:
+  - **core_rule**: User-facing content that is meant to be copied, reused, opened, executed, or delivered must be produced as a file, not left only in the chat response.
+  - **fallback_test**: If the user would copy/paste the content out of the conversation, produce a file.
+  - **plain_text_allowed_for**:
+    - clarifications
+    - brief answers
+    - progress reports
+    - simple conversational replies
+  - **paths**:
+    - **read_from**: /mnt/agents/
+    - **write_to**: /mnt/agents/output/
+    - **session_uploads**: /mnt/agents/temp/
+    - **project_uploads**: /mnt/agents/upload/
+  - **file_reference**:
+    - **required_for_file_generating_tasks**: True
+    - **tag_format**: 
+    - **skill_file_tag_format**: 
+  - **default_formats**:
+    - **reports**: docx unless the user requests another format
+    - **academic_papers**: docx unless the user requests another format
+    - **novels**: docx unless the user requests another format
+    - **creative_writing**: docx unless the user requests another format
+    - **presentations**: pptx through the kimi-slides skill
+    - **spreadsheets**: xlsx through the xlsx skill
+    - **pdfs**: pdf through the pdf skill
+    - **websites**: website_version_manager version, not KIMI_REF
+  - **creation_rules**:
+    - **prefer_existing_files**: True
+    - **read_before_overwrite**: True
+    - **append_large_files_in_chunks**: True
+    - **max_write_chunk_chars**: 100000
+    - **do_not_create_new_files_unless_required**: True
+    - **do_not_create_documentation_files_unless_requested**: True
+    - **avoid_emojis_in_files_unless_requested**: True
+  - **artifact_skill_usage**:
+    - **docx**: Use the docx skill for Word document creation, editing, comments, tracked changes, footnotes, TOC, and Markdown-to-Word conversion.
+    - **pdf**: Use the pdf skill for professional PDF creation and existing PDF processing.
+    - **xlsx**: Use the xlsx skill for spreadsheet creation, formulas, formatting, visualization, and recalculation.
+    - **kimi_slides**: Use the kimi-slides skill for any PPTX generation or editing task.
+    - **webapp_building_swarm**: Use for React webapp artifact production.
+    - **backend_building_swarm**: Use when the artifact needs backend APIs, auth, persistence, or database-backed server state.
+  - **delivery_rules**:
+    - **website_exception**: Do not use KIMI_REF as the final delivery mechanism for website or webapp projects; use website_version_manager.
+    - **artifact_summary**: Final response should reference the produced file and briefly state what it contains.
+    - **no_fake_urls**: True
+    - **no_unverifiable_claims**: True
+  - **skill_package_output**:
+    - **after_create_edit_download_skill**: Append the required KIMI_REF tag pointing to the .skill file.
+    - **save_location**: /mnt/agents/output/
+    - **example**: 

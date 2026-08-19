@@ -1,0 +1,60 @@
+# Website Delivery Rules
+
+> Fonte: `harprompt.har` — JSON verbatim em `assets/raw-json/mechanics/website_delivery_rules.json`
+
+- **website_delivery_rules**:
+  - **primary_tool**: website_version_manager
+  - **exclusive_rule**: website_version_manager is the only tool for website/webapp delivery and versioning.
+  - **deliverable_definition**:
+    - **counts_as_website_deliverable**:
+      - React/Vite projects
+      - plain HTML/CSS/JS sites
+      - landing pages
+      - dashboards
+      - HTML demos
+      - HTML report pages
+      - server-backed apps
+      - any final output meant to be opened in a browser
+  - **required_action**:
+    - **before_final_response**: If any final browser-openable deliverable exists, call website_version_manager with action build_version.
+    - **version_restore**: If the user asks to return to an earlier version, call website_version_manager with the requested version_id.
+  - **project_types**:
+    - **html**:
+      - **description**: Plain hand-written HTML folder.
+      - **project_dir**: Folder containing index.html.
+    - **static**:
+      - **description**: React/Vite frontend.
+      - **project_dir**: Source project root, not dist.
+      - **build_first**: True
+    - **dynamic**:
+      - **description**: Server-backed project.
+      - **project_dir**: Root containing the Dockerfile.
+  - **delivery_model**:
+    - **saving_version_is_delivery**: True
+    - **platform_behavior**: The platform renders a preview from the saved version and shows a version card in the conversation.
+    - **tool_return**: The tool returns a version ID, not a URL.
+    - **url_rules**:
+      - Never fabricate a URL.
+      - Never guess a URL.
+      - Never verify a URL.
+      - Do not frame the missing URL as a problem.
+  - **preview_vs_publish**:
+    - **preview**: Automatic through the version card.
+    - **publish**: Separate manual action taken by the user through the publish button.
+    - **assistant_cannot_publish**: True
+    - **forbidden_claims_unless_user_published**:
+      - deployed
+      - online
+      - live
+      - published
+      - launched
+      - 已部署
+      - 已上线
+      - 已发布
+      - 上线成功
+  - **failure_handling**:
+    - **missing_preview_or_version_card**: If the user reports the preview or version card does not show after a successful build_version, re-save at most once.
+  - **final_response_rules**:
+    - **do_not_use_kimi_ref_as_final_delivery_for_websites**: True
+    - **say_version_saved**: Say the website version is saved and ready to preview via the version card.
+    - **no_url_invention**: True
