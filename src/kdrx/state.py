@@ -9,11 +9,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import threading
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
 from kdrx.schemas.plan import RunManifest
+from kdrx.security import safe_join
 
 # Canonical subdirectories of a run (plan §31). Order matters for rendering.
 RUN_SUBDIRS: tuple[str, ...] = (
@@ -86,12 +90,36 @@ def run_id_from_plan(plan_id: str, suffix: str | None = None) -> str:
 
 
 class RunState:
-    """Owns one run directory and its manifest."""
+    """Owns one run directory and its manifest.
+
+    T-04-05: todo write é (a) resolvido via ``safe_join`` (nenhum rel_path
+    escapa do run dir; ``..``/absoluto levanta) e (b) atômico
+    (tmp + ``os.replace`` no mesmo diretório). Um lock por instância serializa
+    manifest/events/writes deste processo — o scheduler ainda é sequencial,
+    mas crash entre write parcial e rename nunca deixa arquivo truncado.
+    """
 
     def __init__(self, root: str | Path, run_id: str) -> None:
         self.root = Path(root)
         self.run_id = run_id
         self.run_dir = self.root / run_id
+        self._lock = threading.Lock()
+        self._tmp_counter = 0
+
+    def _resolve(self, rel_path: str) -> Path:
+        return safe_join(self.run_dir, rel_path)
+
+    def _atomic_write(self, path: Path, content: str) -> Path:
+        self._tmp_counter += 1
+        tmp = path.with_name(
+            f".{path.name}.tmp-{os.getpid()}-{self._tmp_counter}"
+        )
+        try:
+            tmp.write_text(content, encoding="utf-8")
+            os.replace(tmp, path)  # atômico dentro do mesmo diretório
+        finally:
+            tmp.unlink(missing_ok=True)
+        return path
 
     # ------------------------------------------------------------------ paths
     @property
@@ -119,10 +147,11 @@ class RunState:
 
     # ---------------------------------------------------------------- manifest
     def save_manifest(self, manifest: RunManifest) -> None:
-        self.manifest_path.parent.mkdir(parents=True, exist_ok=True)
-        self.manifest_path.write_text(
-            manifest.model_dump_json(indent=2) + "\n", encoding="utf-8"
-        )
+        manifest.updated_at = datetime.now(timezone.utc)
+        with self._lock:
+            path = self._resolve("manifest.json")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            self._atomic_write(path, manifest.model_dump_json(indent=2) + "\n")
 
     def load_manifest(self) -> RunManifest:
         if not self.manifest_path.exists():
@@ -133,11 +162,14 @@ class RunState:
 
     # ------------------------------------------------------------------ events
     def append_event(self, event: dict[str, Any]) -> None:
-        """Append one event to the append-only log (JSON Lines)."""
+        """Append one event to the append-only log (JSON Lines, locked)."""
         record = dict(event)
         record.setdefault("ts", int(time.time()))
-        with self.events_path.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(record, sort_keys=True) + "\n")
+        with self._lock:
+            path = self._resolve("events.jsonl")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps(record, sort_keys=True) + "\n")
 
     def iter_events(self) -> Iterator[dict[str, Any]]:
         if not self.events_path.exists():
@@ -183,13 +215,13 @@ class RunState:
 
     # ---------------------------------------------------------------- helpers
     def write_text(self, rel_path: str, content: str) -> Path:
-        path = self.run_dir / rel_path
+        path = self._resolve(rel_path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8")
-        return path
+        with self._lock:
+            return self._atomic_write(path, content)
 
     def read_text(self, rel_path: str) -> str:
-        return (self.run_dir / rel_path).read_text(encoding="utf-8")
+        return self._resolve(rel_path).read_text(encoding="utf-8")
 
 
 def load_manifest_from_dir(run_dir: str | Path) -> RunManifest:

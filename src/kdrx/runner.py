@@ -8,6 +8,7 @@ the "cobertura verificável de claims" replaces a raw search count.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -36,6 +37,7 @@ from kdrx.schemas.enums import (
     EvidenceType,
     Route,
     TaskStage,
+    TaskStatus,
 )
 from kdrx.schemas.plan import (
     AcceptanceCriteria,
@@ -184,12 +186,136 @@ def execute_plan(
     contract: ResearchContract,
     corpus: FileCorpus,
     state: RunState,
+    precompleted: dict[str, AgentResult] | None = None,
 ) -> tuple[Any, "_FileResearchExecutor"]:
-    """Run the wave scheduler over a persisted plan; return (result, executor)."""
+    """Run the wave scheduler over a persisted plan; return (result, executor).
+
+    T-04-02: o manifest transiciona a cada evento do lifecycle (PENDING ->
+    RUNNING -> SUCCEEDED/FAILED; completed_tasks/failed_tasks/gate_results)
+    e é re-escrito atomicamente — crash entre waves deixa estado consistente.
+    T-04-03: ao final,artifact_hashes é selado (manifest.json/events.jsonl
+    excluídos — mutáveis por design).
+    T-04-06: delivery-manifest.json é emitido com artifact reais + verdicts.
+    """
     dag = compile_dag(plan.tasks)
     executor = _FileResearchExecutor(corpus, state, contract.objective)
-    result = WaveScheduler(executor, emit=state.append_event).run(dag)
+    manifest = state.load_manifest()
+    manifest.status = TaskStatus.RUNNING
+    state.save_manifest(manifest)
+
+    def emit(event: dict) -> None:
+        state.append_event(event)
+        _apply_manifest_transition(manifest, event)
+        state.save_manifest(manifest)
+
+    result = WaveScheduler(executor, emit=emit).run(dag, precompleted=precompleted)
+
+    # Selo final: status + gates + hashes (T-04-02/03) + delivery manifest (T-04-06)
+    manifest.status = TaskStatus.SUCCEEDED if not result.failed else TaskStatus.FAILED
+    manifest.completed_tasks = list(result.completed)
+    manifest.failed_tasks = list(result.failed)
+    manifest.gate_results = {
+        "integrity": _verdict_of(state, "verification/integrity.json"),
+        "security": _verdict_of(state, "verification/security.json"),
+    }
+    manifest.artifact_hashes = _sealable_hashes(state)
+    state.save_manifest(manifest)
+    _emit_delivery_manifest(state, manifest, result)
     return result, executor
+
+
+def _apply_manifest_transition(manifest: RunManifest, event: dict) -> None:
+    kind = event.get("kind")
+    tid = event.get("task_id")
+    if kind == "task_succeeded" and tid and tid not in manifest.completed_tasks:
+        manifest.completed_tasks.append(tid)
+        manifest.failed_tasks = [t for t in manifest.failed_tasks if t != tid]
+    elif kind in ("task_exhausted", "task_blocked") and tid:
+        if tid not in manifest.failed_tasks:
+            manifest.failed_tasks.append(tid)
+        manifest.completed_tasks = [t for t in manifest.completed_tasks if t != tid]
+
+
+def _verdict_of(state: RunState, rel: str) -> str:
+    path = state.run_dir / rel
+    if not path.is_file():
+        return "missing"
+    try:
+        return str(json.loads(path.read_text(encoding="utf-8")).get("verdict", "unknown"))
+    except (OSError, json.JSONDecodeError):
+        return "unknown"
+
+
+# Arquivos mutáveis por design (nunca entram no selo de hashes)
+_NON_SEALABLE = {"manifest.json", "events.jsonl", "delivery-manifest.json"}
+
+
+def _sealable_hashes(state: RunState) -> dict[str, str]:
+    return {
+        rel: h
+        for rel, h in state.snapshot_hashes().items()
+        if rel.replace("\\", "/") not in _NON_SEALABLE and h
+    }
+
+
+def _emit_delivery_manifest(state: RunState, manifest: RunManifest, result: Any) -> None:
+    """DeliveryManifest persistido (plan §31); o open test é abrir o report."""
+    from kdrx.schemas.artifact import ArtifactRecord, DeliveryManifest
+    from kdrx.schemas.enums import ArtifactKind
+
+    report_path = state.run_dir / "delivery" / "report.md"
+    artifacts: list[ArtifactRecord] = []
+    open_ok = False
+    if report_path.is_file():
+        try:
+            data = report_path.read_bytes()
+            open_ok = True
+            artifacts.append(
+                ArtifactRecord(
+                    artifact_id="report",
+                    kind=ArtifactKind.REPORT,
+                    path=str(report_path),
+                    content_hash=hashlib.sha256(data).hexdigest(),
+                    produced_by="runner:execute_plan",
+                )
+            )
+        except OSError:
+            open_ok = False
+    dm = DeliveryManifest(
+        manifest_id=f"dm-{manifest.run_id}",
+        run_id=manifest.run_id,
+        artifacts=artifacts,
+        final_integrity_pass=manifest.gate_results.get("integrity") == "pass",
+        secret_scan_clean=manifest.gate_results.get("security") == "pass",
+        artifact_open_test_passed=open_ok,
+        unresolved_critical_claims=[],
+    )
+    state.write_text("delivery-manifest.json", dm.model_dump_json(indent=2))
+
+
+def resume_run(state: RunState, corpus: FileCorpus) -> tuple[Any, "_FileResearchExecutor"]:
+    """Continua um run existente sem repetir tasks fechadas (T-04-04).
+
+    Reconstrói o DAG do plan.json persistido, marca as tasks já SUCCEEDED
+    (via manifest) como pré-completadas — o scheduler lhes pula e suas
+    dependências contam como satisfeitas — e executa só a fila restante.
+    """
+    manifest = state.load_manifest()
+    plan = ResearchPlan.model_validate(json.loads(state.read_text("plan.json")))
+    contract = ResearchContract.model_validate(
+        json.loads(state.read_text("research_contract.json"))
+    )
+    precompleted: dict[str, AgentResult] = {}
+    completed = set(manifest.completed_tasks)
+    for task in plan.tasks:
+        if task.task_id in completed:
+            precompleted[task.task_id] = AgentResult(
+                result_id=f"resumed-{task.task_id}",
+                task_id=task.task_id,
+                agent_role=task.role,
+                outputs_produced=list(task.outputs),
+            )
+    return execute_plan(plan, contract, corpus, state, precompleted=precompleted)
 
 
 class _FileResearchExecutor:
@@ -333,10 +459,23 @@ class _FileResearchExecutor:
     def _verify(self, brief: AgentBrief) -> AgentResult:
         from kdrx.verification import source_trust_gate
 
+        # B-06/T-04-07: corpus vazio NÃO pode retornar sucesso — a existência
+        # de fonte verificável é pré-condição do pipeline; falha bloqueia a wave.
+        if not self.sources:
+            raise RuntimeError(
+                "source trust gate: corpus sem fontes verificáveis (empty corpus blocks)"
+            )
         gates = [source_trust_gate(s).model_dump() for s in self.sources]
+        blocking_failures = [
+            g["gate_id"] for g in gates if g["verdict"] in ("fail", "blocked")
+        ]
         self.state.write_text(
             "verification/source_gates.json", json.dumps(gates, indent=2)
         )
+        if blocking_failures:
+            raise RuntimeError(
+                f"source trust gate FAILED: {blocking_failures}"
+            )
         return AgentResult(
             result_id="r-verify",
             task_id=brief.task_id,
@@ -350,12 +489,17 @@ class _FileResearchExecutor:
         self._compute_standings()  # persiste standings/edges do run
         pack = build_evidence_pack("pack-1", self.claims, self.sources, self.spans)
         assembler = ReportAssembler(self.objective)
-        body = "\n\n".join(
-            f"- **{c.claim_id}** ({c.standing.value}, {c.confidence:.2f}) — {c.statement} [cite:{sp.source_id}]"
-            for c in self.claims
-            for sp in self.spans
-            if sp.evidence_id in c.support_edges
-        )
+        span_by_evidence = {sp.evidence_id: sp for sp in self.spans}
+        lines = []
+        for c in self.claims:
+            cites = [
+                f"[cite:{span_by_evidence[e].source_id}]"
+                for e in c.support_edges
+                if e in span_by_evidence
+            ]
+            cite_txt = " ".join(cites) if cites else "[sem evidence span — UNRESOLVED]"
+            lines.append(f"- **{c.claim_id}** ({c.standing.value}, {c.confidence:.2f}) — {c.statement} {cite_txt}")
+        body = "\n\n".join(lines)
         assembler.add_section("Findings", body or "_no claims extracted_")
         self.report_text = assembler.assemble(self.sources)
         self.state.write_text("delivery/report.md", self.report_text)

@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from .enums import GateKind, GateVerdict
+
+# Severidade por check (B-06 / T-04-07): existência, identidade, span e claim
+# material são BLOCKING (falha => non-manifest delivery); sinais de qualidade
+# (COI, currency stale, frase quantitativa sem suporte) são ADVISORY.
+CheckSeverity = Literal["blocking", "advisory"]
 
 
 class GateCheck(BaseModel):
@@ -18,6 +23,7 @@ class GateCheck(BaseModel):
     description: str
     passed: bool
     details: Any | None = None
+    severity: CheckSeverity = "blocking"
 
 
 class GateDecision(BaseModel):
@@ -56,17 +62,22 @@ class GateDecision(BaseModel):
     ) -> "GateDecision":
         """Reduce a list of checks to a verdict.
 
-        ``warn_is_pass`` lets non-blocking gates treat advisory failures as
-        warnings instead of hard failures.
+        Semântica por severidade (T-04-07): falha de check ``blocking``
+        vira FAIL; só ``advisory`` falhando vira WARN; tudo passando, PASS.
+        ``warn_is_pass`` é legado de compat — gates modernos devem usar
+        ``severity`` nos checks, não este flag (E2E não aceita WARN como PASS).
         """
         failed = [c for c in checks if not c.passed]
-        blocking_reasons = [f"{c.check_id}: {c.description}" for c in failed]
+        blocking_failed = [c for c in failed if c.severity == "blocking"]
+        blocking_reasons = [f"{c.check_id}: {c.description}" for c in blocking_failed]
         if not failed:
             verdict = GateVerdict.PASS
-        elif warn_is_pass:
+        elif blocking_failed and not warn_is_pass:
+            verdict = GateVerdict.FAIL
+        elif blocking_failed:  # compat legado: gate histórico era não-bloqueante
             verdict = GateVerdict.WARN
         else:
-            verdict = GateVerdict.FAIL
+            verdict = GateVerdict.WARN
         return cls(
             gate_id=gate_id,
             kind=kind,

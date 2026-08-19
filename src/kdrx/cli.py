@@ -50,14 +50,14 @@ def _build_parser() -> argparse.ArgumentParser:
     p_demo.add_argument(
         "--objective", default="What does this corpus say?", help="research objective"
     )
-    p_demo.add_argument("--out", default=".research", help="runs root directory")
+    p_demo.add_argument("--out", default=".research/runs", help="runs root directory")
 
     p_plan = sub.add_parser(
         "plan", help="create contract + plan, run plan gate, scaffold run dir"
     )
     p_plan.add_argument("--objective", required=True)
     p_plan.add_argument("--corpus", default=None, help="file corpus dir (sizing only)")
-    p_plan.add_argument("--out", default=".research", help="runs root directory")
+    p_plan.add_argument("--out", default=".research/runs", help="runs root directory")
     p_plan.add_argument("--run-id", default=None)
     p_plan.add_argument("--json", action="store_true", help="emit JSON summary")
 
@@ -70,6 +70,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     p_resume = sub.add_parser("resume", help="verify hashes and reload manifest")
     p_resume.add_argument("--run-dir", required=True)
+    p_resume.add_argument("--corpus", default=None, help="file corpus dir (offline path)")
 
     p_verify = sub.add_parser("verify", help="re-run source/claim/integrity gates")
     p_verify.add_argument("--run-dir", required=True)
@@ -321,18 +322,32 @@ def cmd_status(args: argparse.Namespace) -> int:
 
 
 def cmd_resume(args: argparse.Namespace) -> int:
+    """Resume real (T-04-04): verifica hashes e CONTINUA o DAG pendente."""
+    from kdrx.runner import resume_run
     from kdrx.state import RunState, load_manifest_from_dir
 
     run_dir = Path(args.run_dir)
-    m = load_manifest_from_dir(run_dir)
+    try:
+        m = load_manifest_from_dir(run_dir)
+    except FileNotFoundError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     rs = RunState(run_dir.parent, m.run_id)
-    m2 = rs.resume()
-    print(f"resumed {m2.run_id}")
-    if m2.metadata.get("hash_mismatch"):
-        print(f"hash mismatch: {m2.metadata['hash_mismatch']}")
-        return 1
-    print("hashes verified")
-    return 0
+    m = rs.resume()
+    if m.metadata.get("hash_mismatch"):
+        print(f"hash mismatch detectado: {m.metadata['hash_mismatch']}", file=sys.stderr)
+        print("run não retomado (provenance comprometida)", file=sys.stderr)
+        return 2
+    corpus_arg = getattr(args, "corpus", None)
+    if not corpus_arg:
+        print("error: resume offline exige --corpus <dir> (executor R4)", file=sys.stderr)
+        return 2
+    from kdrx.retrieval import FileCorpus
+
+    corpus = FileCorpus(corpus_arg)
+    result, _ex = resume_run(rs, corpus)
+    print(f"resumed {m.run_id}: completed={result.completed} failed={result.failed}")
+    return 0 if not result.failed else 1
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
@@ -366,7 +381,13 @@ def cmd_verify(args: argparse.Namespace) -> int:
     spans = _jsonl(spans_p, EvidenceSpan)
     claims = _jsonl(claims_p, Claim) if claims_p.exists() else []
 
-    src_pass = all(not g.blocking() for g in (source_trust_gate(s) for s in sources))
+    # B-06/T-04-07: empty corpus NÃO retorna sucesso (existência é blocking).
+    # E WARN não conta como PASS no E2E — delivery limpo exige verdict "pass".
+    from kdrx.schemas.enums import GateVerdict
+
+    src_pass = bool(sources) and all(
+        g.verdict == GateVerdict.PASS for g in (source_trust_gate(s) for s in sources)
+    )
     report_p = run_dir / "delivery" / "report.md"
     if report_p.exists():
         report_text = report_p.read_text(encoding="utf-8")
@@ -383,7 +404,11 @@ def cmd_verify(args: argparse.Namespace) -> int:
         "security": security.verdict.value,
     }
     print(json.dumps(results, indent=2))
-    all_pass = src_pass and not citation.blocking() and not security.blocking()
+    all_pass = (
+        src_pass
+        and citation.verdict == GateVerdict.PASS
+        and security.verdict == GateVerdict.PASS
+    )
     print(f"verify: {'PASS' if all_pass else 'FAIL'}")
     return 0 if all_pass else 1
 

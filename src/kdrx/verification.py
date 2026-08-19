@@ -132,8 +132,14 @@ def source_identity_checks(record: SourceRecord) -> list[GateCheck]:
 
 
 def retraction_check(record: SourceRecord) -> GateCheck:
-    """Flag retracted/corrected sources so they never ground a material claim."""
-    ok = record.retraction_status in (RetractionStatus.NONE, RetractionStatus.CORRECTED)
+    """Flag retracted/corrected sources so they never ground a material claim.
+
+    Apenas retração CONHECIDA bloqueia (``RETRACTED``); ``UNKNOWN`` significa
+    "não verificado" e não pode ser bloqueante para corpus offline — o status
+    fica visível nos details, e a ausência de verificação viva é limitação
+    admitida do shelf-life state (ver risk policy por route).
+    """
+    ok = record.retraction_status != RetractionStatus.RETRACTED
     return GateCheck(
         check_id="RETRACTION",
         description=f"retraction status acceptable ({record.retraction_status})",
@@ -151,6 +157,7 @@ def currency_check(record: SourceRecord, max_age_days: int = 730) -> GateCheck:
             check_id="CURRENCY",
             description="source date unknown; cannot assert freshness",
             passed=False,
+            severity="advisory",
         )
     now = datetime.now(timezone.utc)
     age_days = (
@@ -164,6 +171,7 @@ def currency_check(record: SourceRecord, max_age_days: int = 730) -> GateCheck:
         description=f"source age {age_days}d within {max_age_days}d",
         passed=passed,
         details={"age_days": age_days, "max_age_days": max_age_days},
+        severity="advisory",
     )
 
 
@@ -174,6 +182,7 @@ def coi_check(record: SourceRecord) -> GateCheck:
         description="no declared conflicts of interest",
         passed=passed,
         details=record.conflicts_of_interest,
+        severity="advisory",
     )
 
 
@@ -196,16 +205,21 @@ def source_quality_policy(record: SourceRecord) -> QualityGrade:
 
 
 def source_trust_gate(record: SourceRecord) -> GateDecision:
-    """Compose the identity + retraction + COI + currency checks into a gate."""
+    """Identity (blocking) + retraction (blocking) + COI/currency (advisory).
+
+    B-06/T-04-07: existência/identidade e retração BLOQUEIAM a entrega; COI e
+    currency stale sinalizam qualidade sem bloquear por si sós. ``warn_is_pass``
+    foi removido — falha blocking agora é FAIL de verdade.
+    """
     checks = source_identity_checks(record) + [
         retraction_check(record),
         coi_check(record),
+        currency_check(record),
     ]
     return GateDecision.compose(
         gate_id=f"gate:source:{record.source_id}",
         kind=GateKind.SOURCE,
         checks=checks,
-        warn_is_pass=True,
     )
 
 

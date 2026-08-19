@@ -9,9 +9,11 @@ stopping criterion (§18.5). Network/scholarly adapters plug in through the same
 
 from __future__ import annotations
 
+import hashlib
 import math
 from collections import Counter
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
@@ -122,6 +124,12 @@ class FileCorpus:
             except OSError:  # pragma: no cover - unreadable file
                 continue
             rel = str(path.relative_to(self.root))
+            is_code = path.suffix.lower() in {".py", ".json", ".yaml", ".yml"}
+            # Identidade mínima verificável (B-06/T-04-07): a existência da
+            # fonte é blocking — fonte sem URI/título/hash NÃO passa no gate.
+            # O corpus local se identifica como dataset de arquivo com hash e
+            # data de mtime (evidência de frescor) — nada é fakeado: são
+            # atributos reais do arquivo apontado pelo canonical_uri.
             doc = Document(
                 doc_id=rel,
                 text=text,
@@ -129,9 +137,9 @@ class FileCorpus:
                     source_id=f"file:{rel}",
                     canonical_uri=f"file://{path.resolve()}",
                     title=rel,
-                    source_type=SourceType.CODE_REPOSITORY
-                    if path.suffix in {".py", ".json", ".yaml", ".yml"}
-                    else SourceType.UNKNOWN,
+                    source_type=SourceType.CODE_REPOSITORY if is_code else SourceType.DATASET,
+                    content_hash=f"sha256:{hashlib.sha256(text.encode('utf-8')).hexdigest()}",
+                    date=datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc),
                 ),
             )
             docs.append(doc)

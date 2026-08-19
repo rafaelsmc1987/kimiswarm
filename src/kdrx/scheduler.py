@@ -99,17 +99,27 @@ class WaveScheduler:
         self._events.append(event)
         self.emit(event)
 
-    def run(self, dag: CompiledDAG) -> ScheduleResult:
+    def run(
+        self,
+        dag: CompiledDAG,
+        precompleted: dict[str, AgentResult] | None = None,
+    ) -> ScheduleResult:
         """Execute every task in topological wave order.
 
-        A wave is considered done only when all of its tasks have either
-        succeeded or exhausted their retry policy. The result records the final
-        status of every task so callers can drive the Stop gate.
+        ``precompleted`` marca tasks já fechadas (resume, T-04-04): elas
+        nascem SUCCEEDED com o resultado posterior à deduplicação de trabalho
+        — nunca são re-executadas, mas suas dependências contam como
+        satisfeitas.
         """
         if not dag.is_valid:
             raise ValueError("cannot schedule an invalid DAG (issues present)")
 
         states: dict[str, TaskState] = {t.task_id: TaskState(task=t) for t in dag.tasks}
+        for tid, result_obj in (precompleted or {}).items():
+            if tid in states:
+                states[tid].status = TaskStatus.SUCCEEDED
+                states[tid].result = result_obj
+                self._emit(self._event("task_resumed", task_id=tid))
         result = ScheduleResult()
 
         for wave in range(0, dag.max_wave + 1):

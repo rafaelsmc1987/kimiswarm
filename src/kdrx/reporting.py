@@ -126,13 +126,19 @@ def citation_integrity_gate(
         )
     )
 
-    # Every material claim cited in the report has an exact evidence span.
+    # Every material claim cited in the report with a *resolved* standing has
+    # an exact evidence span. Claims UNRESOLVED são regidos por
+    # UNRESOLVED_DISCLOSED (disclosure explícito, não citação).
     material = [
         c
         for c in claims
         if c.importance in (ClaimImportance.CRITICAL, ClaimImportance.MAJOR)
     ]
-    material_by_statement = {c.statement.strip().lower(): c for c in material}
+    material_by_statement = {
+        c.statement.strip().lower(): c
+        for c in material
+        if c.standing != Standing.UNRESOLVED
+    }
     unsupported_material = []
     cited_statements: set[str] = set()
     for sentence in split_sentences(report_text):
@@ -150,18 +156,23 @@ def citation_integrity_gate(
         )
     )
 
-    # Unresolved material claims are surfaced, not silently dropped.
-    unresolved = [c.claim_id for c in material if c.standing == Standing.UNRESOLVED]
+    # Unresolved material claims are surfaced, not silently dropped (blocking:
+    # um claim material sem resolução que NÃO apareça no relatório = omissão).
+    unresolved = [c for c in material if c.standing == Standing.UNRESOLVED]
+    lower_report = report_text.lower()
+    not_disclosed = [
+        c.claim_id for c in unresolved if c.statement.strip().lower() not in lower_report
+    ]
     checks.append(
         GateCheck(
             check_id="UNRESOLVED_DISCLOSED",
             description="unresolved claims are disclosed in the report",
-            passed=not unresolved,
-            details=unresolved,
+            passed=not not_disclosed,
+            details=not_disclosed,
         )
     )
 
-    # Unsupported numeric sentences.
+    # Unsupported numeric sentences (advisory: sinal de qualidade, não bloqueia).
     backed = {c.statement for c in claims}
     flagged = unsupported_sentence_detector(report_text, backed)
     checks.append(
@@ -170,6 +181,7 @@ def citation_integrity_gate(
             description="no unsupported quantitative sentence",
             passed=not flagged,
             details=flagged,
+            severity="advisory",
         )
     )
 
@@ -177,7 +189,6 @@ def citation_integrity_gate(
         gate_id="gate:citation_integrity",
         kind=GateKind.CITATION,
         checks=checks,
-        warn_is_pass=True,
     )
 
 
