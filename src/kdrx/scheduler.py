@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import itertools
 from dataclasses import dataclass, field
-from typing import Callable, Iterable, Protocol
+from typing import Callable
 
 from kdrx.dag import CompiledDAG
 from kdrx.schemas.enums import TaskStatus
@@ -126,10 +126,11 @@ class WaveScheduler:
         result.events = self._events
         return result
 
-    def _dependencies_satisfied(self, task: TaskSpec, states: dict[str, TaskState]) -> bool:
+    def _dependencies_satisfied(
+        self, task: TaskSpec, states: dict[str, TaskState]
+    ) -> bool:
         return all(
-            states.get(dep) is not None
-            and states[dep].status == TaskStatus.SUCCEEDED
+            states.get(dep) is not None and states[dep].status == TaskStatus.SUCCEEDED
             for dep in task.dependencies
         )
 
@@ -185,7 +186,10 @@ class WaveScheduler:
             st.status = TaskStatus.RUNNING
             self._emit(
                 self._event(
-                    "task_started", task_id=tid, attempt=st.attempts, role=task.role.value
+                    "task_started",
+                    task_id=tid,
+                    attempt=st.attempts,
+                    role=task.role.value,
                 )
             )
             try:
@@ -218,9 +222,7 @@ class WaveScheduler:
 
         st.status = TaskStatus.FAILED
         result.no_progress_detected = result.no_progress_detected or no_progress
-        self._emit(
-            self._event("task_exhausted", task_id=tid, attempts=st.attempts)
-        )
+        self._emit(self._event("task_exhausted", task_id=tid, attempts=st.attempts))
 
     @staticmethod
     def _validate_outcome(task: TaskSpec, outcome: AgentResult) -> None:

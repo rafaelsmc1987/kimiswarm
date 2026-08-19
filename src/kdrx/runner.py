@@ -275,7 +275,7 @@ class _FileResearchExecutor:
         )
 
     def _synthesize(self, brief: AgentBrief) -> AgentResult:
-        standings = self._compute_standings()
+        self._compute_standings()  # persiste standings/edges do run
         pack = build_evidence_pack("pack-1", self.claims, self.sources, self.spans)
         assembler = ReportAssembler(self.objective)
         body = "\n\n".join(

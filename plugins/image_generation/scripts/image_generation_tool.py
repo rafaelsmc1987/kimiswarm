@@ -60,7 +60,11 @@ OPAQUE_PIXEL_SIZES = {
     "2K": {"1:1": "2048x2048", "16:9": "2048x1152"},
     "4K": {"16:9": "3840x2160", "9:16": "2160x3840"},
 }
-RATIOS = list(dict.fromkeys(ratio for ratios in OPAQUE_RESOLUTION_RATIOS.values() for ratio in ratios))
+RATIOS = list(
+    dict.fromkeys(
+        ratio for ratios in OPAQUE_RESOLUTION_RATIOS.values() for ratio in ratios
+    )
+)
 TRANSPARENT_RATIOS = OPAQUE_RESOLUTION_RATIOS["1K"]
 RESOLUTIONS = ["1K", "2K", "4K"]
 TRANSPARENT_RESOLUTION = "1K"
@@ -118,13 +122,19 @@ def _fetch_latest_wheel_url() -> str:
         timeout=30,
     )
     if proc.returncode != 0:
-        raise SystemExit(f"failed to fetch the agent-gw manifest from {AGENT_GW_MANIFEST_URL}")
+        raise SystemExit(
+            f"failed to fetch the agent-gw manifest from {AGENT_GW_MANIFEST_URL}"
+        )
     try:
         url = json.loads(proc.stdout)["latest"]["url"]
     except (ValueError, KeyError, TypeError) as exc:
-        raise SystemExit(f"could not read latest.url from {AGENT_GW_MANIFEST_URL}: {exc}")
+        raise SystemExit(
+            f"could not read latest.url from {AGENT_GW_MANIFEST_URL}: {exc}"
+        )
     if not isinstance(url, str) or not url:
-        raise SystemExit(f"the agent-gw manifest at {AGENT_GW_MANIFEST_URL} has no latest.url")
+        raise SystemExit(
+            f"the agent-gw manifest at {AGENT_GW_MANIFEST_URL} has no latest.url"
+        )
     return url
 
 
@@ -150,7 +160,10 @@ def _media_url_and_mime(resp: Any) -> tuple[Optional[str], Optional[str]]:
         return None, None
     url = media.get("url")
     mime = media.get("mime_type")
-    return (url if isinstance(url, str) else None, mime if isinstance(mime, str) else None)
+    return (
+        url if isinstance(url, str) else None,
+        mime if isinstance(mime, str) else None,
+    )
 
 
 def _upload_public_url(client, image_path: str) -> str:
@@ -226,7 +239,10 @@ def _download(url: str, output: Path, mime_type: Optional[str]) -> Path:
     target = output
     if mime_type:
         wanted = MIME_EXT.get(mime_type.lower())
-        if wanted and target.suffix.lower() not in (wanted, ".jpeg" if wanted == ".jpg" else wanted):
+        if wanted and target.suffix.lower() not in (
+            wanted,
+            ".jpeg" if wanted == ".jpg" else wanted,
+        ):
             target = target.with_suffix(wanted)
     target.parent.mkdir(parents=True, exist_ok=True)
     proc = subprocess.run(
@@ -297,7 +313,9 @@ def ensure_deps(args: argparse.Namespace) -> int:
         print(f"agent-gw {version} already satisfies >= {MIN_AGENT_GW_VERSION_TEXT}.")
         return 0
     if version:
-        print(f"agent-gw {version} is older than {MIN_AGENT_GW_VERSION_TEXT}; upgrading...")
+        print(
+            f"agent-gw {version} is older than {MIN_AGENT_GW_VERSION_TEXT}; upgrading..."
+        )
     else:
         print(f"agent-gw not found; installing >= {MIN_AGENT_GW_VERSION_TEXT}...")
 
@@ -320,8 +338,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    gen = subparsers.add_parser("generate", help="Generate an image from a text description")
-    gen.add_argument("--description", required=True, help="Text description of the image")
+    gen = subparsers.add_parser(
+        "generate", help="Generate an image from a text description"
+    )
+    gen.add_argument(
+        "--description", required=True, help="Text description of the image"
+    )
     gen.add_argument("--ratio", default="1:1", choices=RATIOS)
     gen.add_argument("--resolution", default="1K", choices=RESOLUTIONS)
     gen.add_argument("--background", default="opaque", choices=list(BACKGROUND_ENUM))

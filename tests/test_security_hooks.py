@@ -32,7 +32,9 @@ from kdrx.security import (
 
 
 def test_scan_secrets_detects_keys():
-    findings = scan_secrets("sk-kimi-abcdefghijklmnopqrstuvwxyz123456 + AKIAABCDEFGHIJKLMNOP")
+    findings = scan_secrets(
+        "sk-kimi-abcdefghijklmnopqrstuvwxyz123456 + AKIAABCDEFGHIJKLMNOP"
+    )
     kinds = {f.kind for f in findings}
     assert "kimi_sk" in kinds
     assert "aws_access_key" in kinds
@@ -103,7 +105,12 @@ def test_hook_pre_tool_use_blocks_unauthorized():
 
 
 def test_hook_subagent_stop_requires_outputs():
-    r = AgentResult(result_id="r", task_id="T", agent_role=AgentRole.WEB_EXPLORER, outputs_produced=[])
+    r = AgentResult(
+        result_id="r",
+        task_id="T",
+        agent_role=AgentRole.WEB_EXPLORER,
+        outputs_produced=[],
+    )
     assert hook_subagent_stop(r, _task()).blocking()
 
 
@@ -111,7 +118,11 @@ def test_hook_stop_requires_clean_delivery():
     dag = compile_dag([_task()])
     empty = DeliveryManifest(manifest_id="d", run_id="r")
     d = hook_stop(
-        dag=dag, delivery=empty, integrity_pass=False, secret_scan_clean=False,
-        artifact_open_test=False, unresolved_critical=["C1"],
+        dag=dag,
+        delivery=empty,
+        integrity_pass=False,
+        secret_scan_clean=False,
+        artifact_open_test=False,
+        unresolved_critical=["C1"],
     )
     assert d.blocking()

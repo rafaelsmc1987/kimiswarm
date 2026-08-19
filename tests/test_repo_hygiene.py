@@ -11,8 +11,6 @@ import re
 import subprocess
 from pathlib import Path
 
-import pytest
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 PRODUCT_PREFIXES = (
@@ -54,7 +52,9 @@ FORBIDDEN_PATTERNS: list[tuple[re.Pattern[str], str]] = [
         "dump de sandbox",
     ),
     (
-        re.compile(r"^(extracted|evidence|auth|prompts|orchestrator|forensic-corpus)(/|$)"),
+        re.compile(
+            r"^(extracted|evidence|auth|prompts|orchestrator|forensic-corpus)(/|$)"
+        ),
         "corpus forense",
     ),
     (
@@ -94,10 +94,6 @@ def forbidden_reason(path: str) -> str | None:
     return None
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Árvore ainda contaminada; vira XPASS após T-00-04 (split do repo) — remover o xfail então",
-)
 def test_tree_contains_only_product() -> None:
     """Gate do PR-00: git ls-files deve listar apenas produto."""
     non_product = [p for p in tracked_files() if not is_product(p)]
@@ -107,10 +103,6 @@ def test_tree_contains_only_product() -> None:
     )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Árvore ainda contaminada; vira XPASS após T-00-04 (split do repo) — remover o xfail então",
-)
 def test_no_forbidden_paths_in_tree() -> None:
     """B-01: nenhum path proibido (credenciais, HARs, dumps) na árvore."""
     violations = []

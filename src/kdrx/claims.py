@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass, field
 
 from kdrx.schemas.claims import Claim, ClaimEvidenceEdge
-from kdrx.schemas.enums import EdgeDirectness, EdgeRelation, Standing
+from kdrx.schemas.enums import EdgeDirectness, Standing
 
 #: Conjunction boundaries for naive compound-sentence splitting.
 _SPLIT_RE = re.compile(
@@ -113,10 +113,18 @@ def compute_standing(
         components["direct_support"] = sum(
             1.0 for e in support if e.directness == EdgeDirectness.DIRECT
         ) / len(support)
-        components["source_quality"] = sum(e.source_quality for e in support) / len(support)
-        components["source_independence"] = sum(e.independence for e in support) / len(support)
-        components["scope_match"] = sum(1.0 for e in support if e.scope_match) / len(support)
-        components["extraction_confidence"] = sum(e.confidence for e in support) / len(support)
+        components["source_quality"] = sum(e.source_quality for e in support) / len(
+            support
+        )
+        components["source_independence"] = sum(e.independence for e in support) / len(
+            support
+        )
+        components["scope_match"] = sum(1.0 for e in support if e.scope_match) / len(
+            support
+        )
+        components["extraction_confidence"] = sum(e.confidence for e in support) / len(
+            support
+        )
     else:
         components["direct_support"] = 0.0
         components["source_quality"] = 0.0
@@ -134,9 +142,7 @@ def compute_standing(
     contradiction_strength = min(len(contradicts) / 3.0, 1.0)
     components["contradiction_strength"] = contradiction_strength
 
-    score = sum(
-        _WEIGHTS[k] * components.get(k, 0.0) for k in _WEIGHTS
-    )
+    score = sum(_WEIGHTS[k] * components.get(k, 0.0) for k in _WEIGHTS)
     score = score * (1.0 - contradiction_strength)
 
     if not support and contradicts:

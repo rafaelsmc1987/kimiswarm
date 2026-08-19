@@ -19,7 +19,7 @@ def _client_cls():
     except ModuleNotFoundError as exc:
         raise SystemExit(
             "Missing dependency: agent-gw. Install it with: "
-            'python3 -m pip install "$(curl -s https://cdn.kimi.com/agentgw/pysdk/manifest.json | python3 -c "import json,sys; print(json.load(sys.stdin).get(\"latest\").get(\"url\"))")"'
+            'python3 -m pip install "$(curl -s https://cdn.kimi.com/agentgw/pysdk/manifest.json | python3 -c "import json,sys; print(json.load(sys.stdin).get("latest").get("url"))")"'
         ) from exc
     return AgentGwClient, AgentGwError
 
@@ -57,7 +57,9 @@ def describe(args: argparse.Namespace) -> int:
             resp.raise_for_status()
             print(resp.text)
     except agent_gw_error as exc:
-        print(f"Error describing data source '{args.data_source}': {exc}", file=sys.stderr)
+        print(
+            f"Error describing data source '{args.data_source}': {exc}", file=sys.stderr
+        )
         return 1
     return 0
 
@@ -84,7 +86,9 @@ def call(args: argparse.Namespace) -> int:
 
     if not raw.get("is_success"):
         error = raw.get("error") or {}
-        assistant_errors = _texts(error.get("assistant") if isinstance(error, dict) else None)
+        assistant_errors = _texts(
+            error.get("assistant") if isinstance(error, dict) else None
+        )
         user_errors = _texts(error.get("user") if isinstance(error, dict) else None)
         message = "\n".join(user_errors or assistant_errors)
         if not message:
@@ -100,7 +104,9 @@ def call(args: argparse.Namespace) -> int:
         path.write_text(str(file_info.get("content", "")), encoding="utf-8")
 
     result = raw.get("result") or {}
-    assistant_texts = _texts(result.get("assistant") if isinstance(result, dict) else None)
+    assistant_texts = _texts(
+        result.get("assistant") if isinstance(result, dict) else None
+    )
     print("\n".join(assistant_texts))
     return 0
 
@@ -109,7 +115,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    describe_parser = subparsers.add_parser("describe", help="Print Yahoo Finance Markdown docs")
+    describe_parser = subparsers.add_parser(
+        "describe", help="Print Yahoo Finance Markdown docs"
+    )
     describe_parser.add_argument("--data-source", default=DATA_SOURCE_NAME)
     describe_parser.set_defaults(func=describe)
 
@@ -117,7 +125,9 @@ def build_parser() -> argparse.ArgumentParser:
     call_parser.add_argument("--data-source", default=DATA_SOURCE_NAME)
     call_parser.add_argument("--api-name", required=True)
     call_parser.add_argument("--params-json", help="API params as a JSON object")
-    call_parser.add_argument("--params-file", help="Path to a JSON object with API params")
+    call_parser.add_argument(
+        "--params-file", help="Path to a JSON object with API params"
+    )
     call_parser.set_defaults(func=call)
 
     return parser

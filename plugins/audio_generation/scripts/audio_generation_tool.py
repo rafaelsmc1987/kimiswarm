@@ -105,13 +105,19 @@ def _fetch_latest_wheel_url() -> str:
         timeout=30,
     )
     if proc.returncode != 0:
-        raise SystemExit(f"failed to fetch the agent-gw manifest from {AGENT_GW_MANIFEST_URL}")
+        raise SystemExit(
+            f"failed to fetch the agent-gw manifest from {AGENT_GW_MANIFEST_URL}"
+        )
     try:
         url = json.loads(proc.stdout)["latest"]["url"]
     except (ValueError, KeyError, TypeError) as exc:
-        raise SystemExit(f"could not read latest.url from {AGENT_GW_MANIFEST_URL}: {exc}")
+        raise SystemExit(
+            f"could not read latest.url from {AGENT_GW_MANIFEST_URL}: {exc}"
+        )
     if not isinstance(url, str) or not url:
-        raise SystemExit(f"the agent-gw manifest at {AGENT_GW_MANIFEST_URL} has no latest.url")
+        raise SystemExit(
+            f"the agent-gw manifest at {AGENT_GW_MANIFEST_URL} has no latest.url"
+        )
     return url
 
 
@@ -137,7 +143,10 @@ def _media_url_and_mime(resp: Any) -> tuple[Optional[str], Optional[str]]:
         return None, None
     url = media.get("url")
     mime = media.get("mime_type")
-    return (url if isinstance(url, str) else None, mime if isinstance(mime, str) else None)
+    return (
+        url if isinstance(url, str) else None,
+        mime if isinstance(mime, str) else None,
+    )
 
 
 # --- helpers ------------------------------------------------------------------
@@ -213,7 +222,9 @@ def sound_effects(args: argparse.Namespace) -> int:
     try:
         with agent_gw_client(timeout=DEFAULT_TIMEOUT) as client:
             resp = client.tools.generate_sound_effects(
-                args.description, duration_seconds=args.duration, timeout=DEFAULT_TIMEOUT
+                args.description,
+                duration_seconds=args.duration,
+                timeout=DEFAULT_TIMEOUT,
             )
     except agent_gw_error as exc:
         print(f"Error generating sound effects: {exc}", file=sys.stderr)
@@ -231,7 +242,9 @@ def ensure_deps(args: argparse.Namespace) -> int:
         print(f"agent-gw {version} already satisfies >= {MIN_AGENT_GW_VERSION_TEXT}.")
         return 0
     if version:
-        print(f"agent-gw {version} is older than {MIN_AGENT_GW_VERSION_TEXT}; upgrading...")
+        print(
+            f"agent-gw {version} is older than {MIN_AGENT_GW_VERSION_TEXT}; upgrading..."
+        )
     else:
         print(f"agent-gw not found; installing >= {MIN_AGENT_GW_VERSION_TEXT}...")
 
@@ -262,7 +275,9 @@ def build_parser() -> argparse.ArgumentParser:
         choices=list(VOICES),
         help="Voice ID to use; see SKILL.md for the voice descriptions",
     )
-    sp.add_argument("--output", required=True, help="Local output file path ending with .mp3")
+    sp.add_argument(
+        "--output", required=True, help="Local output file path ending with .mp3"
+    )
     sp.set_defaults(func=speech)
 
     sfx = subparsers.add_parser(
@@ -280,7 +295,9 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="SECONDS",
         help=f"Duration in seconds ({SFX_DURATION_MIN}-{SFX_DURATION_MAX})",
     )
-    sfx.add_argument("--output", required=True, help="Local output file path ending with .mp3")
+    sfx.add_argument(
+        "--output", required=True, help="Local output file path ending with .mp3"
+    )
     sfx.set_defaults(func=sound_effects)
 
     ensure = subparsers.add_parser(

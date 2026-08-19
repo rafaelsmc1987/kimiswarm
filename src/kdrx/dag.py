@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from typing import Iterable
 
 from kdrx.schemas.plan import OwnershipEntry, TaskSpec
-from kdrx.schemas.enums import Criticality, TaskStage
+from kdrx.schemas.enums import Criticality
 
 # Tool names that a read-only research worker must never receive.
 DESTRUCTIVE_TOOL_MARKERS = (
@@ -163,7 +163,9 @@ def compile_dag(tasks: list[TaskSpec]) -> CompiledDAG:
     seen: set[str] = set()
     for t in tasks:
         if t.task_id in seen:
-            issues.append(DAGIssue("DUP_ID", f"duplicate task id {t.task_id}", [t.task_id]))
+            issues.append(
+                DAGIssue("DUP_ID", f"duplicate task id {t.task_id}", [t.task_id])
+            )
         seen.add(t.task_id)
 
     # Missing mission / dependencies resolve
@@ -173,7 +175,11 @@ def compile_dag(tasks: list[TaskSpec]) -> CompiledDAG:
         for dep in t.dependencies:
             if dep not in by_id:
                 issues.append(
-                    DAGIssue("UNRESOLVED_DEP", f"dependency '{dep}' does not resolve", [t.task_id])
+                    DAGIssue(
+                        "UNRESOLVED_DEP",
+                        f"dependency '{dep}' does not resolve",
+                        [t.task_id],
+                    )
                 )
 
     # Acyclic
@@ -199,7 +205,9 @@ def compile_dag(tasks: list[TaskSpec]) -> CompiledDAG:
     # Output schema present (acceptance.output_schema or explicit outputs)
     for t in tasks:
         if not t.outputs:
-            issues.append(DAGIssue("NO_OUTPUTS", "task declares no outputs", [t.task_id]))
+            issues.append(
+                DAGIssue("NO_OUTPUTS", "task declares no outputs", [t.task_id])
+            )
         elif not t.acceptance.output_schema and not t.acceptance.criteria:
             issues.append(
                 DAGIssue(
@@ -230,7 +238,11 @@ def compile_dag(tasks: list[TaskSpec]) -> CompiledDAG:
     # Budget valid
     for t in tasks:
         if t.budget.tokens < 0 or t.budget.queries < 0 or t.budget.wall_seconds < 0:
-            issues.append(DAGIssue("BAD_BUDGET", "budget values must be non-negative", [t.task_id]))
+            issues.append(
+                DAGIssue(
+                    "BAD_BUDGET", "budget values must be non-negative", [t.task_id]
+                )
+            )
 
     # Minimal tool scope: read-only workers must not hold destructive tools
     for t in tasks:

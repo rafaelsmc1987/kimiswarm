@@ -9,7 +9,7 @@ delivery-time security gate (secret scan, path escape, egress policy).
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
@@ -66,13 +66,24 @@ class SecretFinding:
 
 _SECRET_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("aws_access_key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
-    ("private_key", re.compile(r"-----BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----")),
-    ("github_pat", re.compile(r"\bghp_[A-Za-z0-9]{36,}\b|\bgithub_pat_[A-Za-z0-9_]{40,}\b")),
+    (
+        "private_key",
+        re.compile(r"-----BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----"),
+    ),
+    (
+        "github_pat",
+        re.compile(r"\bghp_[A-Za-z0-9]{36,}\b|\bgithub_pat_[A-Za-z0-9_]{40,}\b"),
+    ),
     ("slack_token", re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b")),
     ("openai_sk", re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b")),
     ("kimi_sk", re.compile(r"\bsk-kimi-[A-Za-z0-9_-]{20,}\b")),
     ("google_api", re.compile(r"\bAIza[0-9A-Za-z_-]{35}\b")),
-    ("jwt", re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b")),
+    (
+        "jwt",
+        re.compile(
+            r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b"
+        ),
+    ),
 ]
 
 _SECRET_NAME_HINT = re.compile(
@@ -109,7 +120,9 @@ def scan_secrets_in_file(path: str | Path) -> list[SecretFinding]:
     if not path.exists() or not path.is_file():
         return []
     findings: list[SecretFinding] = []
-    for i, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), start=1):
+    for i, line in enumerate(
+        path.read_text(encoding="utf-8", errors="replace").splitlines(), start=1
+    ):
         for f in scan_secrets(line):
             f.line = i
             findings.append(f)

@@ -10,7 +10,7 @@ from kdrx.artifact import (
     seal_artifact,
     verify_seal,
 )
-from kdrx.evals import EvalHarness, builtin_cases, run_case
+from kdrx.evals import EvalCase, EvalHarness, SeededDefect, builtin_cases, run_case
 from kdrx.reporting import (
     ReportAssembler,
     citation_integrity_gate,
@@ -21,6 +21,7 @@ from kdrx.schemas.artifact import ArtifactRecord
 from kdrx.schemas.claims import Claim
 from kdrx.schemas.corpus import EvidenceSpan, SourceRecord
 from kdrx.schemas.enums import ArtifactKind, ClaimImportance, SourceType, Standing
+from kdrx.verification import infer_contradiction_pairs
 
 
 # --------------------------------------------------------------------------- #
@@ -43,7 +44,12 @@ def test_unsupported_sentence_flags_number_without_backing():
 
 
 def test_citation_integrity_gate_passes_backed_report():
-    s1 = SourceRecord(source_id="S1", canonical_uri="https://a", title="A", source_type=SourceType.NEWS)
+    s1 = SourceRecord(
+        source_id="S1",
+        canonical_uri="https://a",
+        title="A",
+        source_type=SourceType.NEWS,
+    )
     c = Claim(
         claim_id="C1",
         statement="The model improved by 12 percent",
@@ -51,7 +57,9 @@ def test_citation_integrity_gate_passes_backed_report():
         standing=Standing.SUPPORTED,
         support_edges=["EV1"],
     )
-    sp = EvidenceSpan(evidence_id="EV1", source_id="S1", verbatim_span="improved by 12 percent")
+    sp = EvidenceSpan(
+        evidence_id="EV1", source_id="S1", verbatim_span="improved by 12 percent"
+    )
     report = "The model improved by 12 percent [cite:S1]."
     gate = citation_integrity_gate(report, sources=[s1], claims=[c], spans=[sp])
     assert not gate.blocking()
@@ -100,6 +108,51 @@ def test_run_case_recall_precision():
     assert report.recall == 1.0
 
 
+def test_contradiction_eval_has_no_label_leakage():
+    """T-09-03: gold labels nunca entram no input do detector de contradição.
+
+    Se o detector usasse ``defects[].expect`` como entrada, este caso
+    (expect declara um par que NÃO se contradiz numericamente) reportaria
+    detecção indevida. Após a correção, nada é detectado e a expectativa
+    aparece como miss no relatório.
+    """
+    cx = Claim(claim_id="CX", statement="Latency is 5 ms", scope={"time": "2025"})
+    cy = Claim(claim_id="CY", statement="Latency is 5 ms", scope={"time": "2025"})
+    case = EvalCase(
+        case_id="leakage",
+        description="expect declara contradição que o conteúdo não suporta",
+        claims=[cx, cy],
+        defects=[
+            SeededDefect("dl", "contradiction", "planted label", expect=["CX", "CY"])
+        ],
+    )
+    report = run_case(case)
+    assert report.detected["contradiction"] == []
+    assert report.expected["contradiction"] == ["CX", "CY"]
+    assert not report.passed
+
+
+def test_contradiction_pairs_inferred_from_content():
+    """T-09-03: pares são inferidos do conteúdo (sujeito + números + escopo)."""
+    ca = Claim(claim_id="CA", statement="Latency is 5 ms", scope={"time": "2025"})
+    cb = Claim(claim_id="CB", statement="Latency is 50 ms", scope={"time": "2025"})
+    assert infer_contradiction_pairs([ca, cb]) == [("CA", "CB")]
+
+
+def test_contradiction_inference_respects_scope():
+    """Escopos distintos não formam par de contradição."""
+    ca = Claim(claim_id="CA", statement="Latency is 5 ms", scope={"time": "2025"})
+    cb = Claim(claim_id="CB", statement="Latency is 50 ms", scope={"time": "2026"})
+    assert infer_contradiction_pairs([ca, cb]) == []
+
+
+def test_contradiction_inference_ignores_numberless_claims():
+    """Sem números dos dois lados, não há par determinístico."""
+    ca = Claim(claim_id="CA", statement="Latency is low", scope={"time": "2025"})
+    cb = Claim(claim_id="CB", statement="Latency is high", scope={"time": "2025"})
+    assert infer_contradiction_pairs([ca, cb]) == []
+
+
 # --------------------------------------------------------------------------- #
 # Analysis
 # --------------------------------------------------------------------------- #
@@ -138,7 +191,9 @@ def test_seal_and_verify(tmp_path):
 
 
 def test_seal_artifact_from_bytes():
-    rec = ArtifactRecord(artifact_id="A", kind=ArtifactKind.REPORT, path="x", content_hash="")
+    rec = ArtifactRecord(
+        artifact_id="A", kind=ArtifactKind.REPORT, path="x", content_hash=""
+    )
     rec = seal_artifact(rec, "payload")
     assert rec.seal_level.value == "level_1_hashed"
     assert rec.content_hash == hash_artifact("payload")

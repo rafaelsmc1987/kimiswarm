@@ -13,7 +13,6 @@ import time
 from pathlib import Path
 from typing import Any, Iterator
 
-from kdrx.schemas.enums import TaskStatus
 from kdrx.schemas.plan import RunManifest
 
 # Canonical subdirectories of a run (plan §31). Order matters for rendering.
@@ -128,7 +127,9 @@ class RunState:
     def load_manifest(self) -> RunManifest:
         if not self.manifest_path.exists():
             raise FileNotFoundError(f"no manifest at {self.manifest_path}")
-        return RunManifest.model_validate_json(self.manifest_path.read_text(encoding="utf-8"))
+        return RunManifest.model_validate_json(
+            self.manifest_path.read_text(encoding="utf-8")
+        )
 
     # ------------------------------------------------------------------ events
     def append_event(self, event: dict[str, Any]) -> None:

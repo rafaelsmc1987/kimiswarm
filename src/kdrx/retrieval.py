@@ -90,7 +90,17 @@ class BM25:
 # --------------------------------------------------------------------------- #
 # File corpus (routes R3 / R4)
 # --------------------------------------------------------------------------- #
-TEXT_EXTENSIONS = {".txt", ".md", ".rst", ".csv", ".json", ".yaml", ".yml", ".py", ".log"}
+TEXT_EXTENSIONS = {
+    ".txt",
+    ".md",
+    ".rst",
+    ".csv",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".py",
+    ".log",
+}
 
 
 class FileCorpus:

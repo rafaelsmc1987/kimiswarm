@@ -15,7 +15,9 @@ from kdrx.schemas.plan import ResearchPlan
 from kdrx.schemas.request import ResearchContract
 
 
-def plan_gate(plan: ResearchPlan, contract: ResearchContract | None = None) -> GateDecision:
+def plan_gate(
+    plan: ResearchPlan, contract: ResearchContract | None = None
+) -> GateDecision:
     """Validate a plan before scheduling.
 
     Returns a :class:`GateDecision` with ``verdict`` in {pass, warn, fail}.
@@ -23,10 +25,23 @@ def plan_gate(plan: ResearchPlan, contract: ResearchContract | None = None) -> G
     """
     checks: list[GateCheck] = []
 
-    def check(check_id: str, description: str, passed: bool, details: object = None) -> None:
-        checks.append(GateCheck(check_id=check_id, description=description, passed=passed, details=details))
+    def check(
+        check_id: str, description: str, passed: bool, details: object = None
+    ) -> None:
+        checks.append(
+            GateCheck(
+                check_id=check_id,
+                description=description,
+                passed=passed,
+                details=details,
+            )
+        )
 
-    check("CONTRACT", "plan references a non-empty contract id", bool(plan.contract_id.strip()))
+    check(
+        "CONTRACT",
+        "plan references a non-empty contract id",
+        bool(plan.contract_id.strip()),
+    )
     if contract is not None:
         check(
             "CONTRACT_MATCH",

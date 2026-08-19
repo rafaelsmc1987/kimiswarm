@@ -18,7 +18,6 @@ from kdrx.schemas.corpus import SourceRecord
 from kdrx.schemas.enums import (
     ContradictionStatus,
     ContradictionType,
-    EdgeRelation,
     QualityGrade,
     RetractionStatus,
     SourceType,
@@ -88,9 +87,7 @@ def scan_prompt_injection(text: str) -> InjectionScan:
     never mutated from this content.
     """
     lowered = text.lower()
-    markers = [
-        m for m in _INJECTION_MARKERS + _WORKFLOW_TAMPER if m in lowered
-    ]
+    markers = [m for m in _INJECTION_MARKERS + _WORKFLOW_TAMPER if m in lowered]
     score = sum(2 if m in _WORKFLOW_TAMPER else 1 for m in markers)
     return InjectionScan(text=text, markers=markers, score=score)
 
@@ -111,7 +108,11 @@ def source_identity_checks(record: SourceRecord) -> list[GateCheck]:
         GateCheck(check_id="URI", description="canonical URI present", passed=has_uri)
     )
     checks.append(
-        GateCheck(check_id="TITLE", description="title present", passed=bool(record.title.strip()))
+        GateCheck(
+            check_id="TITLE",
+            description="title present",
+            passed=bool(record.title.strip()),
+        )
     )
     checks.append(
         GateCheck(
@@ -152,7 +153,11 @@ def currency_check(record: SourceRecord, max_age_days: int = 730) -> GateCheck:
             passed=False,
         )
     now = datetime.now(timezone.utc)
-    age_days = (now - record.date).days if record.date.tzinfo else (now.replace(tzinfo=None) - record.date).days
+    age_days = (
+        (now - record.date).days
+        if record.date.tzinfo
+        else (now.replace(tzinfo=None) - record.date).days
+    )
     passed = age_days <= max_age_days
     return GateCheck(
         check_id="CURRENCY",
@@ -225,10 +230,18 @@ def detect_contradiction_type(a: Claim, b: Claim) -> ContradictionType:
     if "time" in a_scope and "time" in b_scope and a_scope["time"] != b_scope["time"]:
         return ContradictionType.TEMPORAL
     # jurisdiction mismatch
-    if "jurisdiction" in a_scope and "jurisdiction" in b_scope and a_scope["jurisdiction"] != b_scope["jurisdiction"]:
+    if (
+        "jurisdiction" in a_scope
+        and "jurisdiction" in b_scope
+        and a_scope["jurisdiction"] != b_scope["jurisdiction"]
+    ):
         return ContradictionType.JURISDICTION
     # population/sample mismatch
-    if ("population" in a_scope and "population" in b_scope and a_scope["population"] != b_scope["population"]):
+    if (
+        "population" in a_scope
+        and "population" in b_scope
+        and a_scope["population"] != b_scope["population"]
+    ):
         return ContradictionType.POPULATION_SAMPLE
     # numerical disagreement on same subject
     a_num = _extract_numbers(a.statement)
@@ -238,8 +251,40 @@ def detect_contradiction_type(a: Claim, b: Claim) -> ContradictionType:
     return ContradictionType.FACTUAL
 
 
+_NUM_PATTERN = re.compile(r"\d+(?:\.\d+)?%?")
+
+
 def _extract_numbers(statement: str) -> list[str]:
-    return re.findall(r"\d+(?:\.\d+)?%?", statement)
+    return _NUM_PATTERN.findall(statement)
+
+
+def infer_contradiction_pairs(claims: list[Claim]) -> list[tuple[str, str]]:
+    """Infer CONTRADICTS pairs from claim content alone (no gold labels).
+
+    Two claims pair as a contradiction when they share the same scope and
+    make numerically different statements about the same normalized subject
+    (numbers replaced by a placeholder). Semantic-only disagreement stays
+    model-assisted and is out of scope for this deterministic check.
+    """
+
+    def _numeric_subject(statement: str) -> tuple[str, tuple[str, ...]]:
+        nums = tuple(_extract_numbers(statement))
+        subject = (
+            re.sub(r"\s+", " ", _NUM_PATTERN.sub("<NUM>", statement)).strip().lower()
+        )
+        return subject, nums
+
+    pairs: list[tuple[str, str]] = []
+    for i, a in enumerate(claims):
+        for b in claims[i + 1 :]:
+            if (a.scope or {}) != (b.scope or {}):
+                continue
+            subject_a, nums_a = _numeric_subject(a.statement)
+            subject_b, nums_b = _numeric_subject(b.statement)
+            if subject_a != subject_b or not nums_a or not nums_b or nums_a == nums_b:
+                continue
+            pairs.append((a.claim_id, b.claim_id))
+    return pairs
 
 
 def cluster_contradictions(
@@ -305,15 +350,25 @@ class FalsificationPlan:
         """The five falsification roles for a critical claim."""
         roles = [
             {"role": "support", "goal": "find support", "query_hint": claim.statement},
-            {"role": "refute", "goal": "find refutation", "query_hint": f"contradiction to: {claim.statement}"},
-            {"role": "alternative", "goal": "find alternative explanations", "query_hint": f"alternative to: {claim.statement}"},
+            {
+                "role": "refute",
+                "goal": "find refutation",
+                "query_hint": f"contradiction to: {claim.statement}",
+            },
+            {
+                "role": "alternative",
+                "goal": "find alternative explanations",
+                "query_hint": f"alternative to: {claim.statement}",
+            },
             {"role": "verify", "goal": "verify evidence spans", "query_hint": None},
             {"role": "calibrate", "goal": "update standing", "query_hint": None},
         ]
         return cls(claim_id=claim.claim_id, roles=roles)
 
 
-def minimum_new_search_rule(used_queries: set[str], new_queries: list[str], minimum: int = 3) -> bool:
+def minimum_new_search_rule(
+    used_queries: set[str], new_queries: list[str], minimum: int = 3
+) -> bool:
     """Enforce that conflict resolution uses fresh, unused queries (plan §26)."""
     fresh = [q for q in new_queries if q not in used_queries]
     return len(fresh) >= minimum

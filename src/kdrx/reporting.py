@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from kdrx.schemas.claims import Claim, ClaimEvidenceEdge
+from kdrx.schemas.claims import Claim
 from kdrx.schemas.corpus import EvidenceSpan, SourceRecord
 from kdrx.schemas.enums import ClaimImportance, GateKind, Standing
 from kdrx.schemas.gate import GateCheck, GateDecision
@@ -22,7 +22,9 @@ _CITE_RE = re.compile(r"\[cite:\s*([A-Za-z0-9_.:-]+)\]")
 # A "quantitative" token is a number followed by a unit word/symbol, a decimal,
 # or a multi-digit magnitude — so bare list enumerators ("1.", "2.") and years
 # are not mistaken for claims. This keeps false positives low.
-_NUMBER_RE = re.compile(r"\d+(?:\.\d+)?\s?(?:%|percent|million|billion|k\b|[€$]|USD|[A-Za-z]{2,})")
+_NUMBER_RE = re.compile(
+    r"\d+(?:\.\d+)?\s?(?:%|percent|million|billion|k\b|[€$]|USD|[A-Za-z]{2,})"
+)
 
 
 @dataclass
@@ -81,9 +83,7 @@ def split_sentences(text: str) -> list[str]:
     return [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
 
 
-def unsupported_sentence_detector(
-    text: str, backed_statements: set[str]
-) -> list[str]:
+def unsupported_sentence_detector(text: str, backed_statements: set[str]) -> list[str]:
     """Flag sentences that assert numbers but aren't backed by a claim.
 
     Deterministic heuristic: a sentence containing a numeric/quantitative token
@@ -127,7 +127,11 @@ def citation_integrity_gate(
     )
 
     # Every material claim cited in the report has an exact evidence span.
-    material = [c for c in claims if c.importance in (ClaimImportance.CRITICAL, ClaimImportance.MAJOR)]
+    material = [
+        c
+        for c in claims
+        if c.importance in (ClaimImportance.CRITICAL, ClaimImportance.MAJOR)
+    ]
     material_by_statement = {c.statement.strip().lower(): c for c in material}
     unsupported_material = []
     cited_statements: set[str] = set()
@@ -147,9 +151,7 @@ def citation_integrity_gate(
     )
 
     # Unresolved material claims are surfaced, not silently dropped.
-    unresolved = [
-        c.claim_id for c in material if c.standing == Standing.UNRESOLVED
-    ]
+    unresolved = [c.claim_id for c in material if c.standing == Standing.UNRESOLVED]
     checks.append(
         GateCheck(
             check_id="UNRESOLVED_DISCLOSED",
@@ -214,7 +216,9 @@ class ReportAssembler:
             out.append("")
         return "\n".join(out).rstrip() + "\n"
 
-    def build_reference_list(self, text: str, sources: list[SourceRecord]) -> list[SourceRecord]:
+    def build_reference_list(
+        self, text: str, sources: list[SourceRecord]
+    ) -> list[SourceRecord]:
         cited = extract_citations(text)
         by_id = {s.source_id: s for s in sources}
         return [by_id[c] for c in cited if c in by_id]

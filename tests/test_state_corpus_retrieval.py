@@ -7,7 +7,6 @@ from kdrx.corpus import (
     content_hash_from_text,
     count_independent_sources,
     dedupe_exact,
-    independence_families,
     normalize_doi,
 )
 from kdrx.retrieval import (
@@ -30,7 +29,9 @@ from kdrx.state import RunState, hash_file
 # --------------------------------------------------------------------------- #
 def test_scaffold_creates_canonical_tree(tmp_path):
     state = RunState(tmp_path, "run-1")
-    manifest = RunManifest(run_id="run-1", plan_id="p", contract_id="c", route="R1", root_dir="")
+    manifest = RunManifest(
+        run_id="run-1", plan_id="p", contract_id="c", route="R1", root_dir=""
+    )
     run_dir = state.scaffold(manifest)
     assert (run_dir / "manifest.json").exists()
     assert (run_dir / "events.jsonl").exists()
@@ -42,7 +43,11 @@ def test_scaffold_creates_canonical_tree(tmp_path):
 
 def test_events_append_only(tmp_path):
     state = RunState(tmp_path, "run-1")
-    state.scaffold(RunManifest(run_id="run-1", plan_id="p", contract_id="c", route="R1", root_dir=""))
+    state.scaffold(
+        RunManifest(
+            run_id="run-1", plan_id="p", contract_id="c", route="R1", root_dir=""
+        )
+    )
     state.append_event({"kind": "a"})
     state.append_event({"kind": "b"})
     events = list(state.iter_events())
@@ -51,7 +56,11 @@ def test_events_append_only(tmp_path):
 
 def test_snapshot_and_verify_hashes(tmp_path):
     state = RunState(tmp_path, "run-1")
-    state.scaffold(RunManifest(run_id="run-1", plan_id="p", contract_id="c", route="R1", root_dir=""))
+    state.scaffold(
+        RunManifest(
+            run_id="run-1", plan_id="p", contract_id="c", route="R1", root_dir=""
+        )
+    )
     state.write_text("notes.txt", "hello")
     snapshot = state.snapshot_hashes()
     assert state.verify_hashes(snapshot) == []
@@ -74,21 +83,50 @@ def test_canonicalize_url_strips_tracking():
 
 
 def test_normalize_doi():
-    assert normalize_doi("https://doi.org/10.1038/S41586-020-0000-X") == "doi:10.1038/s41586-020-0000-x"
+    assert (
+        normalize_doi("https://doi.org/10.1038/S41586-020-0000-X")
+        == "doi:10.1038/s41586-020-0000-x"
+    )
     assert normalize_doi("no doi here") is None
 
 
 def test_dedupe_exact_by_content_hash():
-    a = SourceRecord(source_id="a", canonical_uri="https://x", title="t", content_hash="h")
-    b = SourceRecord(source_id="b", canonical_uri="https://y", title="t", content_hash="h")
+    a = SourceRecord(
+        source_id="a", canonical_uri="https://x", title="t", content_hash="h"
+    )
+    b = SourceRecord(
+        source_id="b", canonical_uri="https://y", title="t", content_hash="h"
+    )
     assert [s.source_id for s in dedupe_exact([a, b])] == ["a"]
 
 
 def test_independence_families_collapse_syndication():
-    base = SourceRecord(source_id="S0", canonical_uri="https://pr", title="PR", source_type=SourceType.PRESS_RELEASE)
-    c1 = SourceRecord(source_id="S1", canonical_uri="https://a", title="copy", source_type=SourceType.NEWS, dependencies=["S0"])
-    c2 = SourceRecord(source_id="S2", canonical_uri="https://b", title="copy", source_type=SourceType.NEWS, dependencies=["S0"])
-    ind = SourceRecord(source_id="S3", canonical_uri="https://c", title="ind", source_type=SourceType.ACADEMIC_PAPER)
+    base = SourceRecord(
+        source_id="S0",
+        canonical_uri="https://pr",
+        title="PR",
+        source_type=SourceType.PRESS_RELEASE,
+    )
+    c1 = SourceRecord(
+        source_id="S1",
+        canonical_uri="https://a",
+        title="copy",
+        source_type=SourceType.NEWS,
+        dependencies=["S0"],
+    )
+    c2 = SourceRecord(
+        source_id="S2",
+        canonical_uri="https://b",
+        title="copy",
+        source_type=SourceType.NEWS,
+        dependencies=["S0"],
+    )
+    ind = SourceRecord(
+        source_id="S3",
+        canonical_uri="https://c",
+        title="ind",
+        source_type=SourceType.ACADEMIC_PAPER,
+    )
     assert count_independent_sources([base, c1, c2, ind]) == 2
 
 
@@ -116,7 +154,7 @@ def test_file_corpus_search(tmp_path):
 
 def test_query_graph_parent_child():
     g = QueryGraph()
-    root = g.add(QueryNode(query="what is X", node_id="Q0"))
+    g.add(QueryNode(query="what is X", node_id="Q0"))
     child = g.child_of("Q0", query="X primary sources")
     assert child.parent == "Q0"
     assert len(g) == 2

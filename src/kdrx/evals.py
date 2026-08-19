@@ -10,11 +10,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from kdrx.corpus import independence_families, jaccard_similarity, tokenize
+from kdrx.corpus import independence_families, tokenize
 from kdrx.schemas.claims import Claim
 from kdrx.schemas.corpus import EvidenceSpan, SourceRecord
 from kdrx.schemas.enums import RetractionStatus
-from kdrx.verification import cluster_contradictions, scan_prompt_injection
+from kdrx.verification import (
+    cluster_contradictions,
+    infer_contradiction_pairs,
+    scan_prompt_injection,
+)
 
 #: Canonical seeded-defect kinds (plan §36 / §38: adversarial sources, seeded defects).
 DEFECT_KINDS = (
@@ -77,7 +81,9 @@ def detect_fabricated_sources(
 
 def detect_retracted_sources(sources: list[SourceRecord]) -> list[str]:
     return [
-        s.source_id for s in sources if s.retraction_status == RetractionStatus.RETRACTED
+        s.source_id
+        for s in sources
+        if s.retraction_status == RetractionStatus.RETRACTED
     ]
 
 
@@ -133,20 +139,17 @@ def detect_contradicted_claims(
     return sorted({cid for c in clusters for cid in c.claims})
 
 
-def _contradiction_pairs_from_defects(case: EvalCase) -> list[tuple[str, str]]:
-    pairs: list[tuple[str, str]] = []
-    for defect in case.defects:
-        if defect.kind == "contradiction" and len(defect.expect) >= 2:
-            ids = defect.expect
-            pairs.append((ids[0], ids[1]))
-    return pairs
-
-
 _DETECTORS = {
-    "fabricated_source": lambda case: detect_fabricated_sources(case.sources, case.trusted_uris),
-    "mismatched_citation": lambda case: detect_mismatched_citations(case.claims, case.spans),
+    "fabricated_source": lambda case: detect_fabricated_sources(
+        case.sources, case.trusted_uris
+    ),
+    "mismatched_citation": lambda case: detect_mismatched_citations(
+        case.claims, case.spans
+    ),
+    # T-09-03: os pares são inferidos do conteúdo das claims; gold labels
+    # (defects[].expect) NUNCA entram como input do detector.
     "contradiction": lambda case: detect_contradicted_claims(
-        case.claims, _contradiction_pairs_from_defects(case)
+        case.claims, infer_contradiction_pairs(case.claims)
     ),
     "prompt_injection": lambda case: detect_prompt_injection(case.retrieved_texts),
     "retracted_source": lambda case: detect_retracted_sources(case.sources),
@@ -233,7 +236,6 @@ class EvalHarness:
 # --------------------------------------------------------------------------- #
 def builtin_cases() -> list[EvalCase]:
     """A small, self-contained regression suite exercising every defect kind."""
-    from kdrx.schemas.corpus import Locator
     from kdrx.schemas.enums import ClaimImportance, PrimarySecondary, SourceType
 
     # 1. fabricated + retracted + dependent sources, in one corpus
@@ -295,7 +297,9 @@ def builtin_cases() -> list[EvalCase]:
         defects=[
             SeededDefect("d1", "fabricated_source", "fake URI", expect=["S-FAKE"]),
             SeededDefect("d2", "retracted_source", "retracted", expect=["S-RETRACTED"]),
-            SeededDefect("d3", "dependent_sources", "syndicated", expect=["S-COPY1", "S-COPY2"]),
+            SeededDefect(
+                "d3", "dependent_sources", "syndicated", expect=["S-COPY1", "S-COPY2"]
+            ),
         ],
     )
 
@@ -316,7 +320,9 @@ def builtin_cases() -> list[EvalCase]:
         description="citation does not support its claim",
         claims=[claim],
         spans=[span],
-        defects=[SeededDefect("d4", "mismatched_citation", "zero overlap", expect=["C1"])],
+        defects=[
+            SeededDefect("d4", "mismatched_citation", "zero overlap", expect=["C1"])
+        ],
     )
 
     # 3. contradiction between two numeric claims
@@ -345,4 +351,3 @@ def builtin_cases() -> list[EvalCase]:
     )
 
     return [sources_case, cite_case, contra_case, inject_case]
-

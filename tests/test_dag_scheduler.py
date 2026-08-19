@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import pytest
 
 from kdrx.dag import assign_waves, compile_dag
 from kdrx.planner import plan_gate
-from kdrx.scheduler import ExecutorError, WaveScheduler
+from kdrx.scheduler import WaveScheduler
 from kdrx.schemas.enums import AgentRole, Criticality, TaskStage
 from kdrx.schemas.plan import (
     AcceptanceCriteria,
@@ -39,7 +38,9 @@ def _task(
         outputs=list(outputs),
         tools=["bash"] if not read_only else ["read"],
         read_only=read_only,
-        acceptance=AcceptanceCriteria(criteria=[f"has {o}" for o in outputs], output_schema="x"),
+        acceptance=AcceptanceCriteria(
+            criteria=[f"has {o}" for o in outputs], output_schema="x"
+        ),
         retry_policy=RetryPolicy(max_retries=1),
         budget=Budget(tokens=1),
         criticality=Criticality.HIGH if critical else Criticality.MEDIUM,
@@ -126,7 +127,10 @@ def test_scheduler_blocks_dependent_on_failure():
         if brief.task_id == "A":
             raise RuntimeError("boom")
         return AgentResult(
-            result_id="r", task_id=brief.task_id, agent_role=brief.role, outputs_produced=brief.outputs
+            result_id="r",
+            task_id=brief.task_id,
+            agent_role=brief.role,
+            outputs_produced=brief.outputs,
         )
 
     res = WaveScheduler(executor, max_workers=0).run(dag)
@@ -140,7 +144,9 @@ def test_scheduler_rejects_missing_outputs():
 
     def executor(brief):
         return AgentResult(
-            result_id="r", task_id=brief.task_id, agent_role=brief.role,
+            result_id="r",
+            task_id=brief.task_id,
+            agent_role=brief.role,
             outputs_produced=["o1"],  # missing o2
         )
 
@@ -156,8 +162,10 @@ def test_max_workers_does_not_skip_ready_tasks():
 
     def executor(brief):
         return AgentResult(
-            result_id=f"r-{brief.task_id}", task_id=brief.task_id,
-            agent_role=brief.role, outputs_produced=brief.outputs,
+            result_id=f"r-{brief.task_id}",
+            task_id=brief.task_id,
+            agent_role=brief.role,
+            outputs_produced=brief.outputs,
         )
 
     res = WaveScheduler(executor, max_workers=2).run(dag)
@@ -167,12 +175,16 @@ def test_max_workers_does_not_skip_ready_tasks():
 
 def test_plan_gate_blocks_cyclic_plan():
     tasks = [_task("A", deps=("B",)), _task("B", deps=("A",))]
-    plan = ResearchPlan(plan_id="P", contract_id="C", route="R1", plan_md="# x", tasks=tasks)
+    plan = ResearchPlan(
+        plan_id="P", contract_id="C", route="R1", plan_md="# x", tasks=tasks
+    )
     gate = plan_gate(plan)
     assert gate.blocking()
 
 
 def test_plan_gate_passes_valid_plan():
     tasks = [_task("A"), _task("B", deps=("A",), critical=True)]
-    plan = ResearchPlan(plan_id="P", contract_id="C", route="R1", plan_md="# x", tasks=tasks)
+    plan = ResearchPlan(
+        plan_id="P", contract_id="C", route="R1", plan_md="# x", tasks=tasks
+    )
     assert not plan_gate(plan).blocking()

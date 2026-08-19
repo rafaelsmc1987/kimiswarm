@@ -33,17 +33,30 @@ def _build_parser() -> argparse.ArgumentParser:
     p_eval.add_argument("--json", action="store_true", help="emit JSON")
 
     p_hook = sub.add_parser("hook", help="dispatch a deterministic hook")
-    p_hook.add_argument("name", choices=["task_created", "pre_tool_use", "subagent_stop", "task_completed", "stop"])
+    p_hook.add_argument(
+        "name",
+        choices=[
+            "task_created",
+            "pre_tool_use",
+            "subagent_stop",
+            "task_completed",
+            "stop",
+        ],
+    )
     p_hook.add_argument("--json", required=True, help="hook payload as JSON")
 
     p_demo = sub.add_parser("demo", help="end-to-end offline demo over a file corpus")
     p_demo.add_argument("--corpus", required=True, help="directory of text files")
-    p_demo.add_argument("--objective", default="What does this corpus say?", help="research objective")
+    p_demo.add_argument(
+        "--objective", default="What does this corpus say?", help="research objective"
+    )
     p_demo.add_argument("--out", default=".research", help="runs root directory")
 
     p_run = sub.add_parser("run", help="execute a plan from a run dir")
     p_run.add_argument("--run-dir", required=True)
-    p_run.add_argument("--corpus", default=None, help="file corpus for retrieval (optional)")
+    p_run.add_argument(
+        "--corpus", default=None, help="file corpus for retrieval (optional)"
+    )
 
     p_status = sub.add_parser("status", help="print run status")
     p_status.add_argument("--run-dir", required=True)
@@ -82,22 +95,35 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     # smoke run of the scheduler with a trivial DAG
     from kdrx.dag import compile_dag
     from kdrx.scheduler import WaveScheduler
-    from kdrx.schemas.plan import AcceptanceCriteria, AgentResult, Budget, RetryPolicy, TaskSpec
+    from kdrx.schemas.plan import (
+        AcceptanceCriteria,
+        AgentResult,
+        Budget,
+        RetryPolicy,
+        TaskSpec,
+    )
     from kdrx.schemas.enums import AgentRole, TaskStage
 
     tasks = [
         TaskSpec(
-            task_id="T0", stage=TaskStage.RETRIEVAL, wave=0, role=AgentRole.WEB_EXPLORER,
-            mission="smoke", outputs=["o0"],
+            task_id="T0",
+            stage=TaskStage.RETRIEVAL,
+            wave=0,
+            role=AgentRole.WEB_EXPLORER,
+            mission="smoke",
+            outputs=["o0"],
             acceptance=AcceptanceCriteria(criteria=["ok"], output_schema="x"),
-            retry_policy=RetryPolicy(max_retries=0), budget=Budget(tokens=1),
+            retry_policy=RetryPolicy(max_retries=0),
+            budget=Budget(tokens=1),
         )
     ]
     dag = compile_dag(tasks)
 
     def executor(brief: Any) -> AgentResult:
         return AgentResult(
-            result_id="r", task_id=brief.task_id, agent_role=brief.role,
+            result_id="r",
+            task_id=brief.task_id,
+            agent_role=brief.role,
             outputs_produced=brief.outputs,
         )
 
@@ -199,7 +225,6 @@ def cmd_status(args: argparse.Namespace) -> int:
 
 def cmd_resume(args: argparse.Namespace) -> int:
     from kdrx.state import RunState, load_manifest_from_dir
-    from pathlib import Path
 
     run_dir = Path(args.run_dir)
     m = load_manifest_from_dir(run_dir)
@@ -223,8 +248,6 @@ def cmd_verify(args: argparse.Namespace) -> int:
 
 
 def cmd_report(args: argparse.Namespace) -> int:
-    from pathlib import Path
-
     run_dir = Path(args.run_dir)
     report_path = run_dir / "delivery" / "report.md"
     if report_path.exists():
@@ -235,7 +258,9 @@ def cmd_report(args: argparse.Namespace) -> int:
 
 
 def cmd_monitor(args: argparse.Namespace) -> int:
-    print("monitor: delta-search requires a live source adapter; nothing to do offline.")
+    print(
+        "monitor: delta-search requires a live source adapter; nothing to do offline."
+    )
     return 0
 
 

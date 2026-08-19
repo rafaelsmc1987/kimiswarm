@@ -8,7 +8,6 @@ sources (§24's critical rule).
 
 from __future__ import annotations
 
-import hashlib
 import re
 import unicodedata
 from collections import Counter
