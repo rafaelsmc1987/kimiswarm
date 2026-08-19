@@ -732,3 +732,148 @@ def builtin_cases(split: str | None = None) -> list[EvalCase]:
     if split is None:
         return all_cases
     return [c for c in all_cases if c.split == split]
+
+
+# --------------------------------------------------------------------------- #
+# Governed learning: observation -> candidate -> eval -> approval -> canary ->
+# promotion (T-10-05). "Learning nunca promove sem eval."
+# --------------------------------------------------------------------------- #
+LEARNING_STAGES = (
+    "observation",
+    "candidate",
+    "eval",
+    "approval",
+    "canary",
+    "promotion",
+)
+
+_STAGE_INDEX = {stage: i for i, stage in enumerate(LEARNING_STAGES)}
+
+
+def _now() -> str:
+    from datetime import datetime, timezone
+
+    return datetime.now(timezone.utc).isoformat()
+
+
+@dataclass
+class LearningRecord:
+    candidate_id: str
+    stage: str
+    config: dict = field(default_factory=dict)
+    eval_passed: bool | None = None
+    approved_by: str | None = None
+    canary_passed: bool | None = None
+    history: list[dict] = field(default_factory=list)
+
+    def as_dict(self) -> dict:
+        return {
+            "candidate_id": self.candidate_id,
+            "stage": self.stage,
+            "config": self.config,
+            "eval_passed": self.eval_passed,
+            "approved_by": self.approved_by,
+            "canary_passed": self.canary_passed,
+            "history": self.history,
+        }
+
+
+class LearningPipeline:
+    """Pipeline de aprendizado GOVERNADO (T-10-05).
+
+    Transições são duras: não se promove sem (nesta ordem) candidatura, eval
+    PASSADO, aprovação humana registrada e canary OK. Tentativa de pular etapa
+    é registrada como rejeição no histórico e retorna False — nunca silencia.
+    """
+
+    def __init__(self, thresholds: dict | None = None) -> None:
+        self.thresholds = thresholds or dict(THRESHOLD_REGISTRY)
+        self.observations: list[dict] = []
+        self.candidates: dict[str, LearningRecord] = {}
+
+    def _record(self, candidate_id: str, event: str, **info) -> None:
+        rec = self.candidates.get(candidate_id)
+        entry = {"ts": _now(), "event": event, **info}
+        if rec is not None:
+            rec.history.append(entry)
+
+    # -- stages ----------------------------------------------------------- #
+    def observe(self, observation: str, *, source: str = "") -> None:
+        """Observação bruta (ex.: retraction alert, standing change, diff)."""
+        self.observations.append(
+            {"ts": _now(), "observation": observation, "source": source}
+        )
+
+    def propose(self, candidate_id: str, config: dict) -> None:
+        if candidate_id in self.candidates:
+            raise ValueError(f"candidate {candidate_id!r} already proposed")
+        rec = LearningRecord(candidate_id=candidate_id, stage="candidate", config=config)
+        self.candidates[candidate_id] = rec
+        self._record(candidate_id, "proposed", config=config)
+
+    def evaluate(
+        self, candidate_id: str, reports: list[EvalReport]
+    ) -> RegressionGate:
+        rec = self._require(candidate_id)
+        gate = regression_gate(reports, self.thresholds)
+        rec.eval_passed = gate.passed
+        if gate.passed:
+            rec.stage = "eval"
+            self._record(candidate_id, "eval_passed", reasons=[])
+        else:
+            self._record(candidate_id, "eval_failed", reasons=list(gate.reasons))
+        return gate
+
+    def approve(self, candidate_id: str, approver: str) -> bool:
+        rec = self._require(candidate_id)
+        if rec.eval_passed is not True:
+            self._record(candidate_id, "approval_rejected", reason="no_passing_eval")
+            return False
+        rec.approved_by = approver
+        rec.stage = "approval"
+        self._record(candidate_id, "approved", approver=approver)
+        return True
+
+    def canary(self, candidate_id: str, passed: bool) -> bool:
+        rec = self._require(candidate_id)
+        if rec.stage != "approval":
+            self._record(candidate_id, "canary_rejected", reason="not_approved")
+            return False
+        rec.canary_passed = passed
+        if passed:
+            rec.stage = "canary"
+        self._record(candidate_id, "canary", passed=passed)
+        return passed
+
+    def promote(self, candidate_id: str) -> bool:
+        """Promotion EXIGE eval passado + approval + canary OK — sem exceções."""
+        rec = self._require(candidate_id)
+        blockers = []
+        if rec.eval_passed is not True:
+            blockers.append("missing_passing_eval")
+        if rec.approved_by is None:
+            blockers.append("missing_approval")
+        if rec.canary_passed is not True:
+            blockers.append("missing_canary")
+        if blockers:
+            self._record(candidate_id, "promotion_rejected", blockers=blockers)
+            return False
+        rec.stage = "promotion"
+        self._record(candidate_id, "promoted")
+        return True
+
+    # -- introspection --------------------------------------------------- #
+    def _require(self, candidate_id: str) -> LearningRecord:
+        try:
+            return self.candidates[candidate_id]
+        except KeyError:
+            raise KeyError(f"unknown candidate {candidate_id!r}") from None
+
+    def stage_of(self, candidate_id: str) -> str:
+        return self._require(candidate_id).stage
+
+    def registry(self) -> dict:
+        return {
+            "observations": list(self.observations),
+            "candidates": {cid: rec.as_dict() for cid, rec in self.candidates.items()},
+        }

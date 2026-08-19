@@ -30,6 +30,94 @@ _NUMBER_RE = re.compile(
 )
 
 
+# --------------------------------------------------------------------------- #
+# Report diffs (T-10-04)
+# --------------------------------------------------------------------------- #
+_SECTION_RE = re.compile(r"^## (.+?)\s*$", re.MULTILINE)
+_CLAIM_LINE_RE = re.compile(r"^- \*\*([\w.\-]+)\*\* \((\w+), ([\d.]+)\)", re.MULTILINE)
+
+
+@dataclass
+class ReportDiff:
+    """Diferença estrutural entre dois relatórios (monitoramento)."""
+
+    sections_added: list[str] = field(default_factory=list)
+    sections_removed: list[str] = field(default_factory=list)
+    sections_changed: list[str] = field(default_factory=list)
+    claims_added: list[str] = field(default_factory=list)
+    claims_removed: list[str] = field(default_factory=list)
+    standing_changes: dict[str, dict[str, str]] = field(default_factory=dict)
+
+    @property
+    def has_changes(self) -> bool:
+        return bool(
+            self.sections_added
+            or self.sections_removed
+            or self.sections_changed
+            or self.claims_added
+            or self.claims_removed
+            or self.standing_changes
+        )
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "sections_added": self.sections_added,
+            "sections_removed": self.sections_removed,
+            "sections_changed": self.sections_changed,
+            "claims_added": self.claims_added,
+            "claims_removed": self.claims_removed,
+            "standing_changes": self.standing_changes,
+            "has_changes": self.has_changes,
+        }
+
+
+def _split_report_sections(text: str) -> dict[str, str]:
+    """``{title: body}`` pelos headings `## X` (`# title` é ignorado)."""
+    matches = list(_SECTION_RE.finditer(text))
+    sections: dict[str, str] = {}
+    for i, m in enumerate(matches):
+        start = m.end()
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        sections[m.group(1).strip()] = text[start:end].strip()
+    return sections
+
+
+def _parse_claim_lines(text: str) -> dict[str, str]:
+    """``{claim_id: standing}`` extraído das bullets `- **ID** (standing, conf)`."""
+    return {m.group(1): m.group(2) for m in _CLAIM_LINE_RE.finditer(text)}
+
+
+def diff_reports(old_text: str, new_text: str) -> ReportDiff:
+    """Diferença determinística entre dois relatórios KDR-X (T-10-04).
+
+    Captura: seções acrescentadas/removidas/com conteúdo alterado, claims
+    acrescentados/removidos e mudanças de standing claim-a-claim.
+    """
+    old_sections = _split_report_sections(old_text)
+    new_sections = _split_report_sections(new_text)
+    old_claims = _parse_claim_lines(old_text)
+    new_claims = _parse_claim_lines(new_text)
+
+    diff = ReportDiff(
+        sections_added=sorted(set(new_sections) - set(old_sections)),
+        sections_removed=sorted(set(old_sections) - set(new_sections)),
+        sections_changed=sorted(
+            title
+            for title in set(old_sections) & set(new_sections)
+            if old_sections[title] != new_sections[title]
+        ),
+        claims_added=sorted(set(new_claims) - set(old_claims)),
+        claims_removed=sorted(set(old_claims) - set(new_claims)),
+    )
+    for claim_id in sorted(set(old_claims) & set(new_claims)):
+        if old_claims[claim_id] != new_claims[claim_id]:
+            diff.standing_changes[claim_id] = {
+                "from": old_claims[claim_id],
+                "to": new_claims[claim_id],
+            }
+    return diff
+
+
 @dataclass
 class EvidencePack:
     """The focused set of material handed to the synthesis agent (§28)."""

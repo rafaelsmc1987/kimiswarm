@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from kdrx.schemas.claims import Claim, ContradictionCluster
-from kdrx.schemas.corpus import SourceRecord
+from kdrx.schemas.corpus import EvidenceSpan, SourceRecord
 from kdrx.schemas.enums import (
     ContradictionStatus,
     ContradictionType,
@@ -34,6 +34,88 @@ from kdrx.schemas.gate import GateKind
 # security.egress_allowed) são lazy porque formariam ciclos:
 # adapters -> corpus -> state -> security -> verification.
 Transport = Callable[[str, dict[str, str] | None], str]
+
+
+# --------------------------------------------------------------------------- #
+# Retraction / correction alerts (T-10-02)
+# --------------------------------------------------------------------------- #
+_PROBLEM_STATUS = {
+    RetractionStatus.RETRACTED.value,
+    RetractionStatus.CORRECTED.value,
+    RetractionStatus.EXPRESSED_CONCERN.value,
+}
+
+
+@dataclass
+class RetractionAlert:
+    """Fonte que mudou para status problemático + claims afetados."""
+
+    source_id: str
+    previous_status: str
+    current_status: str
+    #: claims com ao menos um support vindo da fonte afetada
+    affected_claims: list[str] = field(default_factory=list)
+    #: claims cuja TOTALIDADE das fontes de suporte está problemática
+    fully_invalidated_claims: list[str] = field(default_factory=list)
+
+    def as_dict(self) -> dict:
+        return {
+            "source_id": self.source_id,
+            "previous_status": self.previous_status,
+            "current_status": self.current_status,
+            "affected_claims": self.affected_claims,
+            "fully_invalidated_claims": self.fully_invalidated_claims,
+        }
+
+
+def retraction_alerts(
+    sources: list[SourceRecord],
+    claims: list[Claim] | None = None,
+    spans: list[EvidenceSpan] | None = None,
+    *,
+    prior_status: dict[str, str] | None = None,
+) -> list[RetractionAlert]:
+    """Detecta fontes que viraram retracted/corrected/expressed-concern e
+    invalida os claims dependentes (T-10-02).
+
+    ``prior_status`` é o snapshot anterior ``{source_id: status}`` (default:
+    tudo "none" — primeira observação). Um alerta só dispara quando o status
+    MUDA para um status problemático; snapshot antigo já retracted não repete.
+    """
+    claims = claims or []
+    spans = spans or []
+    prior_status = prior_status or {}
+    evidence_source = {sp.evidence_id: sp.source_id for sp in spans}
+    status_by_id = {
+        s.source_id: s.retraction_status.value for s in sources
+    }
+
+    alerts: list[RetractionAlert] = []
+    for s in sources:
+        current = s.retraction_status.value
+        previous = prior_status.get(s.source_id, RetractionStatus.NONE.value)
+        if current not in _PROBLEM_STATUS or current == previous:
+            continue
+        alert = RetractionAlert(
+            source_id=s.source_id,
+            previous_status=previous,
+            current_status=current,
+        )
+        for c in claims:
+            supporting_sources = {
+                evidence_source.get(e, "") for e in c.support_edges if e in evidence_source
+            }
+            if s.source_id not in supporting_sources:
+                continue
+            alert.affected_claims.append(c.claim_id)
+            if supporting_sources and all(
+                status_by_id.get(src, RetractionStatus.NONE.value) in _PROBLEM_STATUS
+                for src in supporting_sources
+            ):
+                alert.fully_invalidated_claims.append(c.claim_id)
+        alerts.append(alert)
+    return alerts
+
 
 
 # --------------------------------------------------------------------------- #

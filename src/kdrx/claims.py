@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from kdrx.corpus import tokenize
+from kdrx.corpus import independence_families, tokenize
 from kdrx.schemas.claims import Claim, ClaimEvidenceEdge
 from kdrx.schemas.corpus import EvidenceSpan, SourceRecord
 from kdrx.schemas.enums import (
@@ -500,6 +500,96 @@ def invert_families(families: dict[str, list[str]]) -> dict[str, str]:
     for family_id, members in families.items():
         for member in members:
             out[member] = family_id
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# Standing recompute (monitoring, T-10-03)
+# --------------------------------------------------------------------------- #
+def recompute_standings(
+    claims: list[Claim],
+    spans: list[EvidenceSpan],
+    sources: list[SourceRecord] | None = None,
+    *,
+    recency: float = 0.5,
+) -> list[dict]:
+    """Recomputa standing SEM persistir e SEM mutar os claims (shadow recompute).
+
+    Espelha a derivação do runner (edges derivados + contradições descobertas
+    + compute_standing) mas retorna somente o resultado e a diferença vs. o
+    standing atual em cada claim. Uso de monitoramento: detecta quando uma
+    fonte nova/removida/retractada muda o standing de um claim.
+    """
+    sources = sources or []
+    families = independence_families(sources)
+    source_family = invert_families(families)
+    family_size = {
+        sid: len(families.get(fam, [sid])) for sid, fam in source_family.items()
+    }
+    evidence_source = {sp.evidence_id: sp.source_id for sp in spans}
+    span_by_id = {sp.evidence_id: sp for sp in spans}
+    source_by_id = {s.source_id: s for s in sources}
+    claim_by_id = {c.claim_id: c for c in claims}
+
+    pairs = discover_contradiction_pairs(claims)
+    contra_claims: dict[str, list[str]] = {}
+    for a_id, b_id in pairs:
+        contra_claims.setdefault(a_id, []).append(b_id)
+        contra_claims.setdefault(b_id, []).append(a_id)
+
+    out: list[dict] = []
+    for c in claims:
+        sup = [
+            derive_edge(
+                c,
+                span_by_id[e],
+                source=source_by_id.get(span_by_id[e].source_id),
+                family_size=family_size.get(span_by_id[e].source_id, 1),
+            )
+            for e in c.support_edges
+            if e in span_by_id
+        ]
+        contra: list[ClaimEvidenceEdge] = []
+        for other_id in contra_claims.get(c.claim_id, []):
+            other = claim_by_id[other_id]
+            for e in other.support_edges:
+                sp = span_by_id.get(e)
+                if sp is None:
+                    continue
+                edge = derive_edge(
+                    other,
+                    sp,
+                    source=source_by_id.get(sp.source_id),
+                    family_size=family_size.get(sp.source_id, 1),
+                )
+                contra.append(
+                    edge.model_copy(
+                        update={
+                            "edge_id": f"E-{c.claim_id}-contra-{sp.evidence_id}",
+                            "claim_id": c.claim_id,
+                            "relation": EdgeRelation.CONTRADICTS,
+                        }
+                    )
+                )
+        res = compute_standing(
+            c,
+            sup,
+            contra,
+            evidence_source=evidence_source,
+            source_family=source_family,
+            recency=recency,
+        )
+        out.append(
+            {
+                "claim_id": c.claim_id,
+                "old_standing": c.standing.value,
+                "new_standing": res.standing.value,
+                "changed": res.standing != c.standing,
+                "confidence": round(res.confidence, 4),
+                "components": {k: round(v, 4) for k, v in res.components.items()},
+                "calibration_basis": res.calibration_basis,
+            }
+        )
     return out
 
 

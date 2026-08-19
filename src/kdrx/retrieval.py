@@ -10,6 +10,7 @@ stopping criterion (§18.5). Network/scholarly adapters plug in through the same
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 from collections import Counter
 from collections.abc import Callable
@@ -492,3 +493,115 @@ class StoppingCriterion:
         else:
             reason = "continue"
         return {"stop": saturated or budget_hit, "reason": reason, "unmet": unmet}
+
+
+# --------------------------------------------------------------------------- #
+# Saved queries + delta retrieval (monitoring, T-10-01)
+# --------------------------------------------------------------------------- #
+@dataclass
+class SourceDelta:
+    """Diferença entre dois snapshots de corpus de arquivos."""
+
+    added: list[str] = field(default_factory=list)
+    changed: list[str] = field(default_factory=list)
+    removed: list[str] = field(default_factory=list)
+
+    @property
+    def has_delta(self) -> bool:
+        return bool(self.added or self.changed or self.removed)
+
+    def as_dict(self) -> dict:
+        return {
+            "added": self.added,
+            "changed": self.changed,
+            "removed": self.removed,
+            "has_delta": self.has_delta,
+        }
+
+
+def snapshot_corpus_hashes(
+    corpus_dir: str | Path, *, extensions: set[str] | None = None
+) -> dict[str, str]:
+    """``{rel_path: sha256(texto extraído)}`` — mesmo conteúdo canônico do corpus.
+
+    Hash sobre o TEXTO EXTRAÍDO (não o mtime): uma edição semântica dispara
+    delta "changed"; um re-save idêntico não. Arquivos não-extraíveis são
+    hasheados por bytes (ainda participam do delta).
+    """
+    root = Path(corpus_dir)
+    exts = extensions or TEXT_EXTENSIONS
+    out: dict[str, str] = {}
+    for path in sorted(root.rglob("*")):
+        if not path.is_file() or path.suffix.lower() not in exts:
+            continue
+        rel = str(path.relative_to(root))
+        try:
+            text, _ = extract_text(path)
+            payload = text.encode("utf-8")
+        except ExtractionError:
+            payload = path.read_bytes()
+        out[rel] = hashlib.sha256(payload).hexdigest()
+    return out
+
+
+def delta_sources(previous: dict[str, str], current: dict[str, str]) -> SourceDelta:
+    """Compara dois snapshots ``{path: hash}`` e classifica added/changed/removed."""
+    delta = SourceDelta()
+    for path in sorted(current):
+        if path not in previous:
+            delta.added.append(path)
+        elif previous[path] != current[path]:
+            delta.changed.append(path)
+    for path in sorted(previous):
+        if path not in current:
+            delta.removed.append(path)
+    return delta
+
+
+@dataclass
+class SavedQuery:
+    """Query monitorada (standing query) — o delta-search roda sobre ela."""
+
+    query: str
+    corpus_dir: str
+    saved_at: str
+
+    def as_dict(self) -> dict:
+        return {
+            "query": self.query,
+            "corpus_dir": self.corpus_dir,
+            "saved_at": self.saved_at,
+        }
+
+
+class SavedQueryStore:
+    """Persistência JSON simples de standing queries (T-10-01)."""
+
+    def __init__(self, path: str | Path) -> None:
+        self.path = Path(path)
+
+    def load(self) -> list[SavedQuery]:
+        if not self.path.exists():
+            return []
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+        return [
+            SavedQuery(
+                query=q["query"], corpus_dir=q["corpus_dir"], saved_at=q["saved_at"]
+            )
+            for q in data.get("queries", [])
+        ]
+
+    def save(self, queries: list[SavedQuery]) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path.write_text(
+            json.dumps({"queries": [q.as_dict() for q in queries]}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+    def add(self, query: SavedQuery) -> None:
+        queries = self.load()
+        if not any(
+            q.query == query.query and q.corpus_dir == query.corpus_dir for q in queries
+        ):
+            queries.append(query)
+        self.save(queries)

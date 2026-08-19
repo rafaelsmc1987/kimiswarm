@@ -247,10 +247,12 @@ def test_cli_run_requires_plan(tmp_path: Path):
     assert "kdr plan" in proc.stderr
 
 
-def test_cli_monitor_fails_explicitly():
+def test_cli_monitor_requires_corpus():
+    # FASE 10 (T-10-01): monitor agora é o delta-search real sobre file corpus;
+    # o stub "R12 fora do core" (exit 3) morreu com a implementação.
     proc = _cli("monitor")
-    assert proc.returncode == 3
-    assert "R12" in proc.stderr
+    assert proc.returncode == 2  # argparse: --corpus é obrigatório
+    assert "--corpus" in proc.stderr
 
 
 def test_cli_doctor_in_foreign_repo(tmp_path: Path):

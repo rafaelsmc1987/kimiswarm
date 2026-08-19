@@ -95,7 +95,20 @@ def _build_parser() -> argparse.ArgumentParser:
     p_report = sub.add_parser("report", help="assemble the report from a run dir")
     p_report.add_argument("--run-dir", required=True)
 
-    sub.add_parser("monitor", help="delta-search monitor (R12: not in offline core)")
+    p_monitor = sub.add_parser(
+        "monitor",
+        help="T-10-01: standing queries + delta-search sobre file corpus",
+    )
+    p_monitor.add_argument("--corpus", required=True, help="file corpus dir to watch")
+    p_monitor.add_argument(
+        "--state",
+        default=".research/monitor-state.json",
+        help="JSON state file with snapshots + saved queries",
+    )
+    p_monitor.add_argument(
+        "--save-query", default=None, help="register a standing query (objective)"
+    )
+    p_monitor.add_argument("--json", action="store_true", help="emit JSON")
     return parser
 
 
@@ -488,13 +501,62 @@ def cmd_report(args: argparse.Namespace) -> int:
 
 
 def cmd_monitor(args: argparse.Namespace) -> int:
-    """Delta-search (R12) is out of the offline core — explicit fail (FASE 8)."""
-    print(
-        "monitor: delta-search requer adapter de fonte live (rota R12) — "
-        "não implementado no core offline; ver FASE 8 do plano de correção.",
-        file=sys.stderr,
+    """T-10-01: delta-search sobre file corpus + saved queries.
+
+    Mantém ``{snapshots: {corpus: {arquivo: hash}}, queries: [...]}`` no state
+    JSON; a cada chamada detecta fontes novas/alteradas/removidas e (opcional)
+    registra uma standing query par o delta-search futuro.
+    """
+    from datetime import datetime, timezone
+
+    from kdrx.retrieval import delta_sources, snapshot_corpus_hashes
+
+    state_path = Path(args.state)
+    state = {"snapshots": {}, "queries": []}
+    if state_path.exists():
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+    corpus_key = str(args.corpus)
+
+    current = snapshot_corpus_hashes(args.corpus)
+    previous = state["snapshots"].get(corpus_key, {})
+    delta = delta_sources(previous, current)
+    state["snapshots"][corpus_key] = current
+
+    if args.save_query:
+        entries = state["queries"]
+        if not any(
+            q["query"] == args.save_query and q["corpus_dir"] == corpus_key
+            for q in entries
+        ):
+            entries.append(
+                {
+                    "query": args.save_query,
+                    "corpus_dir": corpus_key,
+                    "saved_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(
+        json.dumps(state, indent=2) + "\n", encoding="utf-8"
     )
-    return 3
+
+    out = {
+        "corpus": corpus_key,
+        "state_file": str(state_path),
+        "tracked_files": len(current),
+        "saved_queries": len(state["queries"]),
+        **delta.as_dict(),
+    }
+    if args.json:
+        print(json.dumps(out, indent=2))
+    else:
+        print(f"monitor: {out['tracked_files']} tracked files in {corpus_key}")
+        print(f"  added={out['added']} changed={out['changed']} removed={out['removed']}")
+        print(f"  saved queries: {out['saved_queries']} (state: {state_path})")
+        if not delta.has_delta:
+            print("  no delta since last snapshot")
+    return 0
 
 
 _CMDS = {
