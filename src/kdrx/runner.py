@@ -14,7 +14,15 @@ import re
 from pathlib import Path
 from typing import Any
 
-from kdrx.claims import compute_standing, invert_families
+from kdrx.claims import (
+    compute_standing,
+    decompose_into_claims,
+    derive_edge,
+    discover_contradiction_pairs,
+    invert_families,
+    is_falsifiable,
+    search_counterevidence,
+)
 from kdrx.corpus import independence_families, source_fingerprint, tokenize
 from kdrx.dag import compile_dag
 from kdrx.planner import plan_gate
@@ -39,10 +47,10 @@ from kdrx.schemas.enums import (
     ClaimImportance,
     ClaimType,
     Criticality,
-    EdgeDirectness,
     EdgeRelation,
     EvidenceType,
     Route,
+    Standing,
     TaskStage,
     TaskStatus,
 )
@@ -561,8 +569,10 @@ class _FileResearchExecutor:
     def _extract_claims(self) -> None:
         """Derive atomic claims from sentences that overlap the objective.
 
-        Each claim is linked to the evidence span of its source document so the
-        claim -> evidence -> standing loop is exercised deterministically.
+        T-07-01: decomposição ESTRUTURADA — sentences candidatas (overlap com o
+        objetivo ou predicado falsificável) passam pelo decomposer: compostos
+        viram claims atômicos com scope extraído. Cada claim é ligado ao
+        evidence span do seu documento para o loop claim -> evidence -> standing.
         """
         objective_tokens = set(tokenize(self.objective))
         span_by_source = {sp.source_id: sp for sp in self.spans}
@@ -571,60 +581,121 @@ class _FileResearchExecutor:
             source_id = doc.source.source_id if doc.source else doc.doc_id
             for sent in split_sentences(doc.text):
                 sent_tokens = set(tokenize(sent))
-                has_number = any(ch.isdigit() for ch in sent)
-                if len(sent_tokens & objective_tokens) >= 2 or has_number:
+                if len(sent_tokens & objective_tokens) < 2 and not is_falsifiable(sent):
+                    continue
+                for claim in decompose_into_claims(f"CL-{len(self.claims) + 1}", sent):
                     # T-05-06: cópias colapsadas para a fonte canônica não
                     # geram claims duplicados — (statement, source) é único.
-                    key = (sent.strip().lower(), source_id)
+                    key = (claim.statement.strip().lower(), source_id)
                     if key in seen_claims:
                         continue
                     seen_claims.add(key)
                     ev = span_by_source.get(source_id)
-                    cid = f"CL-{len(self.claims) + 1}"
-                    self.claims.append(
-                        Claim(
-                            claim_id=cid,
-                            statement=sent,
-                            claim_type=ClaimType.DESCRIPTIVE,
-                            importance=ClaimImportance.MAJOR,
-                            support_edges=[ev.evidence_id] if ev else [],
-                        )
-                    )
+                    claim.claim_type = ClaimType.DESCRIPTIVE
+                    claim.importance = ClaimImportance.MAJOR
+                    claim.support_edges = [ev.evidence_id] if ev else []
+                    self.claims.append(claim)
         self.state.write_text(
             "claims/claims.jsonl",
             "\n".join(c.model_dump_json() for c in self.claims) + "\n",
         )
 
     def _compute_standings(self) -> dict[str, dict]:
-        """Compute standing for every claim and persist standings/edges."""
+        """Compute standing for every claim and persist standings/edges.
+
+        T-07-04: pares contraditórios são DESCOBERTOS (numeric/polarity), não
+        fornecidos. T-07-05: o falsification swarm executa busca ativa de
+        counterevidence por claim. T-07-06: edges derivados (entailment,
+        quality, independence, confidence) — zero scores constantes.
+        T-07-07: claims UNRESOLVED vão para o registry claims/unresolved.json.
+        """
+        from kdrx.verification import cluster_contradictions
+
         families = independence_families(self.sources)
         source_family = invert_families(families)
+        family_size = {
+            sid: len(families.get(fam, [sid])) for sid, fam in source_family.items()
+        }
         evidence_source = {sp.evidence_id: sp.source_id for sp in self.spans}
+        span_by_id = {sp.evidence_id: sp for sp in self.spans}
+        source_by_id = {s.source_id: s for s in self.sources}
+        claim_by_id = {c.claim_id: c for c in self.claims}
+
+        # T-07-04: descoberta automática de contradições (sem pares fornecidos)
+        pairs = discover_contradiction_pairs(self.claims)
+        contradiction_clusters = cluster_contradictions(self.claims, pairs)
+        contra_claims: dict[str, list[str]] = {}
+        for a_id, b_id in pairs:
+            contra_claims.setdefault(a_id, []).append(b_id)
+            contra_claims.setdefault(b_id, []).append(a_id)
+        self.state.write_text(
+            "claims/contradictions.json",
+            json.dumps([c.model_dump(mode="json") for c in contradiction_clusters], indent=2)
+            + "\n",
+        )
+
+        # T-07-05: busca ativa de counterevidence (falsification swarm executado)
+        counter_hits = []
+        for c in self.claims:
+            own_span = next((span_by_id[e] for e in c.support_edges if e in span_by_id), None)
+            own_doc = (
+                own_span.source_id.removeprefix("file:") if own_span is not None else None
+            )
+            counter_hits.extend(
+                search_counterevidence(c, self.corpus, own_source_id=own_doc)
+            )
+        self.state.write_text(
+            "claims/counterevidence.jsonl",
+            "".join(json.dumps(h.__dict__) + "\n" for h in counter_hits),
+        )
+
         standings: dict[str, dict] = {}
         edges_out: list[dict] = []
         for c in self.claims:
+            # T-07-06: cada edge é DERIVADO — entailment verificado, quality
+            # dos atributos da fonte, independence da família, confidence da
+            # extração (ver derive_edge; a base vai em limitations).
             sup = [
-                ClaimEvidenceEdge(
-                    edge_id=f"E-{c.claim_id}",
-                    claim_id=c.claim_id,
-                    evidence_id=e,
-                    relation=EdgeRelation.SUPPORTS,
-                    directness=EdgeDirectness.DIRECT,
-                    source_quality=0.8,
-                    independence=1.0,
-                    scope_match=True,
-                    confidence=0.8,
+                derive_edge(
+                    c,
+                    span_by_id[e],
+                    source=source_by_id.get(span_by_id[e].source_id),
+                    family_size=family_size.get(span_by_id[e].source_id, 1),
                 )
                 for e in c.support_edges
+                if e in span_by_id
             ]
+            contra: list[ClaimEvidenceEdge] = []
+            for other_id in contra_claims.get(c.claim_id, []):
+                other = claim_by_id[other_id]
+                for e in other.support_edges:
+                    sp = span_by_id.get(e)
+                    if sp is None:
+                        continue
+                    edge = derive_edge(
+                        other,
+                        sp,
+                        source=source_by_id.get(sp.source_id),
+                        family_size=family_size.get(sp.source_id, 1),
+                    )
+                    contra.append(
+                        edge.model_copy(
+                            update={
+                                "edge_id": f"E-{c.claim_id}-contra-{sp.evidence_id}",
+                                "claim_id": c.claim_id,
+                                "relation": EdgeRelation.CONTRADICTS,
+                            }
+                        )
+                    )
             res = compute_standing(
-                c, sup, [], evidence_source=evidence_source, source_family=source_family
+                c, sup, contra, evidence_source=evidence_source, source_family=source_family
             )
             c.standing = res.standing
             c.confidence = res.confidence
             c.calibration_basis = res.calibration_basis
             standings[c.claim_id] = res.as_dict()
             edges_out.extend(e.model_dump() for e in sup)
+            edges_out.extend(e.model_dump() for e in contra)
         self.state.write_text(
             "claims/standings.jsonl",
             "\n".join(json.dumps(v) for v in standings.values()) + "\n",
@@ -638,6 +709,23 @@ class _FileResearchExecutor:
         self.state.write_text(
             "claims/claims.jsonl",
             "\n".join(c.model_dump_json() for c in self.claims) + "\n",
+        )
+        # T-07-07: UNRESOLVED registry — todo claim não resolvido é disclosado
+        # com razão auditável (sem span vs. score abaixo dos thresholds).
+        unresolved = [c for c in self.claims if c.standing == Standing.UNRESOLVED]
+        registry = [
+            {
+                "claim_id": c.claim_id,
+                "statement": c.statement,
+                "reason": (
+                    "no_evidence_span" if not c.support_edges else "score_below_threshold"
+                ),
+                "calibration_basis": c.calibration_basis,
+            }
+            for c in unresolved
+        ]
+        self.state.write_text(
+            "claims/unresolved.json", json.dumps(registry, indent=2) + "\n"
         )
         return standings
 
@@ -695,6 +783,16 @@ class _FileResearchExecutor:
             lines.append(f"- **{c.claim_id}** ({c.standing.value}, {c.confidence:.2f}) — {c.statement} {cite_txt}")
         body = "\n\n".join(lines)
         assembler.add_section("Findings", body or "_no claims extracted_")
+        # T-07-07: disclosure explícito dos claims UNRESOLVED no report —
+        # o registry (claims/unresolved.json) é referenciado no texto.
+        unresolved = [c for c in self.claims if c.standing == Standing.UNRESOLVED]
+        if unresolved:
+            ids = ", ".join(c.claim_id for c in unresolved)
+            assembler.add_section(
+                "Unresolved claims",
+                f"{len(unresolved)} claim(s) remain UNRESOLVED and are disclosed "
+                f"in `claims/unresolved.json`: {ids}.",
+            )
         self.report_text = assembler.assemble(self.sources)
         self.state.write_text("delivery/report.md", self.report_text)
         return AgentResult(

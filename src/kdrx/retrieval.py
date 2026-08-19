@@ -105,6 +105,11 @@ class FusionWeights:
 
 RRF_K = 60  # constante canônica do Reciprocal Rank Fusion
 
+#: Piso de relevância do canal dense (T-05-03, calibrado na FASE 7): o ngram
+#: cosine compartilha ruído de caracteres com qualquer doc (~0.08); um typo
+#: real no termo de query produz ~0.5. Abaixo do piso, dense = ruído.
+DENSE_RELEVANCE_FLOOR = 0.2
+
 # Prior de qualidade por grade (channel source-specific, plan §20)
 SOURCE_QUALITY_SCORE: dict[QualityGrade, float] = {
     QualityGrade.EXCELLENT: 1.0,
@@ -330,7 +335,7 @@ class FileCorpus:
             ranked = [
                 (d, fs, br)
                 for d, fs, br in self.fused_search(query, top_k, weights)
-                if br["bm25"] > 0 or br["dense"] > 0
+                if br["bm25"] > 0 or br["dense"] >= DENSE_RELEVANCE_FLOOR
             ]
         else:
             ranked = [(d, s, None) for d, s in self.search(query, top_k) if s > 0]
@@ -353,7 +358,7 @@ class FileCorpus:
             line_end = line_start + verbatim.count("\n")
 
             base_score = breakdown["bm25"] if breakdown else score
-            if fused and base_score <= 0 and (breakdown or {}).get("dense", 0) <= 0:
+            if fused and base_score <= 0 and (breakdown or {}).get("dense", 0) < DENSE_RELEVANCE_FLOOR:
                 continue
             spans.append(
                 {
