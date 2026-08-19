@@ -45,7 +45,9 @@ def test_all_workflows_present_and_guarded_input():
         assert re.search(r"export const meta = \{", text), f"{name}: meta ausente"
         m = re.search(r"name:\s*'([^']+)'", text)
         assert m and m.group(1) == name, f"{name}: meta.name diverge"
-        assert "args === undefined" in text, f"{name}: deve falhar explicitamente sem args"
+        assert "args === undefined" in text, (
+            f"{name}: deve falhar explicitamente sem args"
+        )
 
 
 def test_no_runtime_forbidden_constructs():
@@ -91,11 +93,15 @@ def test_python_boundary_respected():
     # invocam/verificam artefatos.
     for name in ("kdr-run", "kdr-verify", "kdr-deep-research"):
         text = _read(name)
-        assert "kdr " in text or "kdrx" in text, f"{name}: deve usar a CLI kdr para gates"
+        assert "kdr " in text or "kdrx" in text, (
+            f"{name}: deve usar a CLI kdr para gates"
+        )
 
 
 def test_plugin_manifest_declares_workflows():
-    manifest = json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+    manifest = json.loads(
+        (PLUGIN / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")
+    )
     rel = manifest.get("workflows", "./workflows")
     assert (PLUGIN / rel).is_dir(), "manifest declare workflows e o dir deve existir"
 

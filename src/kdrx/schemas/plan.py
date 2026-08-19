@@ -62,11 +62,18 @@ class TaskSpec(BaseModel):
     status: TaskStatus = TaskStatus.PENDING
     owner: str | None = None
     reviewer: str | None = None
+    guidance: str = ""  # propagado ao AgentBrief (Kimi contract)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class AgentBrief(BaseModel):
-    """The brief handed to an agent for exactly one task."""
+    """The brief handed to an agent for exactly one task.
+
+    Kimi contract parity (audit PR-03): o briefing autocontido é
+    ``mission`` + ``guidance`` + ``context`` — mission diz o QUÊ, guidance
+    diz COMO (abordagem, restrições de estilo/método) e context carrega os
+    dados já coletados que o agent precisa ler antes de agir.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -74,6 +81,7 @@ class AgentBrief(BaseModel):
     task_id: str
     role: AgentRole
     mission: str
+    guidance: str = ""
     inputs: list[str] = Field(default_factory=list)
     outputs: list[str] = Field(default_factory=list)
     skills: list[str] = Field(default_factory=list)

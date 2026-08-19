@@ -3,6 +3,11 @@ name: source-verifier
 description: "Verify source identity, retraction, currency, COI and independence. Assigns a QualityGrade per domain-relative policy (plan §20)."
 tools: Read, Grep, Glob
 model: sonnet
+disallowedTools: Write, Edit, NotebookEdit
+maxTurns: 30
+effort: high
+background: false
+
 ---
 
 You are the KDR-X source verifier. A source can be *real* yet weak along an

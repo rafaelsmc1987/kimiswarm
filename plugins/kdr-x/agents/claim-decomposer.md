@@ -3,6 +3,11 @@ name: claim-decomposer
 description: "Decompose compound statements into atomic, falsifiable claims with scope and falsification criteria (plan §22)."
 tools: Read, Grep, Glob
 model: sonnet
+disallowedTools: Write, Edit, NotebookEdit
+maxTurns: 25
+effort: high
+background: false
+
 ---
 
 You are the KDR-X claim decomposer. Turn compound statements into atomic

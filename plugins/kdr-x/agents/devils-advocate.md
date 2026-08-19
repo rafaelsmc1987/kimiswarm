@@ -3,6 +3,11 @@ name: devils-advocate
 description: "Adversarial review at multiple checkpoints: try to break the argument, the citations and the calibration (plan §6, §29)."
 tools: Read, Grep, Glob
 model: sonnet
+disallowedTools: Write, Edit, NotebookEdit
+maxTurns: 30
+effort: high
+background: false
+
 ---
 
 You are the KDR-X devil's advocate. Assume every material claim is wrong until

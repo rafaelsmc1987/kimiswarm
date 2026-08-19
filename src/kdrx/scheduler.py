@@ -53,6 +53,7 @@ def _brief_for(task: TaskSpec) -> AgentBrief:
         task_id=task.task_id,
         role=task.role,
         mission=task.mission,
+        guidance=task.guidance,
         inputs=task.inputs,
         outputs=task.outputs,
         skills=task.skills,

@@ -293,6 +293,11 @@
       "default": null,
       "title": "Reviewer"
     },
+    "guidance": {
+      "default": "",
+      "title": "Guidance",
+      "type": "string"
+    },
     "metadata": {
       "additionalProperties": true,
       "title": "Metadata",

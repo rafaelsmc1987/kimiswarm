@@ -96,7 +96,7 @@
     }
   },
   "additionalProperties": false,
-  "description": "The brief handed to an agent for exactly one task.",
+  "description": "The brief handed to an agent for exactly one task.\n\nKimi contract parity (audit PR-03): o briefing autocontido \u00e9\n``mission`` + ``guidance`` + ``context`` \u2014 mission diz o QU\u00ca, guidance\ndiz COMO (abordagem, restri\u00e7\u00f5es de estilo/m\u00e9todo) e context carrega os\ndados j\u00e1 coletados que o agent precisa ler antes de agir.",
   "properties": {
     "brief_id": {
       "title": "Brief Id",
@@ -111,6 +111,11 @@
     },
     "mission": {
       "title": "Mission",
+      "type": "string"
+    },
+    "guidance": {
+      "default": "",
+      "title": "Guidance",
       "type": "string"
     },
     "inputs": {

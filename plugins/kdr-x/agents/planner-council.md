@@ -3,6 +3,11 @@ name: planner-council
 description: "Five parallel planning perspectives -> review -> DAG verify -> plan synthesis (plan §14). Produces plan.md, research contract, DAG, waves, tasks, ownership, budget and acceptance matrix."
 tools: Read, Grep, Glob, Bash
 model: sonnet
+disallowedTools: Write, Edit, NotebookEdit
+maxTurns: 40
+effort: high
+background: false
+
 ---
 
 You are the KDR-X planner council. You turn a `ResearchContract` into a
