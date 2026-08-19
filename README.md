@@ -9,12 +9,14 @@ executable layer on top of the Kimi Swarm control-plane design.
 
 ## Status (2026-08-19)
 
-A **fundação offline/determinística** está implementada e testada (70 testes,
-`pytest tests/`). Uma auditoria independente classificou a fundação em ~68% e o
-plano completo em 35.3%: schemas, DAG compiler, primitives de corpus/claims, BM25,
-gates básicos e eval harness existem; swarm paralelo real, plugin instalável,
-retrieval web, verificação viva de fontes e CI estão em correção (roadmap de 11
-PRs — ver `auditoria/` e o plano de correção do projeto).
+O **plano de correção pós-auditoria está completo** (80/81; resta apenas o gate
+humano de branch protection). A fundação cresceu para **234 testes**
+(`pytest tests/`) cobrindo as 12 fases: state machine com resume, retrieval de
+produção com adapters web, source trust chain viva, claim-evidence com
+contradições e falsificação, report swarm (council + section DAG + reviewers/
+fixers), integridade final bloqueante, CI, evals per-kind versionados e
+monitoring/governed learning. Scorecard da reauditoria: **9.18** ponderado
+(todas as 15 áreas ≥ 8.0 — ver `auditoria/DOD_VERIFICATION.md`).
 
 Esta árvore contém **apenas o produto**. O corpus forense que originou a pesquisa
 vive em storage privado separado; `evidence-manifest/` é o índice sanitizado
