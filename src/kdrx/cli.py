@@ -31,6 +31,18 @@ def _build_parser() -> argparse.ArgumentParser:
 
     p_eval = sub.add_parser("eval", help="run the seeded-defect eval harness")
     p_eval.add_argument("--json", action="store_true", help="emit JSON")
+    p_eval.add_argument(
+        "--split",
+        choices=["gold", "dev", "heldout", "all"],
+        default="all",
+        help="T-09-05: which data split to evaluate (heldout = prova final)",
+    )
+    p_eval.add_argument(
+        "--trials",
+        type=int,
+        default=1,
+        help="T-09-07: number of trials per case (stability check)",
+    )
 
     p_hook = sub.add_parser("hook", help="dispatch a deterministic hook")
     p_hook.add_argument(
@@ -237,21 +249,63 @@ def cmd_hook(args: argparse.Namespace) -> int:
 
 
 def cmd_eval(args: argparse.Namespace) -> int:
-    from kdrx.evals import builtin_cases, EvalHarness
+    from kdrx.evals import EvalHarness, builtin_cases, run_multi_trial
 
     harness = EvalHarness()
-    for case in builtin_cases():
+    for case in builtin_cases(split=None if args.split == "all" else args.split):
         harness.register(case)
-    reports = harness.run_all()
+    trials = max(1, int(getattr(args, "trials", 1)))
+    if trials > 1:
+        # T-09-07: multi-trial; gate corre sobre a primeira trial
+        # (detectores determinísticos => trials estáveis; instabilidade é bug).
+        results = run_multi_trial(harness.cases, trials)
+        reports = [r.trials[0] for r in results]
+        unstable = [r.case_id for r in results if not r.stable]
+    else:
+        results = []
+        reports = harness.run_all()
+        unstable = []
+    gate = harness.regression_gate(reports)
     if args.json:
-        print(json.dumps([r.__dict__ for r in reports], indent=2, default=str))
+        print(
+            json.dumps(
+                {
+                    "split": args.split,
+                    "trials": trials,
+                    "unstable_cases": unstable,
+                    "gate": {
+                        "passed": gate.passed,
+                        "reasons": gate.reasons,
+                        "threshold_version": gate.threshold_version,
+                        "metrics": {
+                            k: {
+                                "recall": round(m.recall, 4),
+                                "precision": round(m.precision, 4),
+                                "f1": round(m.f1, 4),
+                                "calibration": round(m.calibration, 4),
+                                "expected": m.expected,
+                                "detected": m.detected,
+                            }
+                            for k, m in gate.metrics.items()
+                            if m.expected or m.detected
+                        },
+                    },
+                    "reports": [r.__dict__ for r in reports],
+                },
+                indent=2,
+                default=str,
+            )
+        )
     else:
         for r in reports:
             print(r.summary())
             for d in r.details:
                 print(f"    {d}")
-        print(f"regression pass: {harness.regression_pass(reports)}")
-    return 0 if harness.regression_pass(reports) else 1
+        if trials > 1:
+            labels = ", ".join(unstable) if unstable else "none"
+            print(f"trials: {trials} (unstable cases: {labels})")
+        print(gate.summary())
+    return 0 if gate.passed else 1
 
 
 def cmd_demo(args: argparse.Namespace) -> int:
