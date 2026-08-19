@@ -51,6 +51,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "--objective", default="What does this corpus say?", help="research objective"
     )
     p_demo.add_argument("--out", default=".research/runs", help="runs root directory")
+    p_demo.add_argument(
+        "--live",
+        action="store_true",
+        help="enable live DOI resolution in the source trust gate (needs network)",
+    )
 
     p_plan = sub.add_parser(
         "plan", help="create contract + plan, run plan gate, scaffold run dir"
@@ -256,6 +261,7 @@ def cmd_demo(args: argparse.Namespace) -> int:
         corpus_dir=args.corpus,
         objective=args.objective,
         runs_root=args.out,
+        live=args.live,
     )
     print(json.dumps(summary, indent=2))
     return summary.get("exit_code", 0)

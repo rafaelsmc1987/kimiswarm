@@ -237,6 +237,7 @@ def execute_plan(
     corpus: FileCorpus,
     state: RunState,
     precompleted: dict[str, AgentResult] | None = None,
+    doi_resolver: Any | None = None,
 ) -> tuple[Any, "_FileResearchExecutor"]:
     """Run the wave scheduler over a persisted plan; return (result, executor).
 
@@ -248,7 +249,7 @@ def execute_plan(
     T-04-06: delivery-manifest.json é emitido com artifact reais + verdicts.
     """
     dag = compile_dag(plan.tasks)
-    executor = _FileResearchExecutor(corpus, state, contract.objective)
+    executor = _FileResearchExecutor(corpus, state, contract.objective, doi_resolver)
     manifest = state.load_manifest()
     manifest.status = TaskStatus.RUNNING
     state.save_manifest(manifest)
@@ -371,10 +372,17 @@ def resume_run(state: RunState, corpus: FileCorpus) -> tuple[Any, "_FileResearch
 class _FileResearchExecutor:
     """Deterministic executor: real file-corpus retrieval + gate recording."""
 
-    def __init__(self, corpus: FileCorpus, state: RunState, objective: str) -> None:
+    def __init__(
+        self,
+        corpus: FileCorpus,
+        state: RunState,
+        objective: str,
+        doi_resolver: Any | None = None,
+    ) -> None:
         self.corpus = corpus
         self.state = state
         self.objective = objective
+        self.doi_resolver = doi_resolver
         self.sources: list[SourceRecord] = []
         self.spans: list[EvidenceSpan] = []
         self.claims: list[Claim] = []
@@ -634,7 +642,7 @@ class _FileResearchExecutor:
         return standings
 
     def _verify(self, brief: AgentBrief) -> AgentResult:
-        from kdrx.verification import source_trust_gate
+        from kdrx.verification import record_doi, source_trust_gate
 
         # B-06/T-04-07: corpus vazio NÃO pode retornar sucesso — a existência
         # de fonte verificável é pré-condição do pipeline; falha bloqueia a wave.
@@ -642,7 +650,16 @@ class _FileResearchExecutor:
             raise RuntimeError(
                 "source trust gate: corpus sem fontes verificáveis (empty corpus blocks)"
             )
-        gates = [source_trust_gate(s).model_dump() for s in self.sources]
+        # T-06-01/07: quando um resolver vivo está configurado, fontes com DOI
+        # ganham checks de resolução BLOCKING (fabricado/misrouted => FAIL).
+        gates = []
+        for s in self.sources:
+            resolution = None
+            if self.doi_resolver is not None:
+                doi = record_doi(s)
+                if doi:
+                    resolution = self.doi_resolver.resolve(doi)
+            gates.append(source_trust_gate(s, resolution=resolution).model_dump())
         blocking_failures = [
             g["gate_id"] for g in gates if g["verdict"] in ("fail", "blocked")
         ]
@@ -723,8 +740,14 @@ def run_file_research(
     runs_root: str | Path = ".research",
     *,
     run_id: str | None = None,
+    live: bool = False,
 ) -> dict[str, Any]:
-    """Run the full offline pipeline and return a JSON-serializable summary."""
+    """Run the full offline pipeline and return a JSON-serializable summary.
+
+    ``live=True`` ativa a verificação viva de fontes (T-06-01): DOIs são
+    resolvidos via doi.org durante o source trust gate — depende de rede e é
+    desligado por padrão (pipeline offline determinístico).
+    """
     corpus = FileCorpus(corpus_dir)
     docs = corpus.scan()
 
@@ -740,8 +763,14 @@ def run_file_research(
             "exit_code": 1,
         }
 
+    doi_resolver = None
+    if live:
+        from kdrx.verification import DOIResolver
+
+        doi_resolver = DOIResolver()
+
     state, _manifest = prepare_run_dir(plan, contract, runs_root, run_id)
-    result, executor = execute_plan(plan, contract, corpus, state)
+    result, executor = execute_plan(plan, contract, corpus, state, doi_resolver=doi_resolver)
 
     report_path = state.run_dir / "delivery" / "report.md"
     return {
