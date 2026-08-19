@@ -225,7 +225,11 @@ class WaveScheduler:
         self._emit(self._event("task_exhausted", task_id=tid, attempts=st.attempts))
 
     @staticmethod
-    def _validate_outcome(task: TaskSpec, outcome: AgentResult) -> None:
+    def _validate_outcome(task: TaskSpec, outcome: AgentResult | None) -> None:
+        # T-02-06: um executor que retorna null é uma falha determinística,
+        # não um AttributeError anônimo achatado pelo retry loop.
+        if outcome is None:
+            raise ExecutorError("executor returned null result")
         if not outcome.covers_outputs(task.outputs):
             missing = set(task.outputs) - set(outcome.outputs_produced)
             raise ExecutorError(f"agent did not produce outputs {sorted(missing)}")

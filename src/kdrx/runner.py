@@ -82,6 +82,10 @@ def _retrieval_tasks(corpus_size: int) -> list[TaskSpec]:
             wave=0,
             role=AgentRole.SOURCE_VERIFIER,
             mission="run the source trust gate over every retrieved source",
+            # T-02-05: verify DEVE depender de retrieve explicitamente —
+            # antes ambos caiam na wave 0 e funcionavam só por ordem de lista;
+            # em concorrência real verify poderia iniciar sem sources.
+            dependencies=["T-RETRIEVE"],
             outputs=["verification/source_gates.json"],
             tools=["read"],
             read_only=True,

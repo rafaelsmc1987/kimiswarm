@@ -21,6 +21,7 @@ PRODUCT_PREFIXES = (
     ".claude/",
     ".github/",
     "evidence-manifest/",
+    "auditoria/",  # auditoria independente + roadmap (fonte do plano de correção)
 )
 PRODUCT_FILES = {
     "pyproject.toml",
