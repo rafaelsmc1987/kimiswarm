@@ -1,0 +1,9 @@
+{
+  "session_id": "sess-fixture-1",
+  "transcript_path": "C:\\Users\\WORK\\.claude\\projects\\demo\\sess-fixture-1.jsonl",
+  "cwd": "C:\\kimiswarm",
+  "permission_mode": "default",
+  "hook_event_name": "Stop",
+  "stop_hook_active": false,
+  "last_assistant_message": "Research run finished."
+}

@@ -1,0 +1,12 @@
+{
+  "session_id": "sess-fixture-1",
+  "transcript_path": "C:\\Users\\WORK\\.claude\\projects\\demo\\sess-fixture-1.jsonl",
+  "cwd": "C:\\kimiswarm",
+  "permission_mode": "default",
+  "hook_event_name": "TaskCompleted",
+  "task_id": "T-RETRIEVE",
+  "task_subject": "search the corpus for evidence relevant to the objective",
+  "task_description": "Retrieve evidence spans from the file corpus for the objective.",
+  "teammate_name": "retrieval-worker",
+  "team_name": "kdr-x"
+}

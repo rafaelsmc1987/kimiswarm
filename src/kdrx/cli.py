@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -76,10 +77,20 @@ def _build_parser() -> argparse.ArgumentParser:
     p_plan.add_argument("--corpus", default=None, help="file corpus dir (sizing only)")
     p_plan.add_argument("--out", default=".research/runs", help="runs root directory")
     p_plan.add_argument("--run-id", default=None)
+    p_plan.add_argument(
+        "--session-id",
+        default=None,
+        help="bind this Claude Code session to the run (env KDR_SESSION_ID)",
+    )
     p_plan.add_argument("--json", action="store_true", help="emit JSON summary")
 
     p_run = sub.add_parser("run", help="execute a persisted plan (see `kdr plan`)")
     p_run.add_argument("--run-dir", required=True)
+    p_run.add_argument(
+        "--session-id",
+        default=None,
+        help="bind this Claude Code session to the run (env KDR_SESSION_ID)",
+    )
     p_run.add_argument("--corpus", default=None, help="file corpus dir (offline path)")
 
     p_status = sub.add_parser("status", help="print run status")
@@ -87,6 +98,11 @@ def _build_parser() -> argparse.ArgumentParser:
 
     p_resume = sub.add_parser("resume", help="verify hashes and reload manifest")
     p_resume.add_argument("--run-dir", required=True)
+    p_resume.add_argument(
+        "--session-id",
+        default=None,
+        help="bind this Claude Code session to the run (env KDR_SESSION_ID)",
+    )
     p_resume.add_argument(
         "--corpus", default=None, help="file corpus dir (offline path)"
     )
@@ -114,6 +130,23 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _maybe_bind_session(
+    args: argparse.Namespace, run_id: str, run_dir: Path, runs_root: str | Path
+) -> None:
+    """Binding explícito session_id -> run no registry (SW-00 D2.1)."""
+    session_id = getattr(args, "session_id", None) or os.environ.get("KDR_SESSION_ID")
+    if not session_id:
+        return
+    from kdrx.native_hooks import SessionRegistry
+
+    SessionRegistry.for_runs_root(runs_root).bind(
+        session_id,
+        run_id=run_id,
+        run_dir=str(Path(run_dir).resolve()),
+        binding="explicit",
+    )
+
+
 def cmd_plan(args: argparse.Namespace) -> int:
     from kdrx.planner import plan_gate
     from kdrx.runner import build_contract, build_plan, prepare_run_dir
@@ -134,6 +167,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
     state, manifest = prepare_run_dir(
         plan, contract, runs_root=args.out, run_id=args.run_id
     )
+    _maybe_bind_session(args, manifest.run_id, state.run_dir, args.out)
     waves = sorted({t.wave for t in plan.tasks})
     summary = {
         "run_id": manifest.run_id,
@@ -370,6 +404,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         )
         return 2
     manifest = load_manifest_from_dir(run_dir)
+    _maybe_bind_session(args, manifest.run_id, run_dir, run_dir.parent)
     state = RunState(run_dir.parent, manifest.run_id)
     corpus = FileCorpus(args.corpus)
     docs = corpus.scan()
@@ -408,6 +443,7 @@ def cmd_resume(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     rs = RunState(run_dir.parent, m.run_id)
+    _maybe_bind_session(args, m.run_id, run_dir, run_dir.parent)
     m = rs.resume()
     if m.metadata.get("hash_mismatch"):
         print(

@@ -1,0 +1,12 @@
+{
+  "session_id": "sess-fixture-1",
+  "transcript_path": "C:\\Users\\WORK\\.claude\\projects\\demo\\sess-fixture-1.jsonl",
+  "cwd": "C:\\kimiswarm",
+  "permission_mode": "default",
+  "hook_event_name": "SubagentStop",
+  "stop_hook_active": false,
+  "agent_id": "agent-001",
+  "agent_type": "retrieval-worker",
+  "agent_transcript_path": "C:\\Users\\WORK\\.claude\\projects\\demo\\agent-001.jsonl",
+  "last_assistant_message": "Retrieval complete: evidence spans written to evidence/spans.jsonl."
+}

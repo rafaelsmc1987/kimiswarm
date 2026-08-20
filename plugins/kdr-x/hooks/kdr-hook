@@ -41,7 +41,11 @@ def _decide(decision) -> int:
 
 
 def _load_gate_passed(path: Path) -> bool:
-    """True iff a persisted gate decision ({...,"verdict": "pass"})."""
+    """True iff a persisted gate decision ({...,"verdict": "pass"}).
+
+    Deprecated (SW-00 D6): só o modo legado (payload sintético) usa; o modo
+    nativo vive em ``kdrx.native_hooks``.
+    """
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except OSError:
@@ -51,6 +55,10 @@ def _load_gate_passed(path: Path) -> bool:
 
 def _stop_decision(data: dict):
     """Discover the active run under the run root and gate it for real (T-01-04).
+
+    Deprecated (SW-00 D6): caminho legado do payload sintético (``kdr hook
+    --json``); o Stop nativo é ``kdrx.native_hooks.native_stop`` (registry +
+    manifest persistido). Mantido intacto para o contrato legado.
 
     If no kdr run exists, there is nothing to gate: allow with an explicit
     note (a Stop event can fire in sessions that never ran kdr). With a run
@@ -131,8 +139,36 @@ def _stop_decision(data: dict):
 def main() -> int:
     hook_name = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("KDRX_HOOK", "")
     raw = sys.stdin.read()
-    data = json.loads(raw) if raw.strip() else {}
+    try:
+        data = json.loads(raw) if raw.strip() else {}
+    except json.JSONDecodeError as exc:
+        # JSON malformado nunca é exit 1: erro parseável + exit 2 (plano §3 D3).
+        print(json.dumps({"error": f"invalid hook payload JSON: {exc}"}))
+        return 2
+    if not isinstance(data, dict):
+        # JSON válido mas não-objeto (ex.: ``123``, ``[1, 2]``) idem: o
+        # roteamento exige dict, senão TypeError/AttributeError -> exit 1.
+        print(json.dumps({"error": "hook payload must be a JSON object"}))
+        return 2
 
+    # Roteamento dual-mode (SW-00 D6): payload nativo do Claude Code sempre
+    # traz "hook_event_name" (fallback: "session_id" sem as chaves sintéticas
+    # "task"/"result") e vai para kdrx.native_hooks; o resto é o legado.
+    native = "hook_event_name" in data or (
+        "session_id" in data and "task" not in data and "result" not in data
+    )
+    if native:
+        from kdrx.native_hooks import dispatch as native_dispatch
+
+        try:
+            decision = native_dispatch(hook_name, data)
+        except ValueError as exc:
+            print(json.dumps({"error": str(exc)}))
+            return 2
+        return _decide(decision)
+
+    # Caminho legado: payload sintético do `kdr hook --json` (contrato de
+    # dev/debug); payloads nativos passam por kdrx.native_hooks acima.
     if hook_name in ("task_created", "TaskCreated"):
         decision = hook_task_created(TaskSpec.model_validate(data["task"]))
     elif hook_name in ("pre_tool_use", "PreToolUse"):
