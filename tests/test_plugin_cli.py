@@ -81,6 +81,30 @@ def runs_root(tmp_path: Path) -> Path:
     return tmp_path / ".research"
 
 
+def _scaffold_run(runs_root: Path, objective: str = "system latency") -> Path:
+    proc = _cli("plan", "--objective", objective, "--out", str(runs_root), "--json")
+    assert proc.returncode == 0, proc.stderr
+    return Path(json.loads(proc.stdout)["run_dir"])
+
+
+def _read_plan(run_dir: Path) -> dict:
+    return json.loads((run_dir / "plan.json").read_text(encoding="utf-8"))
+
+
+def _import_cli(*args: str, payload: str | None = None) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, "-m", "kdrx.cli", "import-plan", *args],
+        input=payload,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        env=_env(),
+        cwd=str(REPO_ROOT),
+        timeout=180,
+    )
+
+
 # --------------------------------------------------------------------------- #
 # T-01-01: manifesto completo
 # --------------------------------------------------------------------------- #
@@ -297,3 +321,250 @@ def test_cli_hook_stdin_dispatch(tmp_path: Path):
         "tool_input": {"command": "rm -rf /"},
     }
     assert _stdin(forbidden).returncode == 2
+
+
+# --------------------------------------------------------------------------- #
+# SW-02 PR-A: kdr import-plan + provenance + gates (D1/D4/D5/D8)
+# --------------------------------------------------------------------------- #
+def test_import_plan_hash_equality_chain(corpus: Path, runs_root: Path):
+    """Aceitação 1: hash do import == hash do plan.json == status --json."""
+    from kdrx.state import hash_file
+
+    run_dir = _scaffold_run(runs_root)
+    plan = _read_plan(run_dir)
+    proc = _import_cli(
+        "--run-dir",
+        str(run_dir),
+        "--stdin",
+        "--source",
+        "council-imported",
+        "--review-approved",
+        "--json",
+        payload=json.dumps(plan),
+    )
+    assert proc.returncode == 0, proc.stderr
+    out = json.loads(proc.stdout)
+    assert out["plan_hash"] == hash_file(run_dir / "plan.json")
+    assert out["revision"] == 1
+    assert out["source"] == "council-imported"
+    assert out["review_approved"] is True
+
+    status = _cli("status", "--run-dir", str(run_dir), "--json")
+    assert status.returncode == 0, status.stderr
+    st = json.loads(status.stdout)
+    assert st["plan"]["sha256"] == out["plan_hash"]
+    assert st["plan"]["plan_hash_match"] is True
+    assert st["plan"]["revision"] == 1
+
+
+def test_import_plan_field_round_trip(corpus: Path, runs_root: Path):
+    """Aceitação 4: role/tools/skills/guidance/metadata/owner/reviewer/
+    acceptance/budget custom sobrevivem ao import (extra='forbid' não dropa)."""
+    run_dir = _scaffold_run(runs_root)
+    plan = _read_plan(run_dir)
+    task = plan["tasks"][0]
+    enriched = {
+        "role": "web_explorer",
+        "tools": ["search", "read"],
+        "skills": ["corpus_search"],
+        "guidance": "use only primary sources",
+        "metadata": {"context": "corpus de 2 docs", "priority": 1},
+        "owner": "owner-x",
+        "reviewer": "reviewer-y",
+        "acceptance": {
+            "criteria": ["c1"],
+            "output_schema": "json",
+            "required_evidence_refs": 2,
+        },
+        "budget": {"tokens": 5, "queries": 3, "wall_seconds": 60},
+    }
+    task.update(enriched)
+    proc = _import_cli(
+        "--run-dir", str(run_dir), "--stdin", "--json", payload=json.dumps(plan)
+    )
+    assert proc.returncode == 0, proc.stderr
+    persisted = _read_plan(run_dir)
+    t0 = persisted["tasks"][0]
+    for key, value in enriched.items():
+        assert t0[key] == value, key
+    assert persisted["ownership"], "ownership derivado deve ser persistido"
+
+
+def test_import_plan_malformed_json_exit_3(corpus: Path, runs_root: Path):
+    run_dir = _scaffold_run(runs_root)
+    proc = _import_cli("--run-dir", str(run_dir), "--stdin", payload="{not json")
+    assert proc.returncode == 3
+
+
+def test_import_plan_extra_field_forbidden_exit_3(corpus: Path, runs_root: Path):
+    run_dir = _scaffold_run(runs_root)
+    plan = _read_plan(run_dir)
+    plan["bogus_field"] = 1
+    proc = _import_cli("--run-dir", str(run_dir), "--stdin", payload=json.dumps(plan))
+    assert proc.returncode == 3
+
+
+def test_import_plan_wrong_contract_id_exit_4(corpus: Path, runs_root: Path):
+    run_dir = _scaffold_run(runs_root)
+    plan = _read_plan(run_dir)
+    plan["contract_id"] = "contract-other"
+    proc = _import_cli("--run-dir", str(run_dir), "--stdin", payload=json.dumps(plan))
+    assert proc.returncode == 4
+
+
+def test_import_plan_critical_task_without_reviewer_exit_1(
+    corpus: Path, runs_root: Path
+):
+    run_dir = _scaffold_run(runs_root)
+    plan = _read_plan(run_dir)
+    plan["tasks"][0]["reviewer"] = None  # criticality=high + sem reviewer = NO_VERIFIER
+    proc = _import_cli("--run-dir", str(run_dir), "--stdin", payload=json.dumps(plan))
+    assert proc.returncode == 1
+
+
+def test_import_plan_failed_imports_leave_plan_untouched(corpus: Path, runs_root: Path):
+    """Aceitação 3: validate-then-write — nada muda o plan.json após falhas."""
+    run_dir = _scaffold_run(runs_root)
+    before = (run_dir / "plan.json").read_bytes()
+    plan = _read_plan(run_dir)
+
+    extra = _import_cli(
+        "--run-dir", str(run_dir), "--stdin", payload=json.dumps({**plan, "x": 1})
+    )
+    assert extra.returncode == 3
+    wrong = dict(plan)
+    wrong["contract_id"] = "other"
+    identity = _import_cli(
+        "--run-dir", str(run_dir), "--stdin", payload=json.dumps(wrong)
+    )
+    assert identity.returncode == 4
+    bad = json.loads(json.dumps(plan))
+    bad["tasks"][0]["reviewer"] = None
+    dag_fail = _import_cli(
+        "--run-dir", str(run_dir), "--stdin", payload=json.dumps(bad)
+    )
+    assert dag_fail.returncode == 1
+
+    assert (run_dir / "plan.json").read_bytes() == before
+
+
+def test_import_plan_after_run_exit_4(corpus: Path, runs_root: Path):
+    run_dir = _scaffold_run(runs_root)
+    run = _cli("run", "--run-dir", str(run_dir), "--corpus", str(corpus))
+    assert run.returncode == 0, run.stderr
+    plan = _read_plan(run_dir)
+    proc = _import_cli("--run-dir", str(run_dir), "--stdin", payload=json.dumps(plan))
+    assert proc.returncode == 4
+
+
+def test_import_plan_dispositions_persist_and_validate(corpus: Path, runs_root: Path):
+    run_dir = _scaffold_run(runs_root)
+    plan = _read_plan(run_dir)
+    plan_file = runs_root / "import-plan.json"
+    plan_file.write_text(json.dumps(plan), encoding="utf-8")
+    disp_file = runs_root / "dispositions.json"
+    valid = [
+        {
+            "recommendation": "r1",
+            "perspective": "p1",
+            "disposition": "accepted",
+            "rationale": "ok",
+        },
+        {
+            "recommendation": "r2",
+            "perspective": "p2",
+            "disposition": "deferred",
+            "rationale": "later",
+        },
+    ]
+    disp_file.write_text(json.dumps(valid), encoding="utf-8")
+    proc = _import_cli(
+        "--run-dir",
+        str(run_dir),
+        "--file",
+        str(plan_file),
+        "--dispositions-file",
+        str(disp_file),
+        "--json",
+    )
+    assert proc.returncode == 0, proc.stderr
+    persisted = json.loads(
+        (run_dir / "planner-dispositions.json").read_text(encoding="utf-8")
+    )
+    assert persisted == valid
+
+    invalid = [
+        {
+            "recommendation": "x",
+            "perspective": "p",
+            "disposition": "maybe",
+            "rationale": "",
+        }
+    ]
+    disp_file.write_text(json.dumps(invalid), encoding="utf-8")
+    proc2 = _import_cli(
+        "--run-dir",
+        str(run_dir),
+        "--file",
+        str(plan_file),
+        "--dispositions-file",
+        str(disp_file),
+    )
+    assert proc2.returncode == 3
+
+
+def test_import_plan_warns_unknown_task_ids(corpus: Path, runs_root: Path):
+    """D7: warning não-bloqueante para ids fora do executor offline."""
+    run_dir = _scaffold_run(runs_root)
+    plan = _read_plan(run_dir)
+    plan["tasks"].append(
+        {
+            "task_id": "T-CUSTOM",
+            "stage": "retrieval",
+            "wave": 0,
+            "role": "web_explorer",
+            "mission": "custom enrichment",
+            "dependencies": [],
+            "outputs": ["extra/out.json"],
+            "acceptance": {"criteria": ["ok"], "output_schema": "json"},
+        }
+    )
+    proc = _import_cli(
+        "--run-dir", str(run_dir), "--stdin", "--json", payload=json.dumps(plan)
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "T-CUSTOM" in proc.stderr
+    assert "warning" in proc.stderr
+
+
+def test_plan_objective_file_preserves_quotes_newlines(corpus: Path, runs_root: Path):
+    objective = "He said \"hello\"\nsecond line with 'single quotes'\n"
+    obj_file = runs_root.parent / "objective.txt"
+    obj_file.write_text(objective, encoding="utf-8")
+    proc = _cli(
+        "plan", "--objective-file", str(obj_file), "--out", str(runs_root), "--json"
+    )
+    assert proc.returncode == 0, proc.stderr
+    run_dir = Path(json.loads(proc.stdout)["run_dir"])
+    contract = json.loads(
+        (run_dir / "research_contract.json").read_text(encoding="utf-8")
+    )
+    assert contract["objective"] == objective.strip()
+
+
+def test_resume_with_corrupted_plan_exit_1(corpus: Path, runs_root: Path):
+    run_dir = _scaffold_run(runs_root)
+    (run_dir / "plan.json").write_text("garbage not json", encoding="utf-8")
+    proc = _cli("resume", "--run-dir", str(run_dir), "--corpus", str(corpus))
+    assert proc.returncode == 1
+
+
+def test_verify_emits_plan_dag_and_run_scaffold_note(corpus: Path, runs_root: Path):
+    run_dir = _scaffold_run(runs_root)
+    run = _cli("run", "--run-dir", str(run_dir), "--corpus", str(corpus))
+    assert run.returncode == 0, run.stderr
+    # D8: nota não-bloqueante no run de scaffold sem import
+    assert "note: running scaffold-default plan (no council import)" in run.stderr
+    verify = _cli("verify", "--run-dir", str(run_dir))
+    assert verify.returncode == 0, verify.stdout + verify.stderr
+    assert '"plan_dag": "pass"' in verify.stdout

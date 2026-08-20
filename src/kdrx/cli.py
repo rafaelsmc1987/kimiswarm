@@ -79,7 +79,12 @@ def _build_parser() -> argparse.ArgumentParser:
     p_plan = sub.add_parser(
         "plan", help="create contract + plan, run plan gate, scaffold run dir"
     )
-    p_plan.add_argument("--objective", required=True)
+    g_obj = p_plan.add_mutually_exclusive_group(required=True)
+    g_obj.add_argument("--objective", help="research objective (inline)")
+    g_obj.add_argument(
+        "--objective-file",
+        help="read the objective from a UTF-8 file (no shell interpolation, D6)",
+    )
     p_plan.add_argument("--corpus", default=None, help="file corpus dir (sizing only)")
     p_plan.add_argument("--out", default=".research/runs", help="runs root directory")
     p_plan.add_argument("--run-id", default=None)
@@ -89,6 +94,34 @@ def _build_parser() -> argparse.ArgumentParser:
         help="bind this Claude Code session to the run (env KDR_SESSION_ID)",
     )
     p_plan.add_argument("--json", action="store_true", help="emit JSON summary")
+
+    p_import = sub.add_parser(
+        "import-plan",
+        help="validate + canonize + persist an enriched plan (canonical handoff, D1)",
+    )
+    p_import.add_argument("--run-dir", required=True)
+    g_import = p_import.add_mutually_exclusive_group(required=True)
+    g_import.add_argument(
+        "--stdin", action="store_true", help="read plan JSON from stdin"
+    )
+    g_import.add_argument("--file", help="read plan JSON from a file")
+    p_import.add_argument(
+        "--dispositions-file",
+        default=None,
+        help="planner dispositions JSON (list[PlannerDisposition])",
+    )
+    p_import.add_argument(
+        "--source",
+        choices=["council-imported", "manual"],
+        default="manual",
+        help="provenance source of the import",
+    )
+    p_import.add_argument(
+        "--review-approved",
+        action="store_true",
+        help="mark the import as council-review-approved (D3)",
+    )
+    p_import.add_argument("--json", action="store_true", help="emit JSON summary")
 
     p_run = sub.add_parser("run", help="execute a persisted plan (see `kdr plan`)")
     p_run.add_argument("--run-dir", required=True)
@@ -101,6 +134,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     p_status = sub.add_parser("status", help="print run status")
     p_status.add_argument("--run-dir", required=True)
+    p_status.add_argument("--json", action="store_true", help="emit JSON status")
 
     p_resume = sub.add_parser("resume", help="verify hashes and reload manifest")
     p_resume.add_argument("--run-dir", required=True)
@@ -157,12 +191,22 @@ def cmd_plan(args: argparse.Namespace) -> int:
     from kdrx.planner import plan_gate
     from kdrx.runner import build_contract, build_plan, prepare_run_dir
 
+    objective = args.objective
+    if args.objective_file:
+        try:
+            objective = Path(args.objective_file).read_text(encoding="utf-8").strip()
+        except OSError as exc:
+            print(f"error: objective file: {exc}", file=sys.stderr)
+            return 2
+        if not objective:
+            print("error: objective file is empty", file=sys.stderr)
+            return 2
     corpus_size = 0
     if args.corpus:
         from kdrx.retrieval import FileCorpus
 
         corpus_size = len(FileCorpus(args.corpus).scan())
-    contract = build_contract(args.objective)
+    contract = build_contract(objective)
     plan = build_plan(contract, corpus_size)
     gate = plan_gate(plan, contract)
     if gate.blocking():
@@ -178,6 +222,9 @@ def cmd_plan(args: argparse.Namespace) -> int:
     summary = {
         "run_id": manifest.run_id,
         "run_dir": str(state.run_dir),
+        "plan_id": plan.plan_id,
+        "contract_id": contract.contract_id,
+        "route": contract.route.value,
         "gate": gate.verdict.value,
         "tasks": [t.task_id for t in plan.tasks],
         "waves": waves,
@@ -189,6 +236,119 @@ def cmd_plan(args: argparse.Namespace) -> int:
         print(f"run_dir: {state.run_dir}")
         print(f"plan gate: {gate.verdict.value}")
         print(f"tasks: {len(plan.tasks)}  waves: {waves}")
+    return 0
+
+
+def cmd_import_plan(args: argparse.Namespace) -> int:
+    """D1: validate-then-write import do plano enriquecido (canonical handoff).
+
+    Exit codes: 0 ok · 1 gate estrutural/semântico · 2 usage/IO · 3
+    JSON/pydantic/dispositions validation · 4 state conflict.
+    """
+    from pydantic import TypeAdapter, ValidationError
+
+    from kdrx.planner import plan_gate
+    from kdrx.runner import PlanImportError, import_plan_into_run
+    from kdrx.schemas.plan import PlannerDisposition, ResearchPlan
+    from kdrx.schemas.request import ResearchContract
+    from kdrx.state import RunState, load_manifest_from_dir
+
+    # 1. payload (stdin ou arquivo; grupo mutuamente exclusivo)
+    if args.stdin:
+        raw = sys.stdin.read()
+    else:
+        try:
+            raw = Path(args.file).read_text(encoding="utf-8")
+        except OSError as exc:
+            print(f"error: plan file: {exc}", file=sys.stderr)
+            return 2
+    # 2. pydantic (JSON + extra="forbid") -> 3
+    try:
+        plan = ResearchPlan.model_validate_json(raw)
+    except ValidationError as exc:
+        print(f"error: invalid plan payload: {exc}", file=sys.stderr)
+        return 3
+
+    # 3. manifest + contract do run dir -> 2
+    run_dir = Path(args.run_dir)
+    manifest_path = run_dir / "manifest.json"
+    contract_path = run_dir / "research_contract.json"
+    if not manifest_path.exists() or not contract_path.exists():
+        print(
+            f"error: {run_dir} sem manifest.json/research_contract.json — "
+            "crie o run com `kdr plan` primeiro",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        manifest = load_manifest_from_dir(run_dir)
+        contract = ResearchContract.model_validate_json(
+            contract_path.read_text(encoding="utf-8")
+        )
+    except (OSError, ValidationError) as exc:
+        print(f"error: contract ilegível: {exc}", file=sys.stderr)
+        return 2
+
+    # 9. dispositions (D5) -> 3 (shape inválida); arquivo ilegível -> 2
+    dispositions = None
+    if args.dispositions_file:
+        try:
+            raw_disp = Path(args.dispositions_file).read_text(encoding="utf-8")
+        except OSError as exc:
+            print(f"error: dispositions file: {exc}", file=sys.stderr)
+            return 2
+        try:
+            dispositions = TypeAdapter(list[PlannerDisposition]).validate_json(raw_disp)
+        except ValidationError as exc:
+            print(f"error: invalid dispositions: {exc}", file=sys.stderr)
+            return 3
+
+    state = RunState(run_dir.parent, manifest.run_id)
+    try:
+        provenance = import_plan_into_run(
+            state,
+            plan,
+            contract,
+            source=args.source,
+            review_approved=args.review_approved,
+            dispositions=dispositions,
+        )
+    except PlanImportError as exc:
+        print(f"error: import blocked: {exc}", file=sys.stderr)
+        if exc.details:
+            print(json.dumps(exc.details, indent=2, default=str), file=sys.stderr)
+        return exc.exit_code
+
+    # D7: warning não-bloqueante para task ids fora do executor offline
+    known_ids = {"T-RETRIEVE", "T-VERIFY", "T-SYNTHESIZE", "T-INTEGRITY"}
+    unknown = sorted({t.task_id for t in plan.tasks} - known_ids)
+    if unknown:
+        print(
+            f"warning: task ids {unknown} não são executáveis pelo executor "
+            "offline `kdr run`; use /kdr-x:kdr-run",
+            file=sys.stderr,
+        )
+
+    gate = plan_gate(plan, contract)  # passa por construção (import já bloqueou)
+    waves = sorted(plan.waves)
+    summary = {
+        "run_id": manifest.run_id,
+        "run_dir": str(state.run_dir),
+        "plan_hash": provenance["sha256"],
+        "revision": provenance["revision"],
+        "source": provenance["source"],
+        "review_approved": provenance["review_approved"],
+        "gate": gate.verdict.value,
+        "tasks": [t.task_id for t in plan.tasks],
+        "waves": waves,
+    }
+    if args.json:
+        print(json.dumps(summary, indent=2))
+    else:
+        print(
+            f"imported plan into {manifest.run_id} "
+            f"(hash {provenance['sha256'][:12]}, rev {provenance['revision']})"
+        )
     return 0
 
 
@@ -555,6 +715,12 @@ def cmd_run(args: argparse.Namespace) -> int:
         )
         return 2
     manifest = load_manifest_from_dir(run_dir)
+    # D8: scaffold sem import continua permitido; nota não-bloqueante
+    if (manifest.metadata.get("plan") or {}).get("source") == "scaffold-default":
+        print(
+            "note: running scaffold-default plan (no council import)",
+            file=sys.stderr,
+        )
     _maybe_bind_session(args, manifest.run_id, run_dir, run_dir.parent)
     state = RunState(run_dir.parent, manifest.run_id)
     corpus = FileCorpus(args.corpus)
@@ -574,11 +740,39 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 def cmd_status(args: argparse.Namespace) -> int:
-    from kdrx.state import load_manifest_from_dir
+    from kdrx.state import hash_file, load_manifest_from_dir
 
     m = load_manifest_from_dir(args.run_dir)
-    print(f"run: {m.run_id}  status: {m.status}")
-    print(f"completed: {len(m.completed_tasks)}  failed: {len(m.failed_tasks)}")
+    plan_meta = m.metadata.get("plan")
+    if args.json:
+        plan_blob = dict(plan_meta) if isinstance(plan_meta, dict) else {}
+        stored = plan_blob.get("sha256")
+        plan_path = Path(args.run_dir) / "plan.json"
+        plan_blob["plan_hash_match"] = bool(
+            stored and plan_path.is_file() and hash_file(plan_path) == stored
+        )
+        print(
+            json.dumps(
+                {
+                    "run_id": m.run_id,
+                    "status": m.status.value,
+                    "completed": m.completed_tasks,
+                    "failed": m.failed_tasks,
+                    "plan": plan_blob,
+                },
+                indent=2,
+            )
+        )
+    else:
+        print(f"run: {m.run_id}  status: {m.status}")
+        print(f"completed: {len(m.completed_tasks)}  failed: {len(m.failed_tasks)}")
+        if isinstance(plan_meta, dict) and plan_meta.get("sha256"):
+            print(
+                f"plan: {plan_meta['sha256'][:12]} "
+                f"({plan_meta.get('source', 'unknown')}, "
+                f"rev {plan_meta.get('revision', 0)}, "
+                f"approved={plan_meta.get('review_approved', False)})"
+            )
     return 0
 
 
@@ -602,6 +796,29 @@ def cmd_resume(args: argparse.Namespace) -> int:
         )
         print("run não retomado (provenance comprometida)", file=sys.stderr)
         return 2
+    # SW-02: plan gate antes de retomar (fecha o gap do split-brain, D1.8)
+    from pydantic import ValidationError
+
+    from kdrx.planner import plan_gate
+    from kdrx.schemas.plan import ResearchPlan
+    from kdrx.schemas.request import ResearchContract
+
+    try:
+        plan = ResearchPlan.model_validate_json(
+            (run_dir / "plan.json").read_text(encoding="utf-8")
+        )
+        contract = ResearchContract.model_validate_json(
+            (run_dir / "research_contract.json").read_text(encoding="utf-8")
+        )
+    except (OSError, ValidationError) as exc:
+        print(f"error: plano/contrato corrompido: {exc}", file=sys.stderr)
+        return 1
+    gate = plan_gate(plan, contract)
+    if gate.blocking():
+        print("plan gate BLOCKED:", file=sys.stderr)
+        for reason in gate.blocking_reasons:
+            print(f"  - {reason}", file=sys.stderr)
+        return 1
     corpus_arg = getattr(args, "corpus", None)
     if not corpus_arg:
         print(
@@ -664,10 +881,27 @@ def cmd_verify(args: argparse.Namespace) -> int:
         report_text, sources=sources, claims=claims, spans=spans
     )
     security = security_gate(run_dir)
+    # SW-02: recheck do plano/DAG persistido (informativo; all_pass não muda)
+    plan_dag = "fail"
+    plan_p = run_dir / "plan.json"
+    if plan_p.exists():
+        from pydantic import ValidationError
+
+        from kdrx.dag import compile_dag
+        from kdrx.schemas.plan import ResearchPlan
+
+        try:
+            persisted_plan = ResearchPlan.model_validate_json(
+                plan_p.read_text(encoding="utf-8")
+            )
+            plan_dag = "pass" if compile_dag(persisted_plan.tasks).is_valid else "fail"
+        except (OSError, ValidationError):
+            plan_dag = "fail"
     results = {
         "source_trust": "pass" if src_pass else "fail",
         "citation_integrity": citation.verdict.value,
         "security": security.verdict.value,
+        "plan_dag": plan_dag,
     }
     print(json.dumps(results, indent=2))
     all_pass = (
@@ -759,6 +993,7 @@ _CMDS = {
     "hook": cmd_hook,
     "demo": cmd_demo,
     "plan": cmd_plan,
+    "import-plan": cmd_import_plan,
     "status": cmd_status,
     "resume": cmd_resume,
     "verify": cmd_verify,
