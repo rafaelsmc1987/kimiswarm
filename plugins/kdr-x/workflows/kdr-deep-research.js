@@ -1,20 +1,20 @@
-// kdr-deep-research — E2E plan -> run -> verify >report (T-02-04).
+// kdr-deep-research — E2E plan -> run -> verify -> report -> seal (T-02-04).
 //
 // Compõe a orquestração inteira num script: council fan-out -> synthesis ->
-// waves com gates -> verification adversarial -> delivery. Scripts de
-// workflow são standalone por constraint do runtime (module loading é
-// rejeitado antes do run); o DNA estrutural é o mesmo de
-// kdr-plan/kdr-run/kdr-verify.
+// waves com gates -> verification adversarial -> report -> selo determinístico
+// sobre os bytes finais. Scripts de workflow são standalone por constraint do
+// runtime (module loading é rejeitado antes do run); o DNA estrutural é o
+// mesmo de kdr-plan/kdr-run/kdr-verify.
 //
 // Input (global `args`):
 //   args = "<objective>"  |  { objective, corpus?, out?, run_dir? }
 // Se args.run_dir existir e tiver plan.json, pula a fase de plan (resume do checkpoint).
-// Output: { blocking, run_dir, report, verdict, summary }
+// Output: { blocking, run_dir, report, verdict, sealed, verified_report_hash, summary }
 
 export const meta = {
   name: 'kdr-deep-research',
-  description: 'Full deep-research pipeline: planner council -> gated waves -> adversarial verify -> cited report delivery',
-  phases: ['plan', 'council', 'synthesize', 'waves', 'verify', 'report'],
+  description: 'Full deep-research pipeline: planner council -> gated waves -> adversarial verify -> cited report -> deterministic seal',
+  phases: ['plan', 'council', 'synthesize', 'waves', 'verify', 'report', 'seal'],
 }
 
 if (
@@ -29,6 +29,7 @@ const objective = typeof args === 'string' ? args.trim() : String(args.objective
 const corpus = typeof args === 'object' && args.corpus ? String(args.corpus) : null
 const outRoot = typeof args === 'object' && args.out ? String(args.out) : '.research'
 const resumeRunDir = typeof args === 'object' && args.run_dir ? String(args.run_dir) : null
+const MAX_SEAL_REPAIRS = 1 // D3: repair do report.md guiado por blocking_reasons (N=1 fixo)
 
 // --------------------------------------------------------------------- plan --
 
@@ -207,9 +208,11 @@ const VERIFY_SCHEMA = {
 const verify = await agent(
   [
     'Run the verification gates via Bash: `kdr verify --run-dir ' + runDir + '`.',
-    'Then read verification/integrity.json + verification/security.json and the claims/standings.',
-    'verdict=pass only if every gate JSON says "pass". Unreadable/missing => unverifiable, and list',
-    'what could not be checked — unverifiable NEVER counts as a pass and never as a refutation.',
+    'Parse the STDOUT: the results JSON (source_trust, citation_integrity, security, plan_dag)',
+    'and the final line `verify: PASS` or `verify: FAIL`.',
+    'verdict=pass only if the STDOUT ends with `verify: PASS`. Non-zero exit => fail, and list',
+    'which gates failed; if the command cannot run at all => unverifiable, and list what could',
+    'not be checked — unverifiable NEVER counts as a pass and never as a refutation.',
   ].join('\n'),
   { label: 'dr:verify', phase: 'verify', schema: VERIFY_SCHEMA },
 )
@@ -244,14 +247,146 @@ if (report === null) {
   return { blocking: true, run_dir: runDir, error: 'report agent lost (null result)', verdict }
 }
 
+// --------------------------------------------------------------------- seal --
+
+phase('seal')
+
+// D3: selo determinístico sobre os BYTES finais de delivery/report.md
+// (validate-then-write: `kdr seal` só escreve o selo se TODOS os gates
+// passarem; os verdicts de gate são persistidos sempre). Repair limitado
+// N=1 (MAX_SEAL_REPAIRS), guiado pelos blocking_reasons concretos do seal.
+const SEAL_SCHEMA = {
+  type: 'object',
+  required: ['verdict', 'sealed', 'verified_report_hash'],
+  properties: {
+    verdict: { type: 'string', enum: ['pass', 'fail'] },
+    sealed: { type: 'boolean' },
+    verified_report_hash: {
+      type: ['string', 'null'],
+      description: 'sha256 dos bytes finais do report (stdout do seal); null quando o seal falhou',
+    },
+    delivered_at: { type: ['string', 'null'] },
+    blocking_reasons: { type: 'array', items: { type: 'string' } },
+  },
+}
+
+const seal = await agent(
+  [
+    'Run the deterministic seal via Bash: kdr seal --run-dir "' + runDir + '" --json',
+    'Parse the STDOUT JSON: verdict, sealed, verified_report_hash, delivered_at, blocking_reasons.',
+    'Never invent values — copy them verbatim from the stdout JSON.',
+    'On fail (exit code 1), return blocking_reasons EXACTLY as printed (they drive the repair).',
+    'Usage errors (exit 2/3, no JSON stdout) are also fail: report the stderr message as a',
+    'blocking_reason.',
+  ].join('\n'),
+  { label: 'dr:seal', phase: 'seal', schema: SEAL_SCHEMA },
+)
+
+if (seal === null) {
+  return {
+    blocking: true,
+    run_dir: runDir,
+    report: report.report_path,
+    verdict,
+    error: 'seal agent lost (null result)',
+  }
+}
+
+let sealed = seal.sealed === true
+let sealVerdict = seal.verdict
+let sealHash = seal.verified_report_hash
+let sealReasons = Array.isArray(seal.blocking_reasons) ? seal.blocking_reasons : []
+let deliveredAt = seal.delivered_at || null
+
+let sealRepairs = 0
+while (!sealed && sealVerdict === 'fail' && sealRepairs < MAX_SEAL_REPAIRS) {
+  sealRepairs++
+
+  // repair: re-draft do report.md guiado pelos blocking_reasons (Write
+  // PERMITIDO — seal falho não escreveu selo, o run NÃO está selado, D4).
+  const repair = await agent(
+    [
+      'The deterministic seal (kdr seal) FAILED on the final bytes of ' +
+        runDir +
+        '/delivery/report.md.',
+      'Re-draft ' + runDir + '/delivery/report.md (Write, UTF-8) so EVERY blocking reason below',
+      'resolves. Citations must reference source ids that exist in corpus/sources.jsonl, with',
+      'exact spans from evidence/spans.jsonl. Do NOT touch any other file.',
+      '',
+      'Blocking reasons: ' + JSON.stringify(sealReasons),
+    ].join('\n'),
+    {
+      label: 'dr:seal:repair:' + sealRepairs,
+      phase: 'seal',
+      schema: {
+        type: 'object',
+        required: ['changed'],
+        properties: { changed: { type: 'array', items: { type: 'string' } } },
+      },
+    },
+  )
+
+  if (repair === null) {
+    return {
+      blocking: true,
+      run_dir: runDir,
+      report: report.report_path,
+      verdict,
+      sealed: false,
+      seal_reasons: sealReasons,
+      error: 'seal repair agent lost (null result)',
+    }
+  }
+
+  // re-seal: idempotente (D7) — re-roda os gates sobre os bytes reescritos.
+  const reseal = await agent(
+    [
+      'Re-run the deterministic seal via Bash: kdr seal --run-dir "' + runDir + '" --json',
+      'Parse the STDOUT JSON (verdict, sealed, verified_report_hash, delivered_at,',
+      'blocking_reasons). Never invent values. If it fails again, copy blocking_reasons',
+      'verbatim — do NOT re-draft.',
+    ].join('\n'),
+    { label: 'dr:seal:reseal:' + sealRepairs, phase: 'seal', schema: SEAL_SCHEMA },
+  )
+
+  if (reseal === null) {
+    return {
+      blocking: true,
+      run_dir: runDir,
+      report: report.report_path,
+      verdict,
+      sealed: false,
+      seal_reasons: sealReasons,
+      error: 're-seal agent lost (null result)',
+    }
+  }
+
+  sealed = reseal.sealed === true
+  sealVerdict = reseal.verdict
+  sealHash = reseal.verified_report_hash
+  sealReasons = Array.isArray(reseal.blocking_reasons) ? reseal.blocking_reasons : sealReasons
+  if (reseal.delivered_at) deliveredAt = reseal.delivered_at
+}
+
+blocking = verdict !== 'pass' || !sealed
+
 return {
-  blocking: verdict !== 'pass',
+  blocking,
   run_dir: runDir,
   report: report.report_path,
   summary: report.summary,
   verdict,
+  sealed,
+  verified_report_hash: sealHash,
+  delivered_at: deliveredAt,
+  seal_verdict: sealVerdict,
+  seal_reasons: sealReasons,
   unverified,
   council: council.map((c) => c.perspective),
   waves: wavesReport.map((w) => ({ wave: w.wave, failed: w.failed })),
-  next: 'audit with `kdr verify --run-dir ' + runDir + '` and deliver via `/kdr-x:report`',
+  next: sealed
+    ? 'delivered and sealed (idempotent: `kdr seal --run-dir ' + runDir + '` re-runs the gates)'
+    : 'seal blocked: fix delivery/report.md, then re-run `kdr seal --run-dir ' +
+      runDir +
+      '` (idempotent, re-runnable)',
 }

@@ -20,7 +20,10 @@ of the original synthesis.
 
 - Verification is re-runnable and deterministic: same inputs, same verdict.
 - A gate that fails returns a blocking reason, never a silent pass.
+- Verify is read-only: it persists NOTHING (no verdict files, no manifest, no
+  seal). Use `kdr seal --run-dir <dir>` to persist the verdicts and seal the
+  delivery (see `/kdr:seal`).
 
-`kdr verify --run-dir <dir>` re-runs the persisted gate
-results; use `/kdr:report` to read the assembled output.
-
+`kdr verify --run-dir <dir>` re-runs the gates and prints the results JSON
+plus a `verify: PASS`/`verify: FAIL` line on stdout; use `/kdr:report` to read
+the assembled output.

@@ -1,21 +1,23 @@
 ﻿---
-description: "KDR-X: assemble and deliver the research report"
+description: "KDR-X: print the assembled research report"
 argument-hint: "--run-dir <dir>"
 ---
 
 # /kdr:report
 
-Assemble the report from the evidence pack and deliver the artifact.
+Print the assembled report for a persisted run. `kdr report` is read-only: it
+emits the Markdown on stdout and persists nothing.
 
 ## Steps
 
-1. Load the evidence pack (`kdrx.reporting.build_evidence_pack`).
-2. Assemble dependency-ordered sections via `kdrx.reporting.ReportAssembler`
-   (outline -> body -> dependent synthesis -> review -> citation/integrity ->
-   mechanical assembly, plan §29).
-3. Run the citation/integrity gate before delivery.
-4. Write `delivery/report.md` and a `DeliveryManifest` with sealed artifacts
-   (`kdrx.artifact`).
+1. Read `delivery/report.md` from the run directory.
+2. Print it on stdout, verbatim.
+
+The report itself is assembled by the research pipeline (`kdr run` or the
+`kdr-deep-research` workflow). Assembling and sealing the DELIVERY — manifest
+with `verified_report_hash`, sealed `artifact_hashes`, gate verdicts persisted
+with timestamps — is `kdr seal --run-dir <dir>`, never `kdr report` (see
+`/kdr:seal`).
 
 ## Invariants
 
@@ -24,5 +26,5 @@ Assemble the report from the evidence pack and deliver the artifact.
 - Citations exist *and* support the claim.
 - The report discloses gaps, limitations and disagreement.
 
-`kdr report --run-dir <dir>` prints the assembled Markdown.
-
+`kdr report --run-dir <dir>` prints the assembled Markdown; it does not write
+or seal anything.

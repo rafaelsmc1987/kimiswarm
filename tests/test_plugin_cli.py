@@ -115,7 +115,7 @@ def test_plugin_manifest_paths_exist():
     for field in ("commands", "agents", "skills"):
         for rel in manifest[field]:
             assert (PLUGIN / rel).exists(), f"{field}: path ausente {rel}"
-    assert len(manifest["commands"]) == 9
+    assert len(manifest["commands"]) == 10
 
 
 def test_hooks_json_registers_all_events():
@@ -288,6 +288,22 @@ def test_cli_hook_blocking_exit_code_is_two():
     )
     proc = _cli("hook", "pre_tool_use", "--json", payload)
     assert proc.returncode == 2
+
+
+def test_cli_hook_pre_tool_use_blocks_sealed_path(tmp_path: Path):
+    """SW-03 D4 (g): `kdr hook pre_tool_use --json` com sealed_paths no payload
+    => Write em artifact selado => exit 2 com SEALED_ARTIFACT_WRITE."""
+    payload = json.dumps(
+        {
+            "tool_name": "Write",
+            "tool_input": {"file_path": str(tmp_path / "delivery" / "report.md")},
+            "run_root": str(tmp_path),
+            "sealed_paths": ["delivery/report.md"],
+        }
+    )
+    proc = _cli("hook", "pre_tool_use", "--json", payload)
+    assert proc.returncode == 2, proc.stdout + proc.stderr
+    assert "SEALED_ARTIFACT_WRITE" in proc.stdout
 
 
 def test_cli_hook_stdin_dispatch(tmp_path: Path):

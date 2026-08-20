@@ -41,6 +41,10 @@ EXPECTED = {
         "waves",
         "verify",
         "report",
+        "seal",
+        "kdr seal",
+        "verified_report_hash",
+        "MAX_SEAL_REPAIRS",
         "--objective-file",
     ],
 }
@@ -240,6 +244,48 @@ def test_kdr_plan_review_gate_repair_bound_and_import():
     assert "phase('scaffold')" in plan
     assert "phase('import')" in plan
     assert "run_dir: scaffold.run_dir" in plan, "D9: retorno usa run_dir"
+
+
+def test_kdr_deep_research_verify_report_seal_order():
+    # SW-03 D3/F4: verify (adversarial, pré-report) -> report (assemble) ->
+    # seal (verify-then-seal determinístico sobre os BYTES finais).
+    text = _read("kdr-deep-research")
+    m = re.search(r"phases:\s*\[([^\]]+)\]", text)
+    assert m, "meta.phases ausente"
+    phases = [p.strip().strip("'") for p in m.group(1).split(",")]
+    assert phases[-1] == "seal", f"phases devem terminar em seal: {phases}"
+    assert phases.index("verify") < phases.index("report") < phases.index("seal"), (
+        f"ordem errada: {phases}"
+    )
+    # Verify usa o STDOUT do kdr verify (fixa o false-negative do caminho JS:
+    # verification/*.json não existem antes do seal).
+    assert "verify: PASS" in text, "verify deve parsear a linha verify: PASS do stdout"
+    assert "verification/integrity.json" not in text, (
+        "verify não pode mais ler verification/*.json (inexistentes no caminho JS)"
+    )
+
+
+def test_kdr_deep_research_seal_schema_and_repair_bound():
+    text = _read("kdr-deep-research")
+    # SEAL_SCHEMA: parse do stdout JSON de `kdr seal --json`
+    assert "SEAL_SCHEMA" in text
+    assert "'verdict'" in text and "'sealed'" in text
+    assert "kdr seal --run-dir" in text
+    # N=1 fixo: loop de repair bounded por MAX_SEAL_REPAIRS
+    assert re.search(r"MAX_SEAL_REPAIRS\s*=\s*1\b", text), "MAX_SEAL_REPAIRS deve ser 1"
+    assert "sealRepairs < MAX_SEAL_REPAIRS" in text
+    assert "dr:seal:repair:" in text, "repair com label dr:seal:repair:N"
+    # Segundo fail => blocking (derivado do selo)
+    assert "blocking = verdict !== 'pass' || !sealed" in text
+
+
+def test_kdr_deep_research_return_carries_seal_state():
+    text = _read("kdr-deep-research")
+    ret = text[text.rfind("return {") :]
+    assert "sealed" in ret, "return deve carregar sealed"
+    assert "verified_report_hash" in ret, "return deve carregar verified_report_hash"
+    assert "delivered_at" in ret, "return deve carregar delivered_at"
+    assert "kdr seal" in ret, "next deve apontar para kdr seal manual (idempotente)"
 
 
 def test_no_objective_shell_interpolation():

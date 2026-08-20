@@ -14,6 +14,7 @@
     "./commands/status.md",
     "./commands/verify.md",
     "./commands/report.md",
+    "./commands/seal.md",
     "./commands/monitor.md",
     "./commands/doctor.md",
     "./commands/eval.md"
