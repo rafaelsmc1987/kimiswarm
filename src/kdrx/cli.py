@@ -150,6 +150,12 @@ def _build_parser() -> argparse.ArgumentParser:
     p_verify = sub.add_parser("verify", help="re-run source/claim/integrity gates")
     p_verify.add_argument("--run-dir", required=True)
 
+    p_seal = sub.add_parser(
+        "seal", help="verify-then-seal: gates sobre os bytes finais + selo"
+    )
+    p_seal.add_argument("--run-dir", required=True)
+    p_seal.add_argument("--json", action="store_true", help="emit JSON")
+
     p_report = sub.add_parser("report", help="assemble the report from a run dir")
     p_report.add_argument("--run-dir", required=True)
 
@@ -916,6 +922,211 @@ def cmd_verify(args: argparse.Namespace) -> int:
     return 0 if all_pass else 1
 
 
+def cmd_seal(args: argparse.Namespace) -> int:
+    """D1: verify-then-seal determinístico sobre os bytes finais do report.
+
+    Exit codes: 0 selado · 1 gate falhou (verdicts persistidos, selo NÃO
+    escrito) · 2 usage/IO (manifest/plan/report/sources ausentes) · 3 pydantic
+    (plan.json corrompido).
+    """
+    from datetime import datetime, timezone
+
+    from pydantic import ValidationError
+
+    from kdrx.reporting import citation_integrity_gate
+    from kdrx.runner import (
+        _sealable_hashes,
+        seal_delivery,
+        unresolved_critical_claims,
+    )
+    from kdrx.schemas.claims import Claim
+    from kdrx.schemas.corpus import EvidenceSpan, SourceRecord
+    from kdrx.schemas.enums import GateVerdict
+    from kdrx.schemas.plan import ResearchPlan
+    from kdrx.security import security_gate
+    from kdrx.state import RunState, hash_file, load_manifest_from_dir
+    from kdrx.verification import source_trust_gate
+
+    run_dir = Path(args.run_dir)
+
+    # 1-2. manifest.json (existência + shape) -> 2
+    try:
+        manifest = load_manifest_from_dir(run_dir)
+    except (OSError, ValidationError) as exc:
+        print(f"error: manifest.json ausente/corrompido: {exc}", file=sys.stderr)
+        return 2
+
+    # 3. plan.json: ausente -> 2; ValidationError -> 3
+    plan_p = run_dir / "plan.json"
+    if not plan_p.exists():
+        print(
+            f"error: {run_dir} sem plan.json — crie o run com `kdr plan` primeiro",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        plan = ResearchPlan.model_validate_json(plan_p.read_text(encoding="utf-8"))
+    except ValidationError as exc:
+        print(f"error: plan.json corrompido: {exc}", file=sys.stderr)
+        return 3
+
+    # 4. compile_dag: inválido conta como gate fail (não usage error)
+    from kdrx.dag import compile_dag
+
+    dag_ok = compile_dag(plan.tasks).is_valid
+    plan_dag = "pass" if dag_ok else "fail"
+
+    # 5. corpus/evidence/claims: ausentes -> 2 (parity cmd_verify); claims vazio ok
+    def _jsonl(path: Path, model: type) -> list:
+        return [
+            model.model_validate_json(line)
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+
+    sources_p = run_dir / "corpus" / "sources.jsonl"
+    spans_p = run_dir / "evidence" / "spans.jsonl"
+    claims_p = run_dir / "claims" / "claims.jsonl"
+    missing = [str(p) for p in (sources_p, spans_p, claims_p) if not p.exists()]
+    if missing:
+        print(
+            f"error: artifacts ausentes {missing} — execute `kdr run`/workflow primeiro",
+            file=sys.stderr,
+        )
+        return 2
+    sources = _jsonl(sources_p, SourceRecord)
+    spans = _jsonl(spans_p, EvidenceSpan)
+    claims = _jsonl(claims_p, Claim)
+
+    # 6. report.md em BYTES (CRLF-safe); ausente/ilegível -> 2
+    report_p = run_dir / "delivery" / "report.md"
+    if not report_p.exists():
+        print(
+            f"error: sem relatório em {report_p} — o selo hasheia os bytes finais",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        report_bytes = report_p.read_bytes()
+        report_text = report_bytes.decode("utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        print(f"error: report ilegível: {exc}", file=sys.stderr)
+        return 2
+    report_hash = hash_file(report_p)
+
+    # 7. Gates canônicos sobre os bytes finais
+    src_pass = bool(sources) and all(
+        g.verdict == GateVerdict.PASS for g in (source_trust_gate(s) for s in sources)
+    )
+    citation = citation_integrity_gate(
+        report_text, sources=sources, claims=claims, spans=spans
+    )
+    security = security_gate(run_dir)
+    gate_results = {
+        "source_trust": "pass" if src_pass else "fail",
+        "citation_integrity": citation.verdict.value,
+        "security": security.verdict.value,
+        "plan_dag": plan_dag,
+    }
+
+    # 8. Verdicts persistidos SEMPRE (trilha de auditoria; validate-then-write:
+    # o que NÃO se escreve em fail é o SELO — passos 10-11)
+    state = RunState(run_dir.parent, run_dir.name)
+    gate_ts = datetime.now(timezone.utc).isoformat()
+    integrity_ok = src_pass and citation.verdict == GateVerdict.PASS and dag_ok
+    state.write_text(
+        "verification/integrity.json",
+        json.dumps(
+            {
+                "verdict": "pass" if integrity_ok else "fail",
+                "source_trust": "pass" if src_pass else "fail",
+                "citation_integrity": citation.verdict.value,
+                "plan_dag": plan_dag,
+                "timestamp": gate_ts,
+            },
+            indent=2,
+        ),
+    )
+    state.write_text(
+        "verification/security.json",
+        json.dumps({"verdict": security.verdict.value, "timestamp": gate_ts}, indent=2),
+    )
+
+    all_pass = integrity_ok and security.verdict == GateVerdict.PASS
+    if not all_pass:
+        blocking_reasons: list[str] = []
+        if not src_pass:
+            blocking_reasons.append(
+                "source_trust: nem todas as fontes passaram no trust gate"
+            )
+        blocking_reasons.extend(citation.blocking_reasons)
+        blocking_reasons.extend(security.blocking_reasons)
+        if not dag_ok:
+            blocking_reasons.append("plan_dag: plan.json não compila")
+        out = {
+            "verdict": "fail",
+            "sealed": False,
+            "gate_results": gate_results,
+            "blocking_reasons": blocking_reasons,
+        }
+        if args.json:
+            print(json.dumps(out, indent=2))
+        else:
+            print(json.dumps(out, indent=2))
+            print("seal: FAIL")
+        return 1
+
+    # 10. Selo (validate-then-write: todos os gates passaram)
+    sealed_at = datetime.now(timezone.utc).isoformat()
+    previous = manifest.metadata.get("seal") or {}
+    revision = int(previous.get("revision", 0)) + 1
+    manifest.artifact_hashes = _sealable_hashes(state)
+    manifest.gate_results = {"integrity": "pass", "security": "pass"}
+    manifest.metadata["seal"] = {
+        "verified_report_hash": report_hash,
+        "sealed_at": sealed_at,
+        "revision": revision,
+    }
+    state.save_manifest(manifest)
+    dm = seal_delivery(
+        state,
+        manifest,
+        produced_by="kdr:seal",
+        gate_timestamps={
+            "source_trust": gate_ts,
+            "citation_integrity": gate_ts,
+            "security": gate_ts,
+            "plan_dag": gate_ts,
+            "sealed_at": sealed_at,
+        },
+        unresolved_critical=unresolved_critical_claims(run_dir),
+    )
+    state.append_event(
+        {
+            "kind": "delivery_sealed",
+            "run_id": manifest.run_id,
+            "verified_report_hash": report_hash,
+            "sealed_at": sealed_at,
+        }
+    )
+
+    # 11. stdout JSON -> exit 0
+    out = {
+        "verdict": "pass",
+        "sealed": True,
+        "run_dir": str(run_dir),
+        "verified_report_hash": report_hash,
+        "delivered_at": dm.delivered_at.isoformat() if dm.delivered_at else None,
+        "gate_timestamps": dm.gate_timestamps,
+    }
+    if args.json:
+        print(json.dumps(out, indent=2))
+    else:
+        print(json.dumps(out, indent=2))
+        print("seal: PASS")
+    return 0
+
+
 def cmd_report(args: argparse.Namespace) -> int:
     run_dir = Path(args.run_dir)
     report_path = run_dir / "delivery" / "report.md"
@@ -1000,6 +1211,7 @@ _CMDS = {
     "status": cmd_status,
     "resume": cmd_resume,
     "verify": cmd_verify,
+    "seal": cmd_seal,
     "report": cmd_report,
     "monitor": cmd_monitor,
     "run": cmd_run,  # executa ResearchPlan persistido (T-01-06); demo = atalho one-shot
