@@ -9,6 +9,7 @@ logic into the harness (PreToolUse / Stop / SubagentStop) by shelling out to
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from typing import Any, Iterable
 
 from kdrx.dag import CompiledDAG
@@ -66,12 +67,13 @@ def hook_pre_tool_use(
     *,
     run_root: str | None = None,
     authorized_tools: Iterable[str] | None = None,
+    sealed_paths: Iterable[str] | None = None,
 ) -> GateDecision:
     """PreToolUse guards (plan §33).
 
     Blocks: writes outside the run/worktree, path-traversal markers, destructive
-    commands, secret reads, ``curl | sh``-style command injection, and any
-    unauthorized tool.
+    commands, secret reads, ``curl | sh``-style command injection, any
+    unauthorized tool, and Write/Edit targeting a sealed artifact (D4).
     """
     from kdrx.security import is_within, path_traversal_attempt, scan_secrets
 
@@ -144,6 +146,36 @@ def hook_pre_tool_use(
             )
         )
 
+    # Sealed artifact writes (D4): a write-tool target that resolves to a
+    # rel-path in sealed_paths is blocked. The target comes from
+    # file_path/path/notebook_path — NOT command (Bash/exec are exempt here;
+    # the backstop is verify_hashes in the Stop gate).
+    if sealed_paths and name in _WRITE_TOOLS:
+        target = (
+            tool_input.get("file_path")
+            or tool_input.get("path")
+            or tool_input.get("notebook_path")
+            or ""
+        )
+        if run_root and isinstance(target, str) and target:
+            try:
+                root = Path(run_root).resolve()
+                resolved = Path(target)
+                if not resolved.is_absolute():
+                    resolved = root / resolved
+                rel = resolved.resolve().relative_to(root).as_posix()
+            except (OSError, ValueError):
+                rel = None
+            if rel is not None and rel in {p.replace("\\", "/") for p in sealed_paths}:
+                checks.append(
+                    _check(
+                        "SEALED_ARTIFACT_WRITE",
+                        "sealed artifact is immutable (Write/Edit)",
+                        False,
+                        rel,
+                    )
+                )
+
     if not checks:
         checks.append(_check("NOOP", "no applicable guard", True))
     return GateDecision.compose(
@@ -199,6 +231,7 @@ def hook_stop(
     secret_scan_clean: bool,
     artifact_open_test: bool,
     unresolved_critical: list[str],
+    verified_report_hash_match: bool | None = None,
 ) -> GateDecision:
     """Stop delivery gate (plan §33): no delivery without a closed, clean run."""
     checks = [
@@ -215,4 +248,12 @@ def hook_stop(
         _check("SECRET_SCAN", "secret scan clean", secret_scan_clean),
         _check("OPEN_TEST", "artifact open test passed", artifact_open_test),
     ]
+    if verified_report_hash_match is not None:
+        checks.append(
+            _check(
+                "VERIFIED_REPORT_HASH",
+                "manifest's verified report hash matches the report bytes on disk",
+                verified_report_hash_match,
+            )
+        )
     return GateDecision.compose("hook:stop", GateKind.DELIVERY, checks)

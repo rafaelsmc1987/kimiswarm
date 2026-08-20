@@ -582,6 +582,7 @@ def cmd_hook(args: argparse.Namespace) -> int:
             payload.get("tool_input", {}),
             run_root=payload.get("run_root"),
             authorized_tools=payload.get("authorized_tools"),
+            sealed_paths=payload.get("sealed_paths"),
         )
     elif args.name == "task_created":
         decision = hook_task_created(TaskSpec.model_validate(payload["task"]))
@@ -608,6 +609,7 @@ def cmd_hook(args: argparse.Namespace) -> int:
             secret_scan_clean=payload.get("secret_scan_clean", False),
             artifact_open_test=payload.get("artifact_open_test", False),
             unresolved_critical=payload.get("unresolved_critical", []),
+            verified_report_hash_match=payload.get("verified_report_hash_match"),
         )
     else:  # pragma: no cover - argparse restricts choices
         raise SystemExit(f"unknown hook {args.name}")
@@ -944,7 +946,7 @@ def cmd_seal(args: argparse.Namespace) -> int:
     from kdrx.schemas.enums import GateVerdict
     from kdrx.schemas.plan import ResearchPlan
     from kdrx.security import security_gate
-    from kdrx.state import RunState, hash_file, load_manifest_from_dir
+    from kdrx.state import RunState, hash_bytes, load_manifest_from_dir
     from kdrx.verification import source_trust_gate
 
     run_dir = Path(args.run_dir)
@@ -978,11 +980,24 @@ def cmd_seal(args: argparse.Namespace) -> int:
 
     # 5. corpus/evidence/claims: ausentes -> 2 (parity cmd_verify); claims vazio ok
     def _jsonl(path: Path, model: type) -> list:
-        return [
-            model.model_validate_json(line)
-            for line in path.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except OSError as exc:
+            print(f"error: falha ao ler {path}: {exc}", file=sys.stderr)
+            raise SystemExit(2)
+        out = []
+        for num, line in enumerate(lines, start=1):
+            if not line.strip():
+                continue
+            try:
+                out.append(model.model_validate_json(line))
+            except (ValidationError, json.JSONDecodeError) as exc:
+                print(
+                    f"error: {path.name} linha {num} corrompida: {exc}",
+                    file=sys.stderr,
+                )
+                raise SystemExit(2)
+        return out
 
     sources_p = run_dir / "corpus" / "sources.jsonl"
     spans_p = run_dir / "evidence" / "spans.jsonl"
@@ -1012,7 +1027,7 @@ def cmd_seal(args: argparse.Namespace) -> int:
     except (OSError, UnicodeDecodeError) as exc:
         print(f"error: report ilegível: {exc}", file=sys.stderr)
         return 2
-    report_hash = hash_file(report_p)
+    report_hash = hash_bytes(report_bytes)
 
     # 7. Gates canônicos sobre os bytes finais
     src_pass = bool(sources) and all(
@@ -1066,6 +1081,7 @@ def cmd_seal(args: argparse.Namespace) -> int:
         out = {
             "verdict": "fail",
             "sealed": False,
+            "verified_report_hash": None,
             "gate_results": gate_results,
             "blocking_reasons": blocking_reasons,
         }
@@ -1088,6 +1104,7 @@ def cmd_seal(args: argparse.Namespace) -> int:
         "revision": revision,
     }
     state.save_manifest(manifest)
+    unresolved = unresolved_critical_claims(run_dir)
     dm = seal_delivery(
         state,
         manifest,
@@ -1099,7 +1116,7 @@ def cmd_seal(args: argparse.Namespace) -> int:
             "plan_dag": gate_ts,
             "sealed_at": sealed_at,
         },
-        unresolved_critical=unresolved_critical_claims(run_dir),
+        unresolved_critical=unresolved,
     )
     state.append_event(
         {
@@ -1109,6 +1126,13 @@ def cmd_seal(args: argparse.Namespace) -> int:
             "sealed_at": sealed_at,
         }
     )
+    if unresolved:
+        print(
+            f"warning: {len(unresolved)} claim(s) CRITICAL não resolvida(s) — "
+            "kdr seal atesta hash/gates; a resolução de claims críticas "
+            "permanece gate do Stop hook (CRITICAL_RESOLVED)",
+            file=sys.stderr,
+        )
 
     # 11. stdout JSON -> exit 0
     out = {

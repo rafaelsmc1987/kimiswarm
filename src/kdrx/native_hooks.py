@@ -26,7 +26,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from kdrx.dag import compile_dag
 from kdrx.hooks import (
-    _WRITE_TOOLS,
     hook_pre_tool_use,
     hook_stop,
     hook_subagent_stop,
@@ -397,67 +396,25 @@ def _sealed_paths(run_dir: str | Path) -> list[str] | None:
     return sorted({k.replace("\\", "/") for k in manifest.artifact_hashes})
 
 
-def _sealed_write_target(
-    tool_input: dict[str, Any], run_root: str | Path, sealed_paths: list[str]
-) -> str | None:
-    """Rel-path (as_posix) do alvo de escrita se ∈ sealed_paths; senão None.
-
-    D4: o alvo vem de ``file_path``/``path``/``notebook_path`` — NÃO
-    ``command`` (Bash/exec naturalmente isentos do check de path; o backstop
-    é o ``verify_hashes`` no Stop). Alvo não resolvível ou fora do run root →
-    None (o check WRITE_IN_SCOPE já cobre o escopo).
-    """
-    target = (
-        tool_input.get("file_path")
-        or tool_input.get("path")
-        or tool_input.get("notebook_path")
-        or ""
-    )
-    if not isinstance(target, str) or not target:
-        return None
-    try:
-        root = Path(run_root).resolve()
-        resolved = Path(target)
-        if not resolved.is_absolute():
-            resolved = root / resolved
-        rel = resolved.resolve().relative_to(root).as_posix()
-    except (OSError, ValueError):
-        return None
-    return rel if rel in set(sealed_paths) else None
-
-
 def native_pre_tool_use(data: dict[str, Any]) -> GateDecision:
     """PreToolUse nativo: gate roda com ``run_root`` quando a sessão é bound.
 
     D4: run SELADO (artifact_hashes ≠ {}) bloqueia Write/Edit em artifact
     selado via ``SEALED_ARTIFACT_WRITE``; Bash/exec isentos por construção
-    (``command`` não é path de arquivo).
+    (``command`` não é path de arquivo). O check vive em ``hook_pre_tool_use``
+    (single implementation) — aqui só se prepara ``sealed_paths``.
     """
     env = PreToolUseEnvelope.model_validate(data)
     res = resolve_session(data)
+    sealed_paths = _sealed_paths(res.entry.run_dir) if res.entry is not None else None
     decision = hook_pre_tool_use(
         env.tool_name or "",
         env.tool_input,
         run_root=res.entry.run_dir if res.entry else None,
+        sealed_paths=sealed_paths,
     )
     if res.entry is not None:
         decision.run_id = res.entry.run_id
-        sealed_paths = _sealed_paths(res.entry.run_dir)
-        if sealed_paths and (env.tool_name or "").lower() in _WRITE_TOOLS:
-            hit = _sealed_write_target(env.tool_input, res.entry.run_dir, sealed_paths)
-            if hit is not None:
-                checks = [
-                    *decision.checks,
-                    GateCheck(
-                        check_id="SEALED_ARTIFACT_WRITE",
-                        description="sealed artifact is immutable (Write/Edit)",
-                        passed=False,
-                        details=hit,
-                    ),
-                ]
-                decision = GateDecision.compose(
-                    decision.gate_id, decision.kind, checks, run_id=decision.run_id
-                )
     return decision
 
 
@@ -698,22 +655,7 @@ def native_stop(data: dict[str, Any]) -> GateDecision:
         secret_scan_clean=security_ok,
         artifact_open_test=open_ok,
         unresolved_critical=_unresolved_critical(run_dir),
-    )
-    checks = [
-        *decision.checks,
-        GateCheck(
-            check_id="VERIFIED_REPORT_HASH",
-            description=(
-                "manifest's verified report hash matches the report bytes on disk"
-                if verified_hash_ok is not None
-                else "no verified report hash claimed by the manifest"
-            ),
-            passed=verified_hash_ok is None or verified_hash_ok,
-            details=verified_hash_ok,
-        ),
-    ]
-    decision = GateDecision.compose(
-        decision.gate_id, decision.kind, checks, run_id=decision.run_id
+        verified_report_hash_match=verified_hash_ok,
     )
     decision.run_id = entry.run_id
     return decision
