@@ -22,6 +22,7 @@ PRODUCT_PREFIXES = (
     ".github/",
     "evidence-manifest/",
     "auditoria/",  # auditoria independente + roadmap (fonte do plano de correção)
+    "scripts/",  # build/release tooling do produto
 )
 PRODUCT_FILES = {
     "pyproject.toml",
@@ -142,6 +143,7 @@ def test_detector_passes_on_clean_tree() -> None:
         ".claude/settings.json",
         ".github/workflows/ci.yml",
         "evidence-manifest/manifest.jsonl",
+        "scripts/build_plugin_package.py",
         "pyproject.toml",
         "README.md",
         "LICENSE",
