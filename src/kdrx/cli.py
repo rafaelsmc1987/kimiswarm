@@ -303,6 +303,9 @@ def cmd_import_plan(args: argparse.Namespace) -> int:
             print(f"error: invalid dispositions: {exc}", file=sys.stderr)
             return 3
 
+    if run_dir.name != manifest.run_id:
+        print(f"error: run dir {run_dir} ≠ run_id do manifest", file=sys.stderr)
+        return 2
     state = RunState(run_dir.parent, manifest.run_id)
     try:
         provenance = import_plan_into_run(
