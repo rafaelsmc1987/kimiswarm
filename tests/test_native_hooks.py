@@ -18,6 +18,7 @@ from pathlib import Path
 
 import pytest
 
+from kdrx.hooks import _write_target_escapes
 from kdrx.native_hooks import SessionRegistry, _active_runs, dispatch
 from kdrx.schemas.enums import TaskStatus
 from kdrx.schemas.gate import GateDecision
@@ -313,6 +314,26 @@ def test_pre_tool_use_native_blocks_injection(tmp_path: Path):
     proc = _native("PreToolUse", payload, tmp_path)
     assert proc.returncode == 2
     assert "NO_CMD_INJECTION" in proc.stdout
+
+
+def test_write_target_escapes_allows_absolute_harness_paths(tmp_path: Path):
+    """CI Linux: o harness envia paths ABSOLUTOS (``/abs/path``) no POSIX — eles
+    passam NO_PATH_TRAVERSAL; a contenção é do WRITE_IN_SCOPE."""
+    assert not _write_target_escapes(str(tmp_path / "report.md"))
+    assert not _write_target_escapes("C:\\tmp\\x")
+    if os.name == "nt":
+        # no Windows "/tmp/x" não é absoluto (sem drive) — cai na heurística
+        # legada de path_traversal_attempt, que segue marcando-o
+        assert _write_target_escapes("/tmp/x")
+    else:
+        assert not _write_target_escapes("/tmp/x")
+
+
+def test_write_target_escapes_blocks_dotdot():
+    """``..`` como parte do caminho marca escape em qualquer SO."""
+    assert _write_target_escapes("../x")
+    assert _write_target_escapes("a/../../b")
+    assert _write_target_escapes("/tmp/../etc")
 
 
 def _bound_run_with_mapped_task(tmp_path: Path):

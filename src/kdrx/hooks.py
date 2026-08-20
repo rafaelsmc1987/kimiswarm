@@ -17,6 +17,7 @@ from kdrx.schemas.enums import GateKind
 from kdrx.schemas.gate import GateCheck, GateDecision
 from kdrx.schemas.plan import AgentResult, TaskSpec
 from kdrx.schemas.artifact import DeliveryManifest
+from kdrx.security import path_traversal_attempt
 
 # Tool names whose *side effects* are write/destructive; read-only research
 # workers must not receive them.
@@ -37,6 +38,22 @@ def _check(
     return GateCheck(
         check_id=check_id, description=description, passed=passed, details=details
     )
+
+
+def _write_target_escapes(target: str) -> bool:
+    """True se o alvo de escrita tenta escapar do diretório do run.
+
+    O harness (Claude Code) envia caminhos ABSOLUTOS no POSIX
+    (``/abs/path/file.md``) — eles são legítimos aqui: a contenção fica a
+    cargo de ``WRITE_IN_SCOPE`` quando ``run_root`` é conhecido. ``..`` marca
+    escape por construção em qualquer SO; para strings com cara de relativo
+    mantém-se a heurística legada de ``path_traversal_attempt``.
+    """
+    if ".." in Path(target).parts:
+        return True
+    if Path(target).is_absolute():
+        return False
+    return path_traversal_attempt(target)
 
 
 def hook_task_created(task: TaskSpec) -> GateDecision:
@@ -75,7 +92,7 @@ def hook_pre_tool_use(
     commands, secret reads, ``curl | sh``-style command injection, any
     unauthorized tool, and Write/Edit targeting a sealed artifact (D4).
     """
-    from kdrx.security import is_within, path_traversal_attempt, scan_secrets
+    from kdrx.security import is_within, scan_secrets
 
     checks: list[GateCheck] = []
     name = tool_name.lower()
@@ -98,7 +115,7 @@ def hook_pre_tool_use(
             or tool_input.get("command")
             or ""
         )
-        if isinstance(target, str) and target and path_traversal_attempt(target):
+        if isinstance(target, str) and target and _write_target_escapes(target):
             checks.append(
                 _check(
                     "NO_PATH_TRAVERSAL",
