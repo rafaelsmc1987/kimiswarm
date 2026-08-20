@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -126,6 +126,23 @@ class OwnershipEntry(BaseModel):
     output: str
     owner_task_id: str
     owner_role: AgentRole
+
+
+class PlannerDisposition(BaseModel):
+    """Disposition of one planner recommendation (council import, D5).
+
+    Every planner recommendation must resolve to an explicit disposition so
+    the handoff is machine-checkable; the canonical artifact is
+    ``planner-dispositions.json`` (the human-readable summary lives in
+    ``plan_md``).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    recommendation: str
+    perspective: str
+    disposition: Literal["accepted", "rejected", "deferred"]
+    rationale: str
 
 
 class ResearchPlan(BaseModel):

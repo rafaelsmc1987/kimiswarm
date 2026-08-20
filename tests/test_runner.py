@@ -4,7 +4,18 @@ from __future__ import annotations
 
 import json
 
-from kdrx.runner import run_file_research
+import pytest
+
+from kdrx.runner import (
+    PlanImportError,
+    build_contract,
+    build_plan,
+    import_plan_into_run,
+    prepare_run_dir,
+    run_file_research,
+)
+from kdrx.schemas.enums import TaskStatus
+from kdrx.state import hash_file
 
 
 def test_run_file_research_end_to_end(tmp_path):
@@ -99,3 +110,80 @@ def test_run_dir_persists_real_outputs_per_task(tmp_path):
     kinds = {e["kind"] for e in events}
     assert "task_started" in kinds and "task_succeeded" in kinds
     assert not any(e["kind"] == "task_failed" for e in events)
+
+
+# --------------------------------------------------------------------------- #
+# SW-02 PR-A: import gate + provenance (D1/D4)
+# --------------------------------------------------------------------------- #
+def test_prepare_run_dir_writes_scaffold_provenance(tmp_path):
+    """D4: o scaffold grava metadata['plan'] com sha256 dos bytes persistidos."""
+    contract = build_contract("provenance objective")
+    plan = build_plan(contract, 2)
+    state, manifest = prepare_run_dir(plan, contract, tmp_path / "runs")
+    meta = manifest.metadata["plan"]
+    assert meta["source"] == "scaffold-default"
+    assert meta["review_approved"] is False
+    assert meta["revision"] == 0
+    assert meta["imported_at"] is None
+    assert meta["sha256"] == hash_file(state.run_dir / "plan.json")
+
+
+def test_import_plan_into_run_happy_path(tmp_path):
+    """D1.7: waves sobrescritas pela derivacao; revision incrementa; evento."""
+    contract = build_contract("import objective")
+    plan = build_plan(contract, 2)
+    state, _manifest = prepare_run_dir(plan, contract, tmp_path / "runs")
+    plan.tasks[0].wave = 99  # wave declarada absurda; sem deps -> derivada 0
+
+    imported = import_plan_into_run(
+        state, plan, contract, source="manual", review_approved=True
+    )
+    assert imported["source"] == "manual"
+    assert imported["review_approved"] is True
+    assert imported["revision"] == 1
+    assert imported["sha256"] == hash_file(state.run_dir / "plan.json")
+
+    persisted = json.loads(state.read_text("plan.json"))
+    assert persisted["tasks"][0]["wave"] == 0
+    assert set(persisted["waves"]) == {"0", "1", "2", "3"}
+    events = [e for e in state.iter_events() if e["kind"] == "plan_imported"]
+    assert len(events) == 1
+    assert events[0]["plan_hash"] == imported["sha256"]
+    assert state.load_manifest().metadata["plan"] == imported
+
+    # re-import enquanto PENDING e permitido e incrementa revision (D3/D4)
+    imported2 = import_plan_into_run(
+        state, plan, contract, source="council-imported", review_approved=True
+    )
+    assert imported2["revision"] == 2
+    assert imported2["source"] == "council-imported"
+
+
+def test_import_plan_identity_mismatch_blocks(tmp_path):
+    contract = build_contract("import objective")
+    plan = build_plan(contract, 2)
+    state, _m = prepare_run_dir(plan, contract, tmp_path / "runs")
+    wrong = plan.model_copy(update={"plan_id": "plan-other"})
+    with pytest.raises(PlanImportError) as excinfo:
+        import_plan_into_run(
+            state, wrong, contract, source="manual", review_approved=False
+        )
+    assert excinfo.value.exit_code == 4
+    # validate-then-write: plan.json intacto
+    assert json.loads(state.read_text("plan.json"))["plan_id"] == plan.plan_id
+
+
+def test_import_plan_after_execution_is_forbidden(tmp_path):
+    contract = build_contract("import objective")
+    plan = build_plan(contract, 2)
+    state, _m = prepare_run_dir(plan, contract, tmp_path / "runs")
+    manifest = state.load_manifest()
+    manifest.status = TaskStatus.SUCCEEDED
+    manifest.completed_tasks = ["T-RETRIEVE"]
+    state.save_manifest(manifest)
+    with pytest.raises(PlanImportError) as excinfo:
+        import_plan_into_run(
+            state, plan, contract, source="manual", review_approved=False
+        )
+    assert excinfo.value.exit_code == 4
+    assert "re-import forbidden" in str(excinfo.value)

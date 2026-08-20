@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -58,6 +59,7 @@ from kdrx.schemas.plan import (
     AgentBrief,
     AgentResult,
     Budget,
+    PlannerDisposition,
     ResearchPlan,
     RetryPolicy,
     RunManifest,
@@ -65,7 +67,7 @@ from kdrx.schemas.plan import (
 )
 from kdrx.schemas.request import ResearchContract
 from kdrx.security import security_gate
-from kdrx.state import RunState, run_id_from_plan
+from kdrx.state import RunState, hash_file, run_id_from_plan
 
 
 def _build_query_graph(objective: str, max_children: int = 8) -> QueryGraph:
@@ -234,8 +236,155 @@ def prepare_run_dir(
     state.write_text("research_contract.yaml", _yaml_contract(contract))
     state.write_text("research_contract.json", contract.model_dump_json(indent=2))
     state.write_text("plan.md", plan.plan_md)
-    state.write_text("plan.json", plan.model_dump_json(indent=2))
+    plan_json = plan.model_dump_json(indent=2)
+    state.write_text("plan.json", plan_json)
+    # D4: o scaffold também grava provenance — sha256 dos bytes EXATOS
+    # persistidos em plan.json (relidos do disco; write_text traduz newlines
+    # no Windows, então o hash canônico é o do arquivo, nunca do modelo).
+    manifest.metadata["plan"] = {
+        "sha256": hash_file(state.run_dir / "plan.json"),
+        "source": "scaffold-default",
+        "review_approved": False,
+        "revision": 0,
+        "imported_at": None,
+    }
+    state.save_manifest(manifest)
     return state, manifest
+
+
+class PlanImportError(Exception):
+    """Import blocked with a machine-distinguishable failure class (D1).
+
+    ``exit_code`` follows the canonical map: 4 = state conflict (identity
+    mismatch, re-import after execution), 1 = structural/semantic gate
+    (DAG or plan gate). ``details`` carries structured evidence for stderr.
+    """
+
+    def __init__(self, exit_code: int, message: str, details: Any = None) -> None:
+        super().__init__(message)
+        self.exit_code = exit_code
+        self.details = details
+
+
+def import_plan_into_run(
+    state: RunState,
+    plan: ResearchPlan,
+    contract: ResearchContract,
+    *,
+    source: str,
+    review_approved: bool,
+    dispositions: list[PlannerDisposition] | None = None,
+) -> dict:
+    """Deterministic import gate (D1 steps 4-11): validate-then-write.
+
+    Nada é escrito antes de todos os checks passarem. Em ordem: identity
+    binding (plan <-> manifest <-> contract), re-import policy (só enquanto
+    PENDING e sem tasks executadas), ``compile_dag``, recompute+overwrite de
+    waves/ownership, ``plan_gate``, persistência atômica de
+    plan.json/plan.md/planner-dispositions.json, provenance no manifest e
+    evento ``plan_imported``. Retorna o dict de provenance (D4).
+    """
+    manifest = state.load_manifest()
+
+    # 4. identity binding — o plan importado não pode rebindar o run
+    if plan.plan_id != manifest.plan_id:
+        raise PlanImportError(
+            4,
+            f"identity mismatch: plan.plan_id={plan.plan_id!r} != "
+            f"manifest.plan_id={manifest.plan_id!r}",
+        )
+    if plan.contract_id != contract.contract_id:
+        raise PlanImportError(
+            4,
+            f"identity mismatch: plan.contract_id={plan.contract_id!r} != "
+            f"contract.contract_id={contract.contract_id!r}",
+        )
+    if plan.route != contract.route.value:
+        raise PlanImportError(
+            4,
+            f"identity mismatch: plan.route={plan.route!r} != "
+            f"contract.route={contract.route.value!r}",
+        )
+
+    # 5. re-import policy: PENDING e sem tasks executadas; caso contrário selado
+    if (
+        manifest.status != TaskStatus.PENDING
+        or manifest.completed_tasks
+        or manifest.failed_tasks
+    ):
+        raise PlanImportError(
+            4,
+            "run already executed; re-import forbidden",
+            {
+                "status": manifest.status.value,
+                "completed_tasks": manifest.completed_tasks,
+                "failed_tasks": manifest.failed_tasks,
+            },
+        )
+
+    # 6. compile_dag — gate estrutural
+    dag = compile_dag(plan.tasks)
+    if not dag.is_valid:
+        raise PlanImportError(
+            1,
+            "plan DAG does not compile",
+            {"issues": [str(i) for i in dag.issues]},
+        )
+
+    # 7. wave policy: recompute + overwrite (o plano persistido é
+    # autoconsistente por construção; o campo task.wave é re-derivado)
+    wave_of: dict[str, int] = {
+        tid: wave for wave, ids in dag.waves.items() for tid in ids
+    }
+    for task in plan.tasks:
+        task.wave = wave_of[task.task_id]
+    plan.waves = dag.waves
+    plan.ownership = dag.ownership
+
+    # 8. plan_gate (com contract check) — gate semântico
+    gate = plan_gate(plan, contract)
+    if gate.blocking():
+        raise PlanImportError(
+            1,
+            "plan gate blocked",
+            {"blocking_reasons": gate.blocking_reasons},
+        )
+
+    # 10. persist (validate-then-write: tudo acima passou; cada write é atômico)
+    plan_json = plan.model_dump_json(indent=2)
+    state.write_text("plan.json", plan_json)
+    state.write_text("plan.md", plan.plan_md)
+    if dispositions is not None:
+        state.write_text(
+            "planner-dispositions.json",
+            json.dumps([d.model_dump(mode="json") for d in dispositions], indent=2),
+        )
+
+    # 11. provenance write-back + evento plan_imported
+    previous = manifest.metadata.get("plan") or {}
+    revision = int(previous.get("revision", 0)) + 1
+    provenance = {
+        # sha256 dos bytes EXATOS persistidos (canon D4; relido do disco para
+        # valer por construção contra `kdr status --json.plan_hash_match`).
+        "sha256": hash_file(state.run_dir / "plan.json"),
+        "source": source,
+        "review_approved": review_approved,
+        "revision": revision,
+        "imported_at": datetime.now(timezone.utc).isoformat(),
+    }
+    manifest.metadata["plan"] = provenance
+    state.save_manifest(manifest)
+    state.append_event(
+        {
+            "kind": "plan_imported",
+            "run_id": manifest.run_id,
+            "plan_hash": provenance["sha256"],
+            "source": source,
+            "review_approved": review_approved,
+            "revision": revision,
+        }
+    )
+    return provenance
 
 
 def execute_plan(
