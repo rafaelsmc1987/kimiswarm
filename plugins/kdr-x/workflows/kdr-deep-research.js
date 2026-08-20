@@ -48,13 +48,21 @@ const scaffold = await agent(
   [
     resumeRunDir
       ? 'Resume mode: confirm ' + resumeRunDir + '/plan.json exists (Read it briefly).'
-      : 'Create the deterministic run scaffold: Bash `kdr plan --objective "' +
-        objective.replace(/"/g, "'") +
-        '"' +
-        (corpus ? ' --corpus ' + corpus : '') +
-        ' --out ' +
-        outRoot +
-        ' --json`.',
+      : [
+          'Create the deterministic run scaffold (D6: the objective NEVER goes through the shell).',
+          'Write (tool Write) the research objective below to ' + outRoot + '/.kdr-objective.txt,',
+          'UTF-8, verbatim, no surrounding quotes or commentary:',
+          '',
+          objective,
+          '',
+          'Then run via Bash: kdr plan --objective-file "' +
+            outRoot +
+            '/.kdr-objective.txt"' +
+            (corpus ? ' --corpus "' + corpus + '"' : '') +
+            ' --out "' +
+            outRoot +
+            '" --json',
+        ].join('\n'),
     'Return the run_dir (from the JSON), a one-line contract summary, and the plan.json path.',
   ].join('\n'),
   { label: 'kdr-dr:plan', phase: 'plan', schema: SCAFFOLD_SCHEMA },
