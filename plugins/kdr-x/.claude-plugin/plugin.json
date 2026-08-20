@@ -1,6 +1,6 @@
 {
   "name": "kdr-x",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "KDR-X — KimiSwarm Deep Research eXtended. A claim-evidence operating system for state-of-the-art deep research: research contract, DAG control plane, source-trust chain, atomic claim/evidence graph, contradiction & falsification swarm, deterministic gates and a seeded-defect eval harness.",
   "author": {
     "name": "KDR-X contributors"
@@ -8,28 +8,38 @@
   "homepage": "https://github.com/rafaelsmc1987/kimiswarm",
   "license": "MIT",
   "commands": [
-    "commands/plan.md",
-    "commands/run.md",
-    "commands/resume.md",
-    "commands/status.md",
-    "commands/verify.md",
-    "commands/report.md",
-    "commands/monitor.md",
-    "commands/doctor.md",
-    "commands/eval.md"
+    "./commands/plan.md",
+    "./commands/run.md",
+    "./commands/resume.md",
+    "./commands/status.md",
+    "./commands/verify.md",
+    "./commands/report.md",
+    "./commands/monitor.md",
+    "./commands/doctor.md",
+    "./commands/eval.md"
   ],
   "agents": [
-    "agents/planner-council.md",
-    "agents/source-verifier.md",
-    "agents/claim-decomposer.md",
-    "agents/counterevidence-researcher.md",
-    "agents/devils-advocate.md",
-    "agents/final-integrity-auditor.md"
+    "./agents/claim-decomposer.md",
+    "./agents/claims.md",
+    "./agents/coder.md",
+    "./agents/counterevidence-researcher.md",
+    "./agents/devils-advocate.md",
+    "./agents/evidence.md",
+    "./agents/explore.md",
+    "./agents/final-integrity-auditor.md",
+    "./agents/general.md",
+    "./agents/plan.md",
+    "./agents/planner-council.md",
+    "./agents/reviewer.md",
+    "./agents/search.md",
+    "./agents/source-verifier.md",
+    "./agents/verifier.md",
+    "./agents/writing.md"
   ],
   "skills": [
-    "skills/deep-research",
-    "skills/claim-graph",
-    "skills/source-trust"
+    "./skills/deep-research",
+    "./skills/claim-graph",
+    "./skills/source-trust"
   ],
   "hooks": "./hooks/hooks.json",
   "workflows": "./workflows",

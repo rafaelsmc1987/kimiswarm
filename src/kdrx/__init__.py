@@ -20,7 +20,7 @@ Layers (see plan §10):
 10. Persistent Research Artifact
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from kdrx.schemas import (  # noqa: F401  (re-exported for ergonomic imports)
     AgentBrief,

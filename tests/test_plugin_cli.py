@@ -19,7 +19,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = REPO_ROOT / "plugins" / "kdr-x"
 SRC = REPO_ROOT / "src"
 DISPATCHER = PLUGIN / "hooks" / "kdr-hook"
-WRAPPER = PLUGIN / "bin" / "kdr-hook"
 
 
 def _env() -> dict[str, str]:
@@ -108,8 +107,15 @@ def test_hooks_json_registers_all_events():
     for matchers in cfg["hooks"].values():
         for entry in matchers:
             for hook in entry["hooks"]:
-                assert "CLAUDE_PLUGIN_ROOT" in hook["command"]
-                assert "bin/kdr-hook" in hook["command"]
+                assert hook["command"] == "kdr"
+                assert hook["args"][:2] == ["hook", "--stdin"]
+                assert hook["args"][2] in {
+                    "task_created",
+                    "pre_tool_use",
+                    "subagent_stop",
+                    "task_completed",
+                    "stop",
+                }
 
 
 def test_plugin_hooks_field_points_to_hooks_json():
@@ -120,17 +126,8 @@ def test_plugin_hooks_field_points_to_hooks_json():
 
 
 # --------------------------------------------------------------------------- #
-# T-01-03: wrapper autocontido
+# T-01-03: dispatcher autocontido
 # --------------------------------------------------------------------------- #
-def test_wrapper_resolves_via_plugin_root_only():
-    text = WRAPPER.read_text(encoding="utf-8")
-    assert "CLAUDE_PLUGIN_ROOT" in text
-    assert "hooks/kdr-hook" in text
-    assert (
-        "cd " not in text.split("\n", 6)[-1].rsplit("exec", 1)[-1]
-    )  # exec sem cwd deps
-
-
 def test_dispatcher_runs_from_foreign_cwd(tmp_path: Path):
     proc = _hook(
         "pre_tool_use",
@@ -267,3 +264,36 @@ def test_cli_hook_blocking_exit_code_is_two():
     )
     proc = _cli("hook", "pre_tool_use", "--json", payload)
     assert proc.returncode == 2
+
+
+def test_cli_hook_stdin_dispatch(tmp_path: Path):
+    """SW-01 Fase 1: ``kdr hook --stdin`` despacha o payload lido do stdin."""
+
+    def _stdin(payload: dict) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, "-m", "kdrx.cli", "hook", "--stdin", "pre_tool_use"],
+            input=json.dumps(payload),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=_env(),
+            cwd=str(tmp_path),
+            timeout=120,
+        )
+
+    benign = {
+        "session_id": "sess-stdin-1",
+        "cwd": str(tmp_path),
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Read",
+        "tool_input": {"file_path": "README.md"},
+    }
+    assert _stdin(benign).returncode == 0
+
+    forbidden = {
+        **benign,
+        "tool_name": "Bash",
+        "tool_input": {"command": "rm -rf /"},
+    }
+    assert _stdin(forbidden).returncode == 2

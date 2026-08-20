@@ -4,7 +4,7 @@
     "TaskCreated": [
       {
         "hooks": [
-          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/kdr-hook\" task_created" }
+          { "type": "command", "command": "kdr", "args": ["hook", "--stdin", "task_created"] }
         ]
       }
     ],
@@ -12,28 +12,28 @@
       {
         "matcher": "Write|Edit|Bash|NotebookEdit",
         "hooks": [
-          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/kdr-hook\" pre_tool_use" }
+          { "type": "command", "command": "kdr", "args": ["hook", "--stdin", "pre_tool_use"] }
         ]
       }
     ],
     "SubagentStop": [
       {
         "hooks": [
-          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/kdr-hook\" subagent_stop" }
+          { "type": "command", "command": "kdr", "args": ["hook", "--stdin", "subagent_stop"] }
         ]
       }
     ],
     "TaskCompleted": [
       {
         "hooks": [
-          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/kdr-hook\" task_completed" }
+          { "type": "command", "command": "kdr", "args": ["hook", "--stdin", "task_completed"] }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/kdr-hook\" stop" }
+          { "type": "command", "command": "kdr", "args": ["hook", "--stdin", "stop"] }
         ]
       }
     ]

@@ -74,6 +74,19 @@ kdr schema --out DIR        # export the 15 canonical JSON schemas
 kdr demo --corpus DIR --objective "..." --out .research   # offline run
 ```
 
+### Plugin install (sem checkout do monorepo)
+
+```bash
+pip install kdrx-<versão>-py3-none-any.whl   # artefato local (offline)
+# ou, com rede: pip install "kdrx @ git+https://github.com/rafaelsmc1987/kimiswarm@<tag>"
+unzip kdr-x-plugin-<versão>.zip              # plugin no diretório de plugins do harness
+kdr doctor                                   # valida a instalação
+```
+
+Os hashes dos artefatos ficam em `SHA256SUMS` junto ao release (o zip do
+plugin é bit-reproduzível). `kdr` no PATH é requisito dos hooks: o
+`hooks.json` usa exec form (`kdr hook --stdin <event>`), sem shell.
+
 Claude Code surface: `/kdr:plan`, `/kdr:run`, `/kdr:resume`, `/kdr:status`,
 `/kdr:verify`, `/kdr:report`, `/kdr:monitor`, `/kdr:doctor`, `/kdr:eval`
 (`.claude/commands/kdr/`). Plugin package: `plugins/kdr-x/` — commands, agents,

@@ -1,0 +1,197 @@
+"""KDR-X deterministic hook dispatcher for Claude Code.
+
+Reads the hook input JSON from stdin, maps it to a deterministic hook in
+``kdrx.hooks``, and exits 0 (allow) or 2 (block), printing the decision JSON to
+stdout for observability. This keeps in-process gates and harness hooks
+identical (plan §33).
+
+SW-01 D3: o dispatcher vive no pacote — o harness invoca ``kdr hook --stdin
+<event>`` (exec form) e o shim ``plugins/kdr-x/hooks/kdr-hook`` delega para
+``main``. Sem bootstrap de ``sys.path``: em contexto de pacote, ``kdrx`` já é
+importável.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import sys
+from pathlib import Path
+
+from kdrx.hooks import (
+    hook_pre_tool_use,
+    hook_stop,
+    hook_subagent_stop,
+    hook_task_completed,
+    hook_task_created,
+)
+from kdrx.schemas.plan import AgentResult, ResearchPlan, TaskSpec
+
+
+def _decide(decision) -> int:
+    print(decision.model_dump_json(indent=2))
+    # Claude Code convention: 0 = allow, 2 = block with feedback.
+    return 2 if decision.blocking() else 0
+
+
+def _load_gate_passed(path: Path) -> bool:
+    """True iff a persisted gate decision ({...,"verdict": "pass"}).
+
+    Deprecated (SW-00 D6): só o modo legado (payload sintético) usa; o modo
+    nativo vive em ``kdrx.native_hooks``.
+    """
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except OSError:
+        return False
+    return data.get("verdict") == "pass"
+
+
+def _stop_decision(data: dict):
+    """Discover the active run under the run root and gate it for real (T-01-04).
+
+    Deprecated (SW-00 D6): caminho legado do payload sintético (``kdr hook
+    --json``); o Stop nativo é ``kdrx.native_hooks.native_stop`` (registry +
+    manifest persistido). Mantido intacto para o contrato legado.
+
+    If no kdr run exists, there is nothing to gate: allow with an explicit
+    note (a Stop event can fire in sessions that never ran kdr). With a run
+    present, this is the real ``hook_stop``: DAG validity, delivery manifest,
+    integrity/secret-scan verdicts and artifact open test.
+    """
+    from kdrx.dag import compile_dag
+    from kdrx.schemas.artifact import ArtifactRecord, DeliveryManifest
+    from kdrx.schemas.enums import ArtifactKind, GateKind
+    from kdrx.schemas.gate import GateCheck, GateDecision
+
+    run_root = Path(data.get("run_root") or ".research")
+    candidates = []
+    if run_root.is_dir():
+        candidates = sorted(
+            (p for p in run_root.iterdir() if (p / "plan.json").is_file()),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+    if not candidates:
+        return GateDecision.compose(
+            "hook:stop:no-active-run",
+            GateKind.DELIVERY,
+            [
+                GateCheck(
+                    check_id="ACTIVE_RUN",
+                    description="no active kdr run under run root; nothing to gate",
+                    passed=True,
+                    details=str(run_root),
+                )
+            ],
+        )
+    run_dir = candidates[0]
+    plan = ResearchPlan.model_validate_json(
+        (run_dir / "plan.json").read_text(encoding="utf-8")
+    )
+    dag = compile_dag(plan.tasks)
+
+    report_path = run_dir / "delivery" / "report.md"
+    artifacts = []
+    open_ok = False
+    if report_path.is_file():
+        try:
+            data_bytes = report_path.read_bytes()
+            open_ok = True
+            artifacts.append(
+                ArtifactRecord(
+                    artifact_id="report",
+                    kind=ArtifactKind.REPORT,
+                    path=str(report_path),
+                    content_hash=hashlib.sha256(data_bytes).hexdigest(),
+                    produced_by="kdr-hook:stop",
+                )
+            )
+        except OSError:
+            open_ok = False
+    integrity_ok = _load_gate_passed(run_dir / "verification" / "integrity.json")
+    security_ok = _load_gate_passed(run_dir / "verification" / "security.json")
+    delivery = DeliveryManifest(
+        manifest_id=f"dm-{run_dir.name}",
+        run_id=run_dir.name,
+        artifacts=artifacts,
+        final_integrity_pass=integrity_ok,
+        secret_scan_clean=security_ok,
+        artifact_open_test_passed=open_ok,
+        unresolved_critical_claims=[],
+    )
+    return hook_stop(
+        dag=dag,
+        delivery=delivery,
+        integrity_pass=integrity_ok,
+        secret_scan_clean=security_ok,
+        artifact_open_test=open_ok,
+        unresolved_critical=[],
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = sys.argv[1:] if argv is None else argv
+    hook_name = args[0] if args else os.environ.get("KDRX_HOOK", "")
+    raw = sys.stdin.read()
+    try:
+        data = json.loads(raw) if raw.strip() else {}
+    except json.JSONDecodeError as exc:
+        # JSON malformado nunca é exit 1: erro parseável + exit 2 (plano §3 D3).
+        print(json.dumps({"error": f"invalid hook payload JSON: {exc}"}))
+        return 2
+    if not isinstance(data, dict):
+        # JSON válido mas não-objeto (ex.: ``123``, ``[1, 2]``) idem: o
+        # roteamento exige dict, senão TypeError/AttributeError -> exit 1.
+        print(json.dumps({"error": "hook payload must be a JSON object"}))
+        return 2
+
+    # Roteamento dual-mode (SW-00 D6): payload nativo do Claude Code sempre
+    # traz "hook_event_name" (fallback: "session_id" sem as chaves sintéticas
+    # "task"/"result") e vai para kdrx.native_hooks; o resto é o legado.
+    native = "hook_event_name" in data or (
+        "session_id" in data and "task" not in data and "result" not in data
+    )
+    if native:
+        from kdrx.native_hooks import dispatch as native_dispatch
+
+        try:
+            decision = native_dispatch(hook_name, data)
+        except ValueError as exc:
+            print(json.dumps({"error": str(exc)}))
+            return 2
+        return _decide(decision)
+
+    # Caminho legado: payload sintético do `kdr hook --json` (contrato de
+    # dev/debug); payloads nativos passam por kdrx.native_hooks acima.
+    if hook_name in ("task_created", "TaskCreated"):
+        decision = hook_task_created(TaskSpec.model_validate(data["task"]))
+    elif hook_name in ("pre_tool_use", "PreToolUse"):
+        decision = hook_pre_tool_use(
+            data.get("tool_name", ""),
+            data.get("tool_input", {}),
+            run_root=data.get("run_root"),
+            authorized_tools=data.get("authorized_tools"),
+        )
+    elif hook_name in ("subagent_stop", "SubagentStop"):
+        decision = hook_subagent_stop(
+            AgentResult.model_validate(data["result"]),
+            TaskSpec.model_validate(data["task"]),
+        )
+    elif hook_name in ("task_completed", "TaskCompleted"):
+        decision = hook_task_completed(
+            TaskSpec.model_validate(data["task"]),
+            AgentResult.model_validate(data["result"]),
+        )
+    elif hook_name in ("stop", "Stop"):
+        decision = _stop_decision(data)
+    else:
+        print(json.dumps({"error": f"unknown hook {hook_name}"}))
+        return 2
+
+    return _decide(decision)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

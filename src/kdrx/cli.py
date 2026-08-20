@@ -56,7 +56,13 @@ def _build_parser() -> argparse.ArgumentParser:
             "stop",
         ],
     )
-    p_hook.add_argument("--json", required=True, help="hook payload as JSON")
+    g_hook = p_hook.add_mutually_exclusive_group(required=True)
+    g_hook.add_argument("--json", help="hook payload as JSON")
+    g_hook.add_argument(
+        "--stdin",
+        action="store_true",
+        help="read hook payload from stdin (harness exec form)",
+    )
 
     p_demo = sub.add_parser("demo", help="end-to-end offline demo over a file corpus")
     p_demo.add_argument("--corpus", required=True, help="directory of text files")
@@ -196,14 +202,153 @@ def cmd_schema(args: argparse.Namespace) -> int:
     return 0
 
 
+def _find_plugin_root() -> Path | None:
+    """Localiza a raiz do plugin kdr-x (SW-01 D4).
+
+    Ordem de busca: env ``KDRX_PLUGIN_ROOT`` -> env ``CLAUDE_PLUGIN_ROOT`` ->
+    sobe a partir do cwd procurando ``plugins/kdr-x/.claude-plugin/plugin.json``
+    (layout monorepo) ou ``.claude-plugin/plugin.json`` (plugin na raiz).
+    Retorna ``None`` se nenhuma raiz com manifesto for encontrada.
+    """
+    for env_var in ("KDRX_PLUGIN_ROOT", "CLAUDE_PLUGIN_ROOT"):
+        value = os.environ.get(env_var)
+        if value:
+            root = Path(value)
+            if (root / ".claude-plugin" / "plugin.json").is_file():
+                return root
+    current = Path.cwd().resolve()
+    for base in (current, *current.parents):
+        for root in (base / "plugins" / "kdr-x", base):
+            if (root / ".claude-plugin" / "plugin.json").is_file():
+                return root
+    return None
+
+
+def _check_manifest_completeness(root: Path) -> list[str]:
+    """Agents/commands/skills declarados no manifesto == disco (SW-01 D4).
+
+    Paths declarados carregam prefixo ``./``, removido ao resolver contra a
+    raiz do plugin. Retorna a lista de divergências (vazia = completo).
+    """
+    manifest = json.loads(
+        (root / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")
+    )
+    problems: list[str] = []
+    for field in ("agents", "commands", "skills"):
+        declared = {p.removeprefix("./") for p in manifest.get(field, [])}
+        field_dir = root / field
+        if field == "skills":  # skills são diretórios; agents/commands são .md
+            on_disk = (
+                {f"skills/{d.name}" for d in field_dir.iterdir() if d.is_dir()}
+                if field_dir.is_dir()
+                else set()
+            )
+        else:
+            on_disk = {f"{field}/{f.name}" for f in field_dir.glob("*.md")}
+        for rel in sorted(on_disk - declared):
+            problems.append(f"{rel} existe no disco mas não está declarado")
+        for rel in sorted(declared - on_disk):
+            problems.append(f"{rel} declarado mas ausente no disco")
+    return problems
+
+
+def _check_role_resolution_parity(root: Path) -> list[str]:
+    """Paridade role-resolution <-> AgentRole <-> manifesto (SW-01 D4).
+
+    As chaves de ``agents`` no role-resolution devem ser exatamente os valores
+    do enum ``AgentRole`` (ambas as direções); todo alvo deve ter
+    ``agents/<nome>.md`` existente; e todo ``agents/*.md`` deve estar
+    declarado no manifesto. Retorna a lista de divergências (vazia = paridade).
+    """
+    from kdrx.schemas.enums import AgentRole
+
+    resolution_path = root / "agents" / "role-resolution.json"
+    if not resolution_path.is_file():
+        return ["agents/role-resolution.json ausente"]
+    resolution = json.loads(resolution_path.read_text(encoding="utf-8"))
+    manifest = json.loads(
+        (root / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")
+    )
+    problems: list[str] = []
+    mapping = resolution.get("agents", {})
+    enum_values = {role.value for role in AgentRole}
+    for role in sorted(set(mapping) - enum_values):
+        problems.append(f"{role} não é um AgentRole")
+    for role in sorted(enum_values - set(mapping)):
+        problems.append(f"AgentRole {role} sem mapeamento")
+    for role, target in sorted(mapping.items()):
+        if not (root / "agents" / f"{target}.md").is_file():
+            problems.append(f"alvo de {role} (agents/{target}.md) inexistente")
+    declared = {p.removeprefix("./") for p in manifest.get("agents", [])}
+    for agent_file in sorted((root / "agents").glob("*.md")):
+        if f"agents/{agent_file.name}" not in declared:
+            problems.append(f"agents/{agent_file.name} não declarado no manifesto")
+    return problems
+
+
+def _check_research_writable() -> str | None:
+    """Probe de escrita em ``.research`` sob o cwd (SW-01 D4).
+
+    Cria o diretório, escreve um arquivo temporário e o remove; qualquer run
+    precisa desse acesso. Retorna a mensagem de erro (``None`` = writable).
+    """
+    probe_dir = Path.cwd() / ".research"
+    probe_file = probe_dir / ".doctor-write-probe"
+    try:
+        probe_dir.mkdir(parents=True, exist_ok=True)
+        probe_file.write_text("ok", encoding="utf-8")
+        probe_file.unlink()
+    except OSError as exc:
+        return str(exc)
+    return None
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     import kdrx
+    import pydantic
     from kdrx.schemas import SCHEMAS
 
+    failures = 0
     print(f"kdr {kdrx.__version__}")
+    # SW-01 D4: origem do import + versão do pydantic (skew observável)
+    print(f"kdrx importable: {kdrx.__file__}")
+    print(f"pydantic {pydantic.__version__}")
     print(f"schemas: {len(SCHEMAS)} canonical models")
     for name in SCHEMAS:
         print(f"  - {name}")
+
+    # SW-01 D4: checks de saúde do plugin; sem plugin root, WARN e pula 3-4
+    plugin_root = _find_plugin_root()
+    if plugin_root is None:
+        print(
+            "plugin manifest: WARN (plugin root não encontrado; "
+            "checks de manifesto e paridade pulados)"
+        )
+    else:
+        problems = _check_manifest_completeness(plugin_root)
+        if problems:
+            failures += 1
+            print("plugin manifest: FAIL")
+            for problem in problems:
+                print(f"  - {problem}")
+        else:
+            print("plugin manifest: PASS")
+        problems = _check_role_resolution_parity(plugin_root)
+        if problems:
+            failures += 1
+            print("role-resolution parity: FAIL")
+            for problem in problems:
+                print(f"  - {problem}")
+        else:
+            print("role-resolution parity: PASS")
+
+    writable = _check_research_writable()
+    if writable is not None:
+        failures += 1
+        print(f".research writable: FAIL ({writable})")
+    else:
+        print(".research writable: PASS")
+
     # smoke run of the scheduler with a trivial DAG
     from kdrx.dag import compile_dag
     from kdrx.scheduler import WaveScheduler
@@ -242,7 +387,9 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     res = WaveScheduler(executor).run(dag)
     ok = dag.is_valid and not res.failed and res.completed == ["T0"]
     print(f"scheduler smoke: {'PASS' if ok else 'FAIL'}")
-    return 0 if ok else 1
+    if not ok:
+        failures += 1
+    return 1 if failures else 0
 
 
 def cmd_hook(args: argparse.Namespace) -> int:
@@ -255,6 +402,10 @@ def cmd_hook(args: argparse.Namespace) -> int:
     )
     from kdrx.schemas.plan import AgentResult, TaskSpec
 
+    if args.stdin:
+        from kdrx.hook_dispatch import main as _dispatch
+
+        return _dispatch([args.name])
     payload = json.loads(args.json)
     if args.name == "pre_tool_use":
         decision = hook_pre_tool_use(
