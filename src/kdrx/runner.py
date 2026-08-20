@@ -40,10 +40,12 @@ from kdrx.retrieval import (
     StoppingCriterion,
 )
 from kdrx.scheduler import WaveScheduler
+from kdrx.schemas.artifact import ArtifactRecord, DeliveryManifest
 from kdrx.schemas.claims import Claim, ClaimEvidenceEdge
 from kdrx.schemas.corpus import EvidenceSpan, Locator, SourceRecord
 from kdrx.schemas.enums import (
     AgentRole,
+    ArtifactKind,
     ClaimImportance,
     ClaimType,
     Criticality,
@@ -427,7 +429,13 @@ def execute_plan(
     }
     manifest.artifact_hashes = _sealable_hashes(state)
     state.save_manifest(manifest)
-    _emit_delivery_manifest(state, manifest, result)
+    seal_delivery(
+        state,
+        manifest,
+        produced_by="runner:execute_plan",
+        gate_timestamps={},
+        unresolved_critical=unresolved_critical_claims(state.run_dir),
+    )
     return result, executor
 
 
@@ -467,27 +475,66 @@ def _sealable_hashes(state: RunState) -> dict[str, str]:
     }
 
 
-def _emit_delivery_manifest(
-    state: RunState, manifest: RunManifest, result: Any
-) -> None:
-    """DeliveryManifest persistido (plan §31); o open test é abrir o report."""
-    from kdrx.schemas.artifact import ArtifactRecord, DeliveryManifest
-    from kdrx.schemas.enums import ArtifactKind
+def unresolved_critical_claims(run_dir: str | Path) -> list[str]:
+    """claim_ids com ``importance == CRITICAL`` e ``standing == UNRESOLVED`` (D7).
 
+    Port da lógica de ``native_hooks._unresolved_critical`` (sem tocar em
+    native_hooks — unificação em helper compartilhado fica para depois).
+    """
+    path = Path(run_dir) / "claims" / "claims.jsonl"
+    if not path.is_file():
+        return []
+    out: list[str] = []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            claim = Claim.model_validate_json(line)
+        except ValueError:
+            continue
+        if (
+            claim.importance == ClaimImportance.CRITICAL
+            and claim.standing == Standing.UNRESOLVED
+        ):
+            out.append(claim.claim_id)
+    return out
+
+
+def seal_delivery(
+    state: RunState,
+    manifest: RunManifest,
+    *,
+    produced_by: str,
+    gate_timestamps: dict[str, str],
+    unresolved_critical: list[str],
+) -> DeliveryManifest:
+    """Persiste o DeliveryManifest com o hash dos bytes verificados (D1/D2/D7).
+
+    ``verified_report_hash`` vem de uma RELEITURA dos bytes de
+    ``delivery/report.md`` em disco (CRLF-safe, lição SW-02) — o manifest
+    assevera quais bytes foram verificados no selo (lineage). Idempotente/
+    revision-safe: re-emitir sobre os mesmos bytes produz o mesmo hash.
+    """
     report_path = state.run_dir / "delivery" / "report.md"
     artifacts: list[ArtifactRecord] = []
     open_ok = False
+    verified_report_hash: str | None = None
     if report_path.is_file():
         try:
             data = report_path.read_bytes()
             open_ok = True
+            verified_report_hash = hashlib.sha256(data).hexdigest()
             artifacts.append(
                 ArtifactRecord(
                     artifact_id="report",
                     kind=ArtifactKind.REPORT,
                     path=str(report_path),
-                    content_hash=hashlib.sha256(data).hexdigest(),
-                    produced_by="runner:execute_plan",
+                    content_hash=verified_report_hash,
+                    produced_by=produced_by,
                 )
             )
         except OSError:
@@ -499,9 +546,13 @@ def _emit_delivery_manifest(
         final_integrity_pass=manifest.gate_results.get("integrity") == "pass",
         secret_scan_clean=manifest.gate_results.get("security") == "pass",
         artifact_open_test_passed=open_ok,
-        unresolved_critical_claims=[],
+        unresolved_critical_claims=unresolved_critical,
+        delivered_at=datetime.now(timezone.utc),
+        verified_report_hash=verified_report_hash,
+        gate_timestamps=gate_timestamps,
     )
     state.write_text("delivery-manifest.json", dm.model_dump_json(indent=2))
+    return dm
 
 
 def resume_run(

@@ -150,6 +150,25 @@
       "default": null,
       "title": "Delivered At"
     },
+    "verified_report_hash": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Verified Report Hash"
+    },
+    "gate_timestamps": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Gate Timestamps",
+      "type": "object"
+    },
     "metadata": {
       "additionalProperties": true,
       "title": "Metadata",

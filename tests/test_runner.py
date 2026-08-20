@@ -13,6 +13,8 @@ from kdrx.runner import (
     import_plan_into_run,
     prepare_run_dir,
     run_file_research,
+    seal_delivery,
+    unresolved_critical_claims,
 )
 from kdrx.schemas.enums import TaskStatus
 from kdrx.state import hash_file
@@ -187,3 +189,98 @@ def test_import_plan_after_execution_is_forbidden(tmp_path):
         )
     assert excinfo.value.exit_code == 4
     assert "re-import forbidden" in str(excinfo.value)
+
+
+# --------------------------------------------------------------------------- #
+# SW-03 PR-A Fase 1: seal_delivery + verified_report_hash + unresolved reais
+# --------------------------------------------------------------------------- #
+def test_execute_plan_delivery_manifest_has_verified_report_hash(tmp_path):
+    """Aceitação 2 (caminho Python): o manifest assevera o hash dos bytes EM
+    DISCO de delivery/report.md e delivered_at passa a ser setado."""
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    (corpus / "findings.md").write_text(
+        "The new model improves accuracy by 12 percent on three datasets.\n"
+        "Latency is 5 ms under load.\n"
+    )
+    summary = run_file_research(corpus, "accuracy and latency", tmp_path / "runs")
+    assert summary["exit_code"] == 0
+    run_dir = tmp_path / "runs" / summary["run_id"]
+
+    dm = json.loads((run_dir / "delivery-manifest.json").read_text(encoding="utf-8"))
+    assert dm["delivered_at"] is not None
+    assert dm["verified_report_hash"] == hash_file(run_dir / "delivery" / "report.md")
+    assert dm["artifacts"][0]["content_hash"] == dm["verified_report_hash"]
+
+
+def test_unresolved_critical_claims_filters_critical_unresolved(tmp_path):
+    """D7: só CRITICAL+UNRESOLVED entram no delivery manifest."""
+    from kdrx.schemas.claims import Claim
+    from kdrx.schemas.enums import ClaimImportance, Standing
+
+    claims = [
+        Claim(
+            claim_id="C-crit-unresolved",
+            statement="critical unresolved",
+            importance=ClaimImportance.CRITICAL,
+            standing=Standing.UNRESOLVED,
+        ),
+        Claim(
+            claim_id="C-crit-supported",
+            statement="critical supported",
+            importance=ClaimImportance.CRITICAL,
+            standing=Standing.SUPPORTED,
+        ),
+        Claim(
+            claim_id="C-major-unresolved",
+            statement="major unresolved",
+            importance=ClaimImportance.MAJOR,
+            standing=Standing.UNRESOLVED,
+        ),
+    ]
+    run_dir = tmp_path / "runs" / "run-x"
+    claims_dir = run_dir / "claims"
+    claims_dir.mkdir(parents=True)
+    (claims_dir / "claims.jsonl").write_text(
+        "\n".join(c.model_dump_json() for c in claims) + "\n", encoding="utf-8"
+    )
+    assert unresolved_critical_claims(run_dir) == ["C-crit-unresolved"]
+    assert unresolved_critical_claims(tmp_path / "runs" / "no-such-run") == []
+
+
+def test_seal_delivery_persists_produced_by_and_gate_timestamps(tmp_path):
+    """Fase 1: seal_delivery persiste produced_by/gate_timestamps/verified
+    report hash com re-leitura do disco."""
+    contract = build_contract("seal objective")
+    plan = build_plan(contract, 2)
+    state, manifest = prepare_run_dir(plan, contract, tmp_path / "runs")
+    report = state.run_dir / "delivery" / "report.md"
+    report.parent.mkdir(parents=True, exist_ok=True)
+    report.write_bytes(b"# Report\r\nverified bytes\r\n")  # CRLF-safe
+    manifest.gate_results = {"integrity": "pass", "security": "pass"}
+
+    dm = seal_delivery(
+        state,
+        manifest,
+        produced_by="kdr:seal",
+        gate_timestamps={
+            "source_trust": "2026-08-20T00:00:00Z",
+            "citation_integrity": "2026-08-20T00:00:01Z",
+            "security": "2026-08-20T00:00:02Z",
+            "sealed_at": "2026-08-20T00:00:03Z",
+        },
+        unresolved_critical=["C-1"],
+    )
+    assert dm.verified_report_hash == hash_file(report)
+    assert dm.delivered_at is not None
+    assert dm.unresolved_critical_claims == ["C-1"]
+    assert dm.gate_timestamps["sealed_at"] == "2026-08-20T00:00:03Z"
+    assert dm.artifacts[0].produced_by == "kdr:seal"
+
+    persisted = json.loads(
+        (state.run_dir / "delivery-manifest.json").read_text(encoding="utf-8")
+    )
+    assert persisted["verified_report_hash"] == hash_file(report)
+    assert persisted["gate_timestamps"]["sealed_at"] == "2026-08-20T00:00:03Z"
+    assert persisted["unresolved_critical_claims"] == ["C-1"]
+    assert persisted["delivered_at"] is not None

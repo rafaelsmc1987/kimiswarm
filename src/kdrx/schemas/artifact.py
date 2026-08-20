@@ -39,6 +39,11 @@ class DeliveryManifest(BaseModel):
     artifact_open_test_passed: bool = False
     unresolved_critical_claims: list[str] = Field(default_factory=list)
     delivered_at: datetime | None = None
+    # sha256 dos bytes do report verificados no selo (lineage: bytes em disco)
+    verified_report_hash: str | None = None
+    # ex.: {"source_trust": iso, "citation_integrity": iso, "security": iso,
+    #       "plan_dag": iso, "sealed_at": iso}
+    gate_timestamps: dict[str, str] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     def is_complete(self) -> bool:
