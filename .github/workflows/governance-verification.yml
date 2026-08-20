@@ -1,0 +1,157 @@
+name: governance
+
+# HISTÓRICO (regressão 2026-08-19): quando o repo passou a privado no plano free,
+# o GitHub removeu a branch protection silenciosamente — sem log, sem alerta. A
+# proteção foi reaplicada em 2026-08-20 via API. Este workflow existe para que
+# qualquer divergência futura entre a proteção real de `main` e
+# `.github/governance-policy.json` FALHE ALTO, em vez de sumir em silêncio.
+# Regra derivada: o repo DEVE permanecer público para a proteção se manter.
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * *" # diário (06:00 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: governance verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Busca proteção de main (API pública)
+        # Endpoint público: repos públicos expõem `protected` + bloco `protection`
+        # anonimamente; o header GITHUB_TOKEN só melhora o rate limit e cobre o
+        # caso de o repo estar temporariamente privado (onde anônimo leva 404).
+        run: |
+          curl -fsS -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/rafaelsmc1987/kimiswarm/branches/main" \
+            -o protection.json
+
+      - name: Falha se a proteção sumiu
+        run: |
+          protected=$(python3 -c 'import json; print(json.load(open("protection.json")).get("protected"))')
+          if [ "${protected}" != "True" ]; then
+            echo "::error::main não está protegida — o repo pode ter voltado a ser privado (plano free remove proteção silenciosamente) ou a proteção foi removida manualmente. Reaplique e mantenha o repo público."
+            exit 1
+          fi
+
+      - name: Busca detalhes da proteção (endpoint admin)
+        # O bloco `protection` do endpoint público só expõe `protected: true`; os
+        # campos strict/reviews/linear/force/deletions vêm APENAS do endpoint
+        # dedicado `GET /branches/main/protection`, que exige permissão de
+        # administration. O GITHUB_TOKEN não tem essa permissão — por isso o
+        # secret GOVERNANCE_TOKEN (PAT clássico com repo-admin) é necessário.
+        # Qualquer falha aqui FALHA ALTO: secret ausente/expirado ou sem
+        # permissão não pode silenciosamente pular a verificação.
+        run: |
+          status=$(curl -s -o protection-details.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.GOVERNANCE_TOKEN }}" \
+            "https://api.github.com/repos/rafaelsmc1987/kimiswarm/branches/main/protection")
+          if [ "${status}" != "200" ]; then
+            echo "::error::/branches/main/protection devolveu HTTP ${status} (401/403/404 = secret GOVERNANCE_TOKEN ausente/expirado ou sem permissao) — a verificacao nao pode silenciosamente pular; este e o proposito do workflow."
+            exit 1
+          fi
+          echo "protection endpoint: ok (HTTP 200)"
+
+      - name: Rulesets (best-effort)
+        # Auditoria opcional: usa o mesmo GOVERNANCE_TOKEN (GITHUB_TOKEN não tem
+        # permissão de administration). Se não puder listar rulesets (403/404),
+        # avisa e segue — é o ÚNICO passo tolerante; a proteção em si falha alto.
+        # Roda antes da comparação para que a contagem entre no artefato.
+        run: |
+          status=$(curl -s -o rulesets.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.GOVERNANCE_TOKEN }}" \
+            "https://api.github.com/repos/rafaelsmc1987/kimiswarm/rulesets")
+          if [ "${status}" = "403" ] || [ "${status}" = "404" ]; then
+            echo "::warning::rulesets not auditable via GOVERNANCE_TOKEN (HTTP ${status}); prosseguindo"
+            echo "null" > rulesets.json
+          elif [ "${status}" != "200" ]; then
+            echo "::warning::rulesets endpoint devolveu HTTP ${status}; prosseguindo"
+            echo "null" > rulesets.json
+          else
+            echo "rulesets acessíveis: $(python3 -c 'import json; print(len(json.load(open("rulesets.json"))))') ruleset(s)"
+          fi
+
+      - name: Compara proteção contra governance-policy.json
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          from datetime import datetime, timezone
+
+          policy = json.load(open(".github/governance-policy.json", encoding="utf-8"))
+          data = json.load(open("protection.json", encoding="utf-8"))
+          # Campos vêm DIRETOS do endpoint admin /branches/main/protection (JSON
+          # flat) — o bloco `protection` do endpoint público não os inclui.
+          protection = json.load(open("protection-details.json", encoding="utf-8"))
+
+          rsc = protection.get("required_status_checks") or {}
+          api_contexts = sorted(rsc.get("contexts") or [])
+          policy_contexts = sorted(policy["required_status_checks"]["contexts"])
+          missing = sorted(set(policy_contexts) - set(api_contexts))
+          extra = sorted(set(api_contexts) - set(policy_contexts))
+
+          strict = bool(rsc.get("strict"))
+          pr_reviews = protection.get("required_pull_request_reviews") is not None
+          linear = bool((protection.get("required_linear_history") or {}).get("enabled"))
+          force = bool((protection.get("allow_force_pushes") or {}).get("enabled"))
+          deletions = bool((protection.get("allow_deletions") or {}).get("enabled"))
+
+          problems = []
+          if api_contexts != policy_contexts:
+              problems.append(f"contexts divergem: ausentes={missing} extras={extra}")
+          if strict is not True:
+              problems.append(f"strict: esperado=True real={strict}")
+          if pr_reviews is not True:
+              problems.append(f"required_pull_request_reviews: esperado=True real={pr_reviews}")
+          if linear is not True:
+              problems.append(f"required_linear_history: esperado=True real={linear}")
+          if force is not False:
+              problems.append(f"allow_force_pushes: esperado=False real={force}")
+          if deletions is not False:
+              problems.append(f"allow_deletions: esperado=False real={deletions}")
+
+          rulesets_count = None
+          try:
+              raw = open("rulesets.json", encoding="utf-8").read().strip()
+              parsed = json.loads(raw) if raw and raw != "null" else None
+              rulesets_count = len(parsed) if isinstance(parsed, list) else None
+          except (FileNotFoundError, ValueError):
+              pass
+
+          evidence = {
+              "checked_at": datetime.now(timezone.utc).isoformat(),
+              "protected": bool(data.get("protected")),
+              "protection_endpoint": "ok",
+              "contexts": api_contexts,
+              "strict": strict,
+              "linear": linear,
+              "force_pushes": force,
+              "deletions": deletions,
+              "pr_reviews": pr_reviews,
+              "rulesets_count": rulesets_count,
+              "policy_matches": not problems,
+          }
+          with open("governance-evidence.json", "w", encoding="utf-8") as fh:
+              json.dump(evidence, fh, ensure_ascii=False, indent=2)
+
+          if problems:
+              print("::error::divergência entre a proteção real e governance-policy.json:")
+              for problem in problems:
+                  print(f"  - {problem}")
+              sys.exit(1)
+          print("governance: proteção de main confere com a policy")
+          PY
+
+      - name: Upload governance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: governance-evidence
+          path: governance-evidence.json

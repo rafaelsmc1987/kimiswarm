@@ -1,0 +1,29 @@
+flowchart TD
+    U[User Request] --> I[Intake and Research Contract]
+    I --> PC[Planner Council]
+    PC --> DC[DAG Compiler]
+    DC --> WS[Wave Scheduler]
+
+    WS --> DE[Discovery Swarm]
+    WS --> AS[Academic/Search Specialists]
+    WS --> CS[Code/Data Specialists]
+    WS --> CE[Counterevidence Swarm]
+
+    DE --> C[Canonical Corpus]
+    AS --> C
+    CS --> C
+    CE --> C
+
+    C --> ST[Source Trust Chain]
+    ST --> ES[Evidence Span Store]
+    ES --> CG[Atomic Claim Graph]
+    CG --> CX[Contradiction and Gap Engine]
+    CX --> FV[Falsification and Targeted Verification]
+    FV --> AC[Analytical Compute]
+    AC --> SY[Calibrated Synthesis]
+    SY --> RW[Dependency-aware Report Writing]
+    RW --> IR[Independent Review]
+    IR --> FI[Final Integrity Gate]
+    FI --> PA[Persistent Research Artifact]
+    FI --> DL[Delivery]
+    FI -- FAIL --> DC

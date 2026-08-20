@@ -1,0 +1,274 @@
+[
+  {
+    "pr": "SW-00",
+    "title": "Native hooks and session-bound run registry",
+    "depends_on": [],
+    "acceptance_tests": [
+      "Fixtures oficiais TaskCreated/TaskCompleted/SubagentStop/Stop passam",
+      "duas sessões simultâneas nunca cruzam runs",
+      "Stop rejeita report modificado após integrity gate",
+      "nenhum KeyError com payload nativo"
+    ],
+    "release_blocking": true
+  },
+  {
+    "pr": "SW-01",
+    "title": "Self-contained cross-platform plugin",
+    "depends_on": [
+      "SW-00"
+    ],
+    "acceptance_tests": [
+      "instalação em repo vazio Linux/macOS/Windows",
+      "todos 17 agents aparecem",
+      "todos comandos/workflows/hooks funcionam sem checkout do monorepo",
+      "offline uninstall/reinstall reproduz o mesmo hash"
+    ],
+    "release_blocking": true
+  },
+  {
+    "pr": "SW-02",
+    "title": "Canonical planner handoff and revision loop",
+    "depends_on": [
+      "SW-01"
+    ],
+    "acceptance_tests": [
+      "o hash do plano retornado é o hash do plan.json executado",
+      "todo planner recommendation tem disposition",
+      "plano inválido nunca chega a kdr-run",
+      "role/tools/skills/guidance/context/owners/reviewers/acceptance/budget preservados"
+    ],
+    "release_blocking": true
+  },
+  {
+    "pr": "SW-03",
+    "title": "Final report verify-then-seal ordering",
+    "depends_on": [
+      "SW-02"
+    ],
+    "acceptance_tests": [
+      "qualquer byte alterado após gate bloqueia",
+      "relatório final e relatório verificado são idênticos",
+      "nenhum Write/Edit permitido em artifact sealed"
+    ],
+    "release_blocking": true
+  },
+  {
+    "pr": "SW-04",
+    "title": "Role-aware specialist executor",
+    "depends_on": [
+      "SW-02"
+    ],
+    "acceptance_tests": [
+      "trace mostra agent type/model/tools por task",
+      "search worker não escreve",
+      "coder sempre usa worktree",
+      "autor nunca aprova o próprio output"
+    ],
+    "release_blocking": false
+  },
+  {
+    "pr": "SW-05",
+    "title": "Unify JavaScript swarm with Python research kernel",
+    "depends_on": [
+      "SW-03",
+      "SW-04"
+    ],
+    "acceptance_tests": [
+      "golden live-web E2E usa 5+ specialist agents",
+      "todos outputs estão no manifest e claim graph",
+      "resume após kill continua sem repetir tasks fechadas",
+      "relatório final sealed passa gates"
+    ],
+    "release_blocking": true
+  },
+  {
+    "pr": "SW-06",
+    "title": "Event-sourced durable scheduler",
+    "depends_on": [
+      "SW-05"
+    ],
+    "acceptance_tests": [
+      "chaos test mata orchestrator e workers em todas waves",
+      "zero output duplicate/corrupt",
+      "branches independentes continuam após falha não relacionada",
+      "dead worker é reconciliado automaticamente"
+    ],
+    "release_blocking": true
+  },
+  {
+    "pr": "SW-07",
+    "title": "Architecture selector and adaptive workforce",
+    "depends_on": [
+      "SW-05"
+    ],
+    "acceptance_tests": [
+      "selector escolhe single-agent para sequential tasks",
+      "centralized/hybrid para breadth e contradictions",
+      "87%+ selector accuracy no conjunto interno ou threshold justificado",
+      "multi-agent nunca é default cego"
+    ],
+    "release_blocking": true
+  },
+  {
+    "pr": "SW-08",
+    "title": "Dynamic DAG mutation and evidence saturation",
+    "depends_on": [
+      "SW-06",
+      "SW-07"
+    ],
+    "acceptance_tests": [
+      "novo conflito cria verifier wave automaticamente",
+      "duas rounds sem gain encerram run",
+      "DAG history é auditável e reproduzível",
+      "budget ceiling produz explicit unresolved registry"
+    ],
+    "release_blocking": false
+  },
+  {
+    "pr": "SW-09",
+    "title": "Blackboard, directed messaging and resource coordination",
+    "depends_on": [
+      "SW-06"
+    ],
+    "acceptance_tests": [
+      "DPBench-inspired contention suite sem deadlock",
+      "Silo-inspired distributed-state tasks integram informação corretamente",
+      "message budget e relevance score limitam chatter"
+    ],
+    "release_blocking": false
+  },
+  {
+    "pr": "SW-10",
+    "title": "Context engineering and durable memory",
+    "depends_on": [
+      "SW-05"
+    ],
+    "acceptance_tests": [
+      "context contains only required artifacts",
+      "no hidden sibling dependency",
+      "token use drops without quality regression",
+      "memory contamination tests pass"
+    ],
+    "release_blocking": false
+  },
+  {
+    "pr": "SW-11",
+    "title": "Semantic retrieval, entailment and calibrated consensus",
+    "depends_on": [
+      "SW-05"
+    ],
+    "acceptance_tests": [
+      "hard-negative citation suite",
+      "compound/partial/scope mismatch recall thresholds",
+      "calibration ECE/Brier floors",
+      "critical claims require independent evidence families"
+    ],
+    "release_blocking": true
+  },
+  {
+    "pr": "SW-12",
+    "title": "Real multiagent editorial pipeline",
+    "depends_on": [
+      "SW-11"
+    ],
+    "acceptance_tests": [
+      "writer/reviewer/fixer independence",
+      "all claims trace to exact evidence",
+      "orphan/dangling/unsupported/numeric mismatches block",
+      "section-level artifacts survive resume"
+    ],
+    "release_blocking": false
+  },
+  {
+    "pr": "SW-13",
+    "title": "Per-worker containment and untrusted-content firewall",
+    "depends_on": [
+      "SW-05"
+    ],
+    "acceptance_tests": [
+      "prompt-injection red team cannot mutate task/gate/tool policy",
+      "SSRF metadata endpoints blocked",
+      "worker compromise cannot read sibling secrets/artifacts",
+      "all tool outputs have provenance/trust labels"
+    ],
+    "release_blocking": true
+  },
+  {
+    "pr": "SW-14",
+    "title": "OpenTelemetry, cost attribution and deterministic replay",
+    "depends_on": [
+      "SW-06"
+    ],
+    "acceptance_tests": [
+      "todo report claim abre trace até source/tool call",
+      "cost por agent/task/claim disponível",
+      "replay reconstrói state sem chamar modelo",
+      "PII/secrets redacted"
+    ],
+    "release_blocking": false
+  },
+  {
+    "pr": "SW-15",
+    "title": "Live delta research and governed learning",
+    "depends_on": [
+      "SW-08",
+      "SW-11",
+      "SW-14"
+    ],
+    "acceptance_tests": [
+      "retracted source invalidates affected claims",
+      "unaffected claims remain stable",
+      "no prompt/skill self-edit outside PR",
+      "promotion fails on any regression"
+    ],
+    "release_blocking": false
+  },
+  {
+    "pr": "SW-16",
+    "title": "Live swarm evaluation and SOTA benchmark program",
+    "depends_on": [
+      "SW-07",
+      "SW-09",
+      "SW-11",
+      "SW-14"
+    ],
+    "acceptance_tests": [
+      "quality superiority statistically significant vs single and Kimi baseline",
+      "no sequential-task regression beyond allowed floor",
+      "reported confidence intervals and cost",
+      "held-out prompts never used for tuning"
+    ],
+    "release_blocking": true
+  },
+  {
+    "pr": "SW-17",
+    "title": "CI hardening, supply chain and governance",
+    "depends_on": [
+      "SW-01",
+      "SW-16"
+    ],
+    "acceptance_tests": [
+      "all required checks enforced",
+      "ruleset evidence artifact generated",
+      "reproducible wheel/plugin package",
+      "rollback tested"
+    ],
+    "release_blocking": true
+  },
+  {
+    "pr": "SW-18",
+    "title": "Durable multi-tenant swarm backend",
+    "depends_on": [
+      "SW-06",
+      "SW-13",
+      "SW-14"
+    ],
+    "acceptance_tests": [
+      "100+ concurrent runs under load",
+      "no cross-tenant leakage",
+      "orchestrator restart loses zero committed state",
+      "cost and latency SLOs"
+    ],
+    "release_blocking": false
+  }
+]

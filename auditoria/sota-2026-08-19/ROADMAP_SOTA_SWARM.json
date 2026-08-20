@@ -1,0 +1,450 @@
+{
+  "repository": "rafaelsmc1987/kimiswarm",
+  "target": "production-grade adaptive, durable, secure and empirically validated research swarm",
+  "roadmap": [
+    {
+      "pr": "SW-00",
+      "phase": "P0 — Correctness",
+      "title": "Native hooks and session-bound run registry",
+      "depends_on": [],
+      "scope": [
+        "NativeHookEnvelope por evento oficial",
+        "session_id -> run_id registry",
+        "task_id nativo -> TaskSpec registry",
+        "SubagentStop transcript/result adapter",
+        "TaskCompleted acceptance lookup",
+        "Stop com persisted DeliveryManifest, unresolved claims e seal validation",
+        "paths unificados em .research/runs"
+      ],
+      "acceptance": [
+        "Fixtures oficiais TaskCreated/TaskCompleted/SubagentStop/Stop passam",
+        "duas sessões simultâneas nunca cruzam runs",
+        "Stop rejeita report modificado após integrity gate",
+        "nenhum KeyError com payload nativo"
+      ]
+    },
+    {
+      "pr": "SW-01",
+      "phase": "P0 — Packaging",
+      "title": "Self-contained cross-platform plugin",
+      "depends_on": [
+        "SW-00"
+      ],
+      "scope": [
+        "Corrigir manifest paths e agent auto-discovery",
+        "Empacotar kernel como wheel/zipapp ou sidecar incluído",
+        "Wrapper Node/Python cross-platform",
+        "plugin doctor usando claude plugin validate e claude agents",
+        "sem dependência de ../../src no projeto consumidor",
+        "semver, changelog e release artifact"
+      ],
+      "acceptance": [
+        "instalação em repo vazio Linux/macOS/Windows",
+        "todos 17 agents aparecem",
+        "todos comandos/workflows/hooks funcionam sem checkout do monorepo",
+        "offline uninstall/reinstall reproduz o mesmo hash"
+      ]
+    },
+    {
+      "pr": "SW-02",
+      "phase": "P0 — Canonical plan",
+      "title": "Canonical planner handoff and revision loop",
+      "depends_on": [
+        "SW-01"
+      ],
+      "scope": [
+        "Workflow usa ResearchPlan/TaskSpec JSON Schema completos",
+        "kdr import-plan --stdin valida e persiste",
+        "review.approved é gate obrigatório",
+        "review -> repair -> verify loop limitado",
+        "plan revision/hash/provenance",
+        "argumentos passados como JSON, sem interpolação shell"
+      ],
+      "acceptance": [
+        "o hash do plano retornado é o hash do plan.json executado",
+        "todo planner recommendation tem disposition",
+        "plano inválido nunca chega a kdr-run",
+        "role/tools/skills/guidance/context/owners/reviewers/acceptance/budget preservados"
+      ]
+    },
+    {
+      "pr": "SW-03",
+      "phase": "P0 — Integrity",
+      "title": "Final report verify-then-seal ordering",
+      "depends_on": [
+        "SW-02"
+      ],
+      "scope": [
+        "draft -> review -> fix -> assemble -> verify -> seal",
+        "artifact immutable após seal",
+        "DeliveryManifest contém verified hash e gate timestamps",
+        "Stop compara hash e lineage",
+        "citation/source/claim/numeric/security gates sobre bytes finais"
+      ],
+      "acceptance": [
+        "qualquer byte alterado após gate bloqueia",
+        "relatório final e relatório verificado são idênticos",
+        "nenhum Write/Edit permitido em artifact sealed"
+      ]
+    },
+    {
+      "pr": "SW-04",
+      "phase": "P1 — Agent runtime",
+      "title": "Role-aware specialist executor",
+      "depends_on": [
+        "SW-02"
+      ],
+      "scope": [
+        "AgentExecutionSpec derivado de TaskSpec",
+        "custom agent type por role-resolution",
+        "model/effort/tools/skills/cwd/worktree por task",
+        "least privilege",
+        "context pack + upstream artifacts",
+        "reviewer/verifier independence constraints"
+      ],
+      "acceptance": [
+        "trace mostra agent type/model/tools por task",
+        "search worker não escreve",
+        "coder sempre usa worktree",
+        "autor nunca aprova o próprio output"
+      ]
+    },
+    {
+      "pr": "SW-05",
+      "phase": "P1 — Unified E2E",
+      "title": "Unify JavaScript swarm with Python research kernel",
+      "depends_on": [
+        "SW-03",
+        "SW-04"
+      ],
+      "scope": [
+        "claim/lease/commit API para tasks",
+        "AgentBrief e AgentResult canônicos",
+        "adapters, source trust, claim graph, report swarm e gates em um run",
+        "Python sidecar determinístico",
+        "artifact transactions e provenance"
+      ],
+      "acceptance": [
+        "golden live-web E2E usa 5+ specialist agents",
+        "todos outputs estão no manifest e claim graph",
+        "resume após kill continua sem repetir tasks fechadas",
+        "relatório final sealed passa gates"
+      ]
+    },
+    {
+      "pr": "SW-06",
+      "phase": "P1 — Durability",
+      "title": "Event-sourced durable scheduler",
+      "depends_on": [
+        "SW-05"
+      ],
+      "scope": [
+        "Postgres/SQLite event store interface",
+        "ready queue, worker leases e heartbeats",
+        "idempotency keys",
+        "retry/backoff/jitter/dead-letter",
+        "descendant-only blocking",
+        "cancellation and timeout propagation",
+        "staging + atomic artifact commit",
+        "cross-session/cross-process resume"
+      ],
+      "acceptance": [
+        "chaos test mata orchestrator e workers em todas waves",
+        "zero output duplicate/corrupt",
+        "branches independentes continuam após falha não relacionada",
+        "dead worker é reconciliado automaticamente"
+      ]
+    },
+    {
+      "pr": "SW-07",
+      "phase": "P1 — Adaptive swarm",
+      "title": "Architecture selector and adaptive workforce",
+      "depends_on": [
+        "SW-05"
+      ],
+      "scope": [
+        "features: decomposability, sequentiality, tool density, uncertainty, breadth, value",
+        "routes: single, centralized, independent, hybrid, agent-team",
+        "agent-count and model-budget policy",
+        "cost/quality prediction",
+        "fallback and escalation"
+      ],
+      "acceptance": [
+        "selector escolhe single-agent para sequential tasks",
+        "centralized/hybrid para breadth e contradictions",
+        "87%+ selector accuracy no conjunto interno ou threshold justificado",
+        "multi-agent nunca é default cego"
+      ]
+    },
+    {
+      "pr": "SW-08",
+      "phase": "P1 — Replanning",
+      "title": "Dynamic DAG mutation and evidence saturation",
+      "depends_on": [
+        "SW-06",
+        "SW-07"
+      ],
+      "scope": [
+        "coverage/gap/contradiction monitor",
+        "versioned DAG mutations",
+        "targeted validation waves",
+        "entity-following and citation chaining",
+        "marginal evidence/source gain",
+        "budget-aware stop",
+        "no-progress detection"
+      ],
+      "acceptance": [
+        "novo conflito cria verifier wave automaticamente",
+        "duas rounds sem gain encerram run",
+        "DAG history é auditável e reproduzível",
+        "budget ceiling produz explicit unresolved registry"
+      ]
+    },
+    {
+      "pr": "SW-09",
+      "phase": "P1 — Coordination",
+      "title": "Blackboard, directed messaging and resource coordination",
+      "depends_on": [
+        "SW-06"
+      ],
+      "scope": [
+        "typed events for sources/claims/gaps/requests",
+        "scoped subscriptions",
+        "direct peer request somente com rationale",
+        "artifact/resource locks",
+        "deadlock prevention",
+        "A2A-compatible Task/Artifact/Event facade",
+        "integration agents for distributed state"
+      ],
+      "acceptance": [
+        "DPBench-inspired contention suite sem deadlock",
+        "Silo-inspired distributed-state tasks integram informação corretamente",
+        "message budget e relevance score limitam chatter"
+      ]
+    },
+    {
+      "pr": "SW-10",
+      "phase": "P1 — Context",
+      "title": "Context engineering and durable memory",
+      "depends_on": [
+        "SW-05"
+      ],
+      "scope": [
+        "ContextPack schema",
+        "artifact relevance index",
+        "phase summaries and compaction",
+        "prompt-cache-aware batch grouping",
+        "token budget per role/task",
+        "memory scopes: run/project/global",
+        "governed retrieval of prior experience"
+      ],
+      "acceptance": [
+        "context contains only required artifacts",
+        "no hidden sibling dependency",
+        "token use drops without quality regression",
+        "memory contamination tests pass"
+      ]
+    },
+    {
+      "pr": "SW-11",
+      "phase": "P1 — Epistemics",
+      "title": "Semantic retrieval, entailment and calibrated consensus",
+      "depends_on": [
+        "SW-05"
+      ],
+      "scope": [
+        "real embeddings + cross-encoder reranker",
+        "citation/entity graph",
+        "semantic claim decomposition",
+        "independent NLI/LLM verifier",
+        "cross-model verifier on critical claims",
+        "semantic contradiction and alternative hypotheses",
+        "calibration/abstention/quorum",
+        "domain evidence policies and RoB/GRADE adapters"
+      ],
+      "acceptance": [
+        "hard-negative citation suite",
+        "compound/partial/scope mismatch recall thresholds",
+        "calibration ECE/Brier floors",
+        "critical claims require independent evidence families"
+      ]
+    },
+    {
+      "pr": "SW-12",
+      "phase": "P1 — Report swarm",
+      "title": "Real multiagent editorial pipeline",
+      "depends_on": [
+        "SW-11"
+      ],
+      "scope": [
+        "outline council",
+        "section DAG",
+        "parallel specialist writers",
+        "reviewer/fixer pairs",
+        "transition/terminology/citation agents",
+        "late executive synthesis",
+        "mechanical assembly",
+        "final reverify and seal"
+      ],
+      "acceptance": [
+        "writer/reviewer/fixer independence",
+        "all claims trace to exact evidence",
+        "orphan/dangling/unsupported/numeric mismatches block",
+        "section-level artifacts survive resume"
+      ]
+    },
+    {
+      "pr": "SW-13",
+      "phase": "P2 — Security",
+      "title": "Per-worker containment and untrusted-content firewall",
+      "depends_on": [
+        "SW-05"
+      ],
+      "scope": [
+        "sandbox per worker",
+        "read-only retrieval workers",
+        "egress proxy and domain policy",
+        "SSRF/redirect/DNS rebinding protection",
+        "content size/type limits and circuit breakers",
+        "credential broker",
+        "MCP/tool allowlist",
+        "Web/MCP output quarantine and instruction/data labels",
+        "artifact malware/secret scan"
+      ],
+      "acceptance": [
+        "prompt-injection red team cannot mutate task/gate/tool policy",
+        "SSRF metadata endpoints blocked",
+        "worker compromise cannot read sibling secrets/artifacts",
+        "all tool outputs have provenance/trust labels"
+      ]
+    },
+    {
+      "pr": "SW-14",
+      "phase": "P2 — Observability",
+      "title": "OpenTelemetry, cost attribution and deterministic replay",
+      "depends_on": [
+        "SW-06"
+      ],
+      "scope": [
+        "trace spans run/wave/task/agent/tool/query/source/claim/gate",
+        "token/cost/latency/model/tool metrics",
+        "critical path and straggler metrics",
+        "agent contribution and duplicated-work score",
+        "error amplification",
+        "privacy redaction",
+        "trace viewer and replay"
+      ],
+      "acceptance": [
+        "todo report claim abre trace até source/tool call",
+        "cost por agent/task/claim disponível",
+        "replay reconstrói state sem chamar modelo",
+        "PII/secrets redacted"
+      ]
+    },
+    {
+      "pr": "SW-15",
+      "phase": "P2 — Monitoring",
+      "title": "Live delta research and governed learning",
+      "depends_on": [
+        "SW-08",
+        "SW-11",
+        "SW-14"
+      ],
+      "scope": [
+        "scheduled saved query execution",
+        "web/API delta retrieval",
+        "retraction/correction alerts",
+        "standing dependency cascade",
+        "report diff",
+        "observation -> candidate -> offline eval -> PR -> canary -> promotion -> rollback"
+      ],
+      "acceptance": [
+        "retracted source invalidates affected claims",
+        "unaffected claims remain stable",
+        "no prompt/skill self-edit outside PR",
+        "promotion fails on any regression"
+      ]
+    },
+    {
+      "pr": "SW-16",
+      "phase": "P2 — Proof",
+      "title": "Live swarm evaluation and SOTA benchmark program",
+      "depends_on": [
+        "SW-07",
+        "SW-09",
+        "SW-11",
+        "SW-14"
+      ],
+      "scope": [
+        "actual Claude workflow runner in CI/nightly",
+        "single-agent baseline",
+        "independent/centralized/hybrid/team ablations",
+        "agent-count scaling curves",
+        "multi-trial stochastic evaluation",
+        "Kimi replay end-to-end",
+        "DeepResearch Bench/BrowseComp/Silo-Bench/DPBench adapters",
+        "human expert calibration",
+        "cost-quality-latency Pareto"
+      ],
+      "acceptance": [
+        "quality superiority statistically significant vs single and Kimi baseline",
+        "no sequential-task regression beyond allowed floor",
+        "reported confidence intervals and cost",
+        "held-out prompts never used for tuning"
+      ]
+    },
+    {
+      "pr": "SW-17",
+      "phase": "P2 — Release",
+      "title": "CI hardening, supply chain and governance",
+      "depends_on": [
+        "SW-01",
+        "SW-16"
+      ],
+      "scope": [
+        "mypy/pyright blocking",
+        "coverage floor",
+        "property/mutation/fuzz tests",
+        "Linux/macOS/Windows",
+        "plugin marketplace install E2E",
+        "live adapter contract tests",
+        "SBOM, provenance and SLSA-style attestations",
+        "signed tags/releases",
+        "ruleset verification workflow",
+        "release automation"
+      ],
+      "acceptance": [
+        "all required checks enforced",
+        "ruleset evidence artifact generated",
+        "reproducible wheel/plugin package",
+        "rollback tested"
+      ]
+    },
+    {
+      "pr": "SW-18",
+      "phase": "P3 — Scale",
+      "title": "Durable multi-tenant swarm backend",
+      "depends_on": [
+        "SW-06",
+        "SW-13",
+        "SW-14"
+      ],
+      "scope": [
+        "stateless orchestrator brains",
+        "durable append-only sessions",
+        "independent sandbox hands",
+        "Postgres/Redis/object store adapters",
+        "horizontal scaling",
+        "tenant quotas/rate limits",
+        "versioned harness and model routing",
+        "rolling/rainbow deployments"
+      ],
+      "acceptance": [
+        "100+ concurrent runs under load",
+        "no cross-tenant leakage",
+        "orchestrator restart loses zero committed state",
+        "cost and latency SLOs"
+      ]
+    }
+  ]
+}

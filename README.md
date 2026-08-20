@@ -12,6 +12,11 @@ executable layer on top of the Kimi Swarm control-plane design.
 O **plano de correção pós-auditoria está completo (81/81)**, incluindo CI verde
 no GitHub e branch protection ativa em `main` (9 required checks, strict,
 PR obrigatório, linear history — ver `auditoria/DOD_VERIFICATION.md` item 16).
+A governança agora é **verificada por máquina** (`governance-verification`): o
+workflow compara a proteção real de `main` contra `.github/governance-policy.json`
+(fonte de verdade) e publica o artefato `governance-evidence`. Lição da
+regressão: o repo **deve permanecer público** — no plano free, torná-lo privado
+remove a branch protection silenciosamente.
 A fundação cresceu para **234 testes**
 (`pytest tests/`) cobrindo as 12 fases: state machine com resume, retrieval de
 produção com adapters web, source trust chain viva, claim-evidence com

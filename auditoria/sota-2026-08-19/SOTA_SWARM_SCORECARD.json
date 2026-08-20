@@ -1,0 +1,307 @@
+{
+  "repository": "rafaelsmc1987/kimiswarm",
+  "commit": "08f927dd8feeb1c856deb2cda991ee14f46dfce9",
+  "audit_date": "2026-08-19",
+  "audit_method": "static_github_and_current_primary_sources",
+  "local_execution_performed": false,
+  "sota_readiness_percent": 48.1,
+  "scorecard": [
+    {
+      "dimension": "Kernel determinístico: schemas, DAG, gates e artifacts",
+      "weight": 10,
+      "score": 8.5,
+      "status": "FORTE",
+      "finding": "Boa base Pydantic/DAG/state/claims, mas ainda não é o runtime que coordena os agentes reais."
+    },
+    {
+      "dimension": "Planejamento e compilação do DAG",
+      "weight": 8,
+      "score": 7.0,
+      "status": "BOM_COM_GAP_CRITICO",
+      "finding": "Planner council existe, porém o plano sintetizado pelo workflow não é persistido e revalidado como o ResearchPlan canônico."
+    },
+    {
+      "dimension": "Orquestração multiagente real",
+      "weight": 15,
+      "score": 5.0,
+      "status": "PARCIAL",
+      "finding": "Há parallel()/pipeline(), mas workers genéricos não usam a biblioteca de agentes, TaskSpec completo, retries duráveis ou ownership transacional."
+    },
+    {
+      "dimension": "Seleção adaptativa de arquitetura e replanning",
+      "weight": 10,
+      "score": 2.5,
+      "status": "AUSENTE",
+      "finding": "Não escolhe single/centralized/hybrid/team conforme decomposability, sequentiality, tool density, incerteza e custo; DAG é essencialmente fixo."
+    },
+    {
+      "dimension": "Especialização, comunicação e integração distribuída",
+      "weight": 8,
+      "score": 3.5,
+      "status": "FRACO",
+      "finding": "Existem 17 definições e role-resolution, mas workflows usam agent() genérico; não há blackboard, directed peer requests ou protocolo de integração."
+    },
+    {
+      "dimension": "Durabilidade, recuperação e execução distribuída",
+      "weight": 10,
+      "score": 4.0,
+      "status": "PARCIAL",
+      "finding": "Python tem manifest/resume, mas workflows só retomam plenamente na mesma sessão Claude e não há leases, heartbeats, idempotency ou fila durável."
+    },
+    {
+      "dimension": "Rigor epistemológico do deep research",
+      "weight": 10,
+      "score": 6.5,
+      "status": "BOM_MAS_HEURISTICO",
+      "finding": "Claim graph, source trust e falsification existem, porém entailment/contradição/ranking ainda dependem muito de regras lexicais e proxies."
+    },
+    {
+      "dimension": "Context engineering e memória",
+      "weight": 7,
+      "score": 3.0,
+      "status": "FRACO",
+      "finding": "Sem context-pack builder, relevância por artifact, compaction por fase, cache-aware batching ou memória governada conectada à execução."
+    },
+    {
+      "dimension": "Segurança e contenção por worker",
+      "weight": 8,
+      "score": 4.5,
+      "status": "PARCIAL",
+      "finding": "Há hooks/egress/secret guards, mas workflows rodam acceptEdits, escrevem em diretório compartilhado e o boundary não cobre toda saída Web/MCP."
+    },
+    {
+      "dimension": "Observabilidade, custo e attribution",
+      "weight": 5,
+      "score": 2.5,
+      "status": "AUSENTE",
+      "finding": "Sem OpenTelemetry, spans por agent/tool/query/claim, custo por contribuição, critical path, error amplification ou replay operacional."
+    },
+    {
+      "dimension": "Evals e prova de superioridade",
+      "weight": 6,
+      "score": 4.0,
+      "status": "PARCIAL",
+      "finding": "Há 234 testes declarados e toy/heldout fixtures, mas não há live Claude workflow CI, baseline single-agent, ablations, scaling curves ou benchmark results."
+    },
+    {
+      "dimension": "Packaging, CI e governança",
+      "weight": 3,
+      "score": 4.5,
+      "status": "PARCIAL",
+      "finding": "CI existe, mas mypy é advisory; plugin não é totalmente autocontido/cross-platform e a API clássica do branch contradiz a documentação de protection."
+    }
+  ],
+  "critical_gaps": [
+    {
+      "id": "S0-01",
+      "severity": "BLOCKER",
+      "title": "Hooks usam payload KDR-X customizado, não o payload nativo do Claude Code",
+      "evidence": [
+        "plugins/kdr-x/hooks/kdr-hook espera data['task'] com TaskSpec completo",
+        "SubagentStop/TaskCompleted esperam data['result'] e data['task']",
+        "Claude Code envia task_id/task_subject/task_description ou agent_id/agent_type/transcript paths/last_assistant_message",
+        "tests/test_plugin_cli.py injeta payloads sintéticos criados pelo próprio KDR-X"
+      ],
+      "impact": "Os hooks mais importantes podem falhar com KeyError ou não validar a task/agent real; a conclusão 18/18 não prova enforcement no harness nativo.",
+      "fix": [
+        "Criar NativeHookEnvelope por evento e adapters específicos.",
+        "Persistir session_id -> run_id e task_id nativo -> TaskSpec canônico.",
+        "Extrair AgentResult do transcript/result artifact no SubagentStop.",
+        "Emitir JSON/event-specific decision e stderr compatíveis com Claude Code.",
+        "Cobrir stop_hook_active, recursive stop e ausência de active run.",
+        "Executar contract tests contra fixtures copiadas da documentação oficial."
+      ]
+    },
+    {
+      "id": "S0-02",
+      "severity": "BLOCKER",
+      "title": "Split-brain entre plano do planner council e plan.json executado",
+      "evidence": [
+        "kdr-plan.js cria scaffold Python e depois sintetiza um plano enriquecido",
+        "o plano enriquecido é apenas retornado pelo workflow",
+        "kdr-run.js relê runDir/plan.json, que continua sendo o scaffold padrão",
+        "o PLAN_SCHEMA JavaScript omite grande parte de TaskSpec/ResearchPlan"
+      ],
+      "impact": "As cinco perspectivas podem não controlar o DAG executado; o sistema apresenta planner council sem executar suas decisões.",
+      "fix": [
+        "Usar JSON Schema canônico exportado pelo Python no workflow.",
+        "Adicionar kdr import-plan --run-dir ... --stdin e validar compile_dag + plan_gate.",
+        "Persistir plan revision, plan hash, provenance dos planners e approval.",
+        "Bloquear se review.approved=false; implementar revisão/correção até PASS.",
+        "Nunca aceitar um plano compacto sem role/tools/skills/guidance/context/owner/reviewer/acceptance/retry/budget."
+      ]
+    },
+    {
+      "id": "S0-03",
+      "severity": "BLOCKER",
+      "title": "Relatório final é escrito depois da verificação",
+      "evidence": [
+        "kdr-deep-research.js executa a fase verify",
+        "em seguida um novo agent escreve delivery/report.md",
+        "não há nova verificação, citation gate ou seal após essa escrita"
+      ],
+      "impact": "O artefato entregue não é necessariamente o artefato que passou nos gates; uma escrita pós-gate invalida toda garantia de integridade.",
+      "fix": [
+        "Ordenar: draft -> review/fix -> assemble -> verify -> seal -> immutable delivery.",
+        "Proibir qualquer Write/Edit no artifact sealed.",
+        "Gravar verified_report_hash no DeliveryManifest.",
+        "Stop hook deve comparar hash atual com o hash verificado.",
+        "Executar final verifier sobre o relatório exatamente entregue."
+      ]
+    },
+    {
+      "id": "S0-04",
+      "severity": "BLOCKER",
+      "title": "A biblioteca de agentes não é usada pela orquestração",
+      "evidence": [
+        "role-resolution.json mapeia dezenas de AgentRole para 17 agentes",
+        "workflows chamam agent(prompt, {label, phase, schema}) sem agent type",
+        "plugin manifest declara somente seis agents e paths não seguem consistentemente './'",
+        "workers herdam modelo/tool allowlist da sessão"
+      ],
+      "impact": "Não há garantia de especialização, least privilege, model routing, worktree, effort ou skills; muitos agentes definidos podem nunca carregar.",
+      "fix": [
+        "Corrigir manifest para auto-discovery de agents/ ou paths './agents/'.",
+        "Gerar AgentExecutionSpec por TaskSpec com agent_type, model, effort, cwd, tools, worktree e schema.",
+        "Invocar explicitamente os agentes resolvidos em vez de persona textual.",
+        "Mover controles não suportados por plugin para .claude/agents ou policy global.",
+        "Adicionar doctor que compara AgentRole enum, role-resolution e agents realmente carregados por `claude agents`."
+      ]
+    },
+    {
+      "id": "S0-05",
+      "severity": "BLOCKER",
+      "title": "Não existe um único E2E que una agentes reais e o kernel canônico",
+      "evidence": [
+        "Python: schemas/gates/state/retrieval/claim/report robustos, mas scheduler sequencial e executor offline",
+        "JavaScript: agentes paralelos reais, mas schemas compactos, gates mediados por agents e artifacts parcialmente desconectados",
+        "adapters de produção aparecem no módulo e testes, não no runner/workflow principal"
+      ],
+      "impact": "Cada metade demonstra algo diferente; nenhuma prova o produto SOTA completo.",
+      "fix": [
+        "Definir o Python como control API/sidecar determinístico e o workflow como executor.",
+        "Toda task deve fazer claim/lease via API, receber AgentBrief canônico e commit de AgentResult.",
+        "Integrar adapters, source trust, claim graph, report swarm e gates no mesmo run.",
+        "Criar uma golden E2E com web real, múltiplos agentes, conflito, retry, resume e relatório sealed."
+      ]
+    },
+    {
+      "id": "S0-06",
+      "severity": "HIGH",
+      "title": "Stop hook não é session-bound e pode escolher o run errado",
+      "evidence": [
+        "procura o diretório mais recentemente modificado sob .research",
+        "CLI usa por padrão .research/runs",
+        "ignora session_id do payload",
+        "unresolved_critical é passado como lista vazia",
+        "reconstrói DeliveryManifest em vez de validar o persistido"
+      ],
+      "impact": "Uma sessão pode ser bloqueada/liberada com base em outro run, em gates obsoletos ou sem claims críticos reais.",
+      "fix": [
+        "Criar session registry persistente session_id -> run_id.",
+        "Nunca usar most-recent-directory como fonte de verdade.",
+        "Carregar DeliveryManifest persistido, verificar seals e unresolved registry.",
+        "Exigir gate timestamps/hash posteriores ao relatório final."
+      ]
+    },
+    {
+      "id": "S0-07",
+      "severity": "HIGH",
+      "title": "Branch protection declarada não é confirmada pela API clássica",
+      "evidence": [
+        "README e DOD dizem 9 required checks e strict protection",
+        "GET branch atual retorna protected=false, protection.enabled=false e enforcement off",
+        "o commit mais recente está unsigned"
+      ],
+      "impact": "A governança pode estar documentada de forma incorreta, ter sido removida ou existir apenas em ruleset não auditado.",
+      "fix": [
+        "Consultar e exportar repository rulesets como artifact de CI.",
+        "Adicionar governance-verification workflow que falha quando proteção/ruleset diverge.",
+        "Atualizar README para distinguir classic branch protection de rulesets.",
+        "Adotar signed tags/releases e, se viável, signed commits."
+      ]
+    }
+  ],
+  "major_gaps": [
+    {
+      "id": "S1-01",
+      "title": "DAG fixo e sem selector de arquitetura",
+      "details": "O scaffold padrão tem quatro tasks e o swarm é usado mesmo sem medir decomposability/sequentiality/tool density. Isso pode degradar tarefas sequenciais."
+    },
+    {
+      "id": "S1-02",
+      "title": "Sem replanning dinâmico e stopping loop operacional",
+      "details": "QueryGraph e saturation existem no Python, mas o lead não adiciona/remove tasks em resposta a gaps, conflitos, marginal gain, API failures ou novas entidades."
+    },
+    {
+      "id": "S1-03",
+      "title": "Falha numa task bloqueia waves inteiras",
+      "details": "O workflow interrompe tudo em vez de bloquear apenas descendants; branches independentes não continuam e não há quorum/partial completion policy."
+    },
+    {
+      "id": "S1-04",
+      "title": "Sem durable distributed scheduler",
+      "details": "Não há leases, heartbeats, idempotency keys, transactional artifact commits, worker reconciliation, dead-letter queue, cancellation propagation ou recovery após sair do Claude Code."
+    },
+    {
+      "id": "S1-05",
+      "title": "Shared filesystem sem staging transacional",
+      "details": "Múltiplos agents em acceptEdits escrevem diretamente no mesmo run dir; outputs podem colidir, ficar parciais ou ser lidos antes de commit."
+    },
+    {
+      "id": "S1-06",
+      "title": "Sem protocolo de comunicação/blackboard",
+      "details": "Não há evented blackboard de claims/sources/gaps, peer request dirigida, locks de recursos ou síntese distribuída; compartilhar arquivos não resolve o communication-reasoning gap."
+    },
+    {
+      "id": "S1-07",
+      "title": "Context packs e compaction ausentes",
+      "details": "Workers recebem prompts ad hoc, não artifact bundles mínimos versionados. Não há relevance retrieval, phase summaries, prompt-cache grouping ou token budgets por task."
+    },
+    {
+      "id": "S1-08",
+      "title": "Model routing e cost governance ausentes",
+      "details": "Workflows não selecionam modelo/effort por etapa, não registram tokens/custo previsto/real, nem usam escalation/de-escalation por uncertainty."
+    },
+    {
+      "id": "S1-09",
+      "title": "Retrieval ainda não é SOTA",
+      "details": "O canal dense padrão é char-ngram proxy; faltam embeddings/reranker neural, citation/entity graphs, pagination/retry/rate-limit, JS-rendered web, robust PDF multimodal e cross-lingual retrieval."
+    },
+    {
+      "id": "S1-10",
+      "title": "Semântico ainda muito heurístico",
+      "details": "Entailment, scope e contradiction usam token overlap/regex/números; faltam verifier semântico independente, cross-model checks, calibration, abstention e adversarial hard negatives."
+    },
+    {
+      "id": "S1-11",
+      "title": "Monitoramento é somente file-delta",
+      "details": "Salva queries, mas não as reexecuta, não busca web delta, não revalida fontes, não cascata standings nem produz report diffs."
+    },
+    {
+      "id": "S1-12",
+      "title": "Learning pipeline não está conectado ao produto",
+      "details": "A state machine de learning é in-memory em evals.py; não há observation ingestion, versioned candidate, PR bot, canary production, rollback ou provenance."
+    },
+    {
+      "id": "S1-13",
+      "title": "Security boundary incompleta",
+      "details": "Hooks cobrem algumas ferramentas de escrita; não inspecionam sistematicamente WebSearch/WebFetch/MCP/Agent outputs. Adapters não têm SSRF/redirect/DNS-rebinding/size/content-type/circuit-breaker completos."
+    },
+    {
+      "id": "S1-14",
+      "title": "Observabilidade inexistente",
+      "details": "Sem OpenTelemetry, traces por run/wave/task/agent/tool/query/source/claim/gate, cost attribution, contribution score, error amplification, critical path e deterministic replay."
+    },
+    {
+      "id": "S1-15",
+      "title": "Evals não provam SOTA",
+      "details": "Testes de workflows são estruturais; não há execução real Claude em CI, single-agent baseline, architecture ablation, scaling curve, Silo-Bench/DPBench, DeepResearch Bench results ou cost-quality Pareto."
+    },
+    {
+      "id": "S1-16",
+      "title": "CI/release ainda incompletos",
+      "details": "Mypy é advisory; sem coverage floor, mutation/property/fuzz, Windows/macOS, plugin marketplace install E2E, live contract tests, SBOM/SLSA e release workflow."
+    }
+  ]
+}
