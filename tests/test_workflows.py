@@ -24,10 +24,25 @@ import pytest
 PLUGIN = Path(__file__).resolve().parents[1] / "plugins" / "kdr-x"
 WORKFLOWS = PLUGIN / "workflows"
 EXPECTED = {
-    "kdr-plan": ["requirements", "scope", "retrieval", "methodology", "risk"],
+    "kdr-plan": [
+        "requirements",
+        "scope",
+        "retrieval",
+        "methodology",
+        "risk",
+        "import-plan",
+        "--objective-file",
+    ],
     "kdr-run": ["pipeline(", "gate"],
     "kdr-verify": ["source-verifier", "devils-advocate", "final-integrity-auditor"],
-    "kdr-deep-research": ["council", "synthesize", "waves", "verify", "report"],
+    "kdr-deep-research": [
+        "council",
+        "synthesize",
+        "waves",
+        "verify",
+        "report",
+        "--objective-file",
+    ],
 }
 
 NODE = shutil.which("node") or shutil.which("node.exe")
@@ -142,3 +157,160 @@ def test_workflow_bodies_compile_as_runtime_dialect():
         )
         assert proc.returncode == 0, f"{path.name}: {proc.stdout}{proc.stderr}"
         assert proc.stdout.startswith("OK kdr-"), proc.stdout
+
+
+# --------------------------------------------------------------------------- #
+# SW-02: gate canônico de import + schema flattened com paridade pydantic.
+# --------------------------------------------------------------------------- #
+
+REQUIRED_TASK_KEYS = {
+    "task_id",
+    "stage",
+    "wave",
+    "role",
+    "mission",
+    "dependencies",
+    "inputs",
+    "outputs",
+    "skills",
+    "tools",
+    "read_only",
+    "source_policy",
+    "acceptance",
+    "retry_policy",
+    "budget",
+    "criticality",
+    "status",
+    "owner",
+    "reviewer",
+    "guidance",
+    "metadata",
+}
+
+# Extrai o object literal do PLAN_SCHEMA (entre os marcadores das consts) e o
+# avalia como object literal — mesmo truque do NODE_CHECK_SCRIPT, mas para o
+# schema do synthesizer. NODE só é usado para extrair; a comparação com o
+# runtime pydantic é feita no Python.
+PLAN_SCHEMA_NODE_SCRIPT = r"""
+const fs = require('fs');
+const path = process.argv[1];
+const text = fs.readFileSync(path, 'utf8');
+const start = text.indexOf('const PLAN_SCHEMA = ');
+const end = text.indexOf('\nconst SYNTHESIS_SCHEMA', start);
+if (start < 0 || end < 0) { console.error('NO_SCHEMAS'); process.exit(3); }
+let lit = text.slice(start + 'const PLAN_SCHEMA = '.length, end).trim();
+// corta comentários à direita (o fecho do literal é o único '\n}' em coluna 0;
+// comentário final engoliria o ')' de fechamento do wrapper)
+const close = lit.lastIndexOf('\n}');
+if (close >= 0) lit = lit.slice(0, close + 2);
+let plan;
+try { plan = (new Function('return (' + lit + ')'))(); }
+catch (e) { console.error('SCHEMA_SYNTAX: ' + e.message); process.exit(4); }
+const task = plan.properties.tasks.items;
+console.log(JSON.stringify({
+  planRequired: plan.required,
+  taskRequired: task.required,
+  taskKeys: Object.keys(task.properties),
+  roleEnum: task.properties.role.enum,
+  stageEnum: task.properties.stage.enum,
+  statusEnum: task.properties.status.enum,
+  criticalityEnum: task.properties.criticality.enum,
+}));
+"""
+
+
+def _runtime_enum_members():
+    """Membros (TaskStage, AgentRole) do runtime pydantic, se importável."""
+    try:
+        from kdrx.schemas.enums import AgentRole, TaskStage
+    except ImportError:
+        return None, None
+    return [m.value for m in TaskStage], [m.value for m in AgentRole]
+
+
+def test_kdr_plan_review_gate_repair_bound_and_import():
+    plan = _read("kdr-plan")
+    assert re.search(r"const MAX_REPAIRS = 2\b", plan), "MAX_REPAIRS deve ser 2 (D3)"
+    assert "council:repair:" in plan, "repair loop com label council:repair:N"
+    assert "!review.approved" in plan, "review.approved deve gatear o fluxo"
+    assert "dispositions" in plan, "SYNTHESIS_SCHEMA deve carregar dispositions (D5)"
+    assert "SYNTHESIS_SCHEMA" in plan
+    assert "IMPORT_SCHEMA" in plan
+    assert "plan_hash" in plan
+    assert "phase('scaffold')" in plan
+    assert "phase('import')" in plan
+    assert "run_dir: scaffold.run_dir" in plan, "D9: retorno usa run_dir"
+
+
+def test_no_objective_shell_interpolation():
+    # D6: o objective nunca é interpolado no shell (nem via replace lossy).
+    for name in EXPECTED:
+        text = _read(name)
+        assert '.replace(/"/g' not in text, (
+            f"{name}: interpolação lossy do objective proibida (D6)"
+        )
+        assert '--objective "' not in text, (
+            f"{name}: objective inline no shell proibido (D6)"
+        )
+
+
+@pytest.mark.skipif(NODE is None, reason="node indisponível neste host")
+def test_plan_schema_parity_with_pydantic():
+    proc = subprocess.run(
+        [NODE, "-e", PLAN_SCHEMA_NODE_SCRIPT, str(WORKFLOWS / "kdr-plan.js")],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=30,
+    )
+    assert proc.returncode == 0, f"extração do PLAN_SCHEMA: {proc.stdout}{proc.stderr}"
+    data = json.loads(proc.stdout)
+
+    # D2: o TaskSpec do JS deve expor TODOS os campos do TaskSpec pydantic.
+    assert REQUIRED_TASK_KEYS <= set(data["taskKeys"]), (
+        f"TaskSpec do JS perdeu campos: {REQUIRED_TASK_KEYS - set(data['taskKeys'])}"
+    )
+    assert set(data["taskRequired"]) == {
+        "task_id",
+        "stage",
+        "wave",
+        "role",
+        "mission",
+        "dependencies",
+        "outputs",
+    }
+    assert set(data["planRequired"]) == {
+        "plan_id",
+        "contract_id",
+        "route",
+        "plan_md",
+        "tasks",
+    }
+
+    # Enums de contrato canônico (tamanhos fixos, sem duplicatas).
+    assert set(data["stageEnum"]) == {
+        "intake",
+        "planning",
+        "retrieval",
+        "verification",
+        "analysis",
+        "synthesis",
+        "writing",
+        "review",
+        "delivery",
+    }
+    assert set(data["criticalityEnum"]) == {"high", "medium", "low"}
+    assert len(data["statusEnum"]) == 9
+    assert len(data["roleEnum"]) == len(set(data["roleEnum"])), (
+        "role enum com duplicatas"
+    )
+
+    stage_members, role_members = _runtime_enum_members()
+    if stage_members is None or role_members is None:
+        # kdrx não importável neste host: bound conservador (AgentRole >= 50).
+        assert len(data["roleEnum"]) >= 50, "role enum suspeitamente curto"
+    else:
+        assert set(data["roleEnum"]) == set(role_members), (
+            "role enum do JS diverge do AgentRole runtime"
+        )
+        assert set(data["stageEnum"]) == set(stage_members)
