@@ -512,6 +512,200 @@ def test_stop_allows_complete_intact_run(tmp_path: Path, corpus: Path):
 
 
 # --------------------------------------------------------------------------- #
+# SW-03 PR-A Fase 3: SEALED_ARTIFACT_WRITE (D4) + VERIFIED_REPORT_HASH (D5)
+# --------------------------------------------------------------------------- #
+def _sealed_js_run(tmp_path: Path, session_id: str) -> Path:
+    """Run JS-style SELADO: ``kdr plan`` (bound) + corpus/evidence/claims/
+    report fabricados + ``kdr seal`` (exit 0)."""
+    from datetime import datetime, timezone
+
+    from kdrx.schemas.claims import Claim
+    from kdrx.schemas.corpus import EvidenceSpan, Locator, SourceRecord
+    from kdrx.schemas.enums import (
+        ClaimImportance,
+        EvidenceType,
+        ExtractionStatus,
+        SourceType,
+        Standing,
+    )
+
+    runs_root = _runs_root(tmp_path)
+    plan = _cli(
+        "plan",
+        "--objective",
+        "system latency",
+        "--out",
+        str(runs_root),
+        "--session-id",
+        session_id,
+        "--json",
+    )
+    assert plan.returncode == 0, plan.stderr
+    run_dir = Path(json.loads(plan.stdout)["run_dir"])
+    statement = "The system latency is 5 ms in 2025."
+    sources = [
+        SourceRecord(
+            source_id="src-1",
+            canonical_uri="file:///corpus/doc-1.txt",
+            title="doc-1.txt",
+            source_type=SourceType.DATASET,
+            content_hash="sha256:abcd1234",
+            date=datetime.now(timezone.utc),
+            extraction_status=ExtractionStatus.EXTRACTED,
+        )
+    ]
+    spans = [
+        EvidenceSpan(
+            evidence_id="EV-1",
+            source_id="src-1",
+            locator=Locator(char_start=0, char_end=10),
+            verbatim_span=statement,
+            evidence_type=EvidenceType.VERBATIM,
+            verified=True,
+        )
+    ]
+    claims = [
+        Claim(
+            claim_id="CL-1",
+            statement=statement,
+            importance=ClaimImportance.MAJOR,
+            standing=Standing.UNRESOLVED,
+            support_edges=["EV-1"],
+        )
+    ]
+    (run_dir / "corpus" / "sources.jsonl").write_text(
+        "\n".join(s.model_dump_json() for s in sources) + "\n", encoding="utf-8"
+    )
+    (run_dir / "evidence" / "spans.jsonl").write_text(
+        "\n".join(s.model_dump_json() for s in spans) + "\n", encoding="utf-8"
+    )
+    (run_dir / "claims" / "claims.jsonl").write_text(
+        "\n".join(c.model_dump_json() for c in claims) + "\n", encoding="utf-8"
+    )
+    (run_dir / "delivery" / "report.md").write_text(
+        f"# Report\n\n{statement} [cite: src-1]\n", encoding="utf-8"
+    )
+    seal = _cli("seal", "--run-dir", str(run_dir), "--json")
+    assert seal.returncode == 0, seal.stdout + seal.stderr
+    return run_dir
+
+
+def _check_passed(stdout: str, check_id: str) -> bool:
+    decision = json.loads(stdout)
+    for check in decision["checks"]:
+        if check["check_id"] == check_id:
+            return bool(check["passed"])
+    raise AssertionError(f"{check_id} não presente em {decision['checks']}")
+
+
+def test_pre_tool_use_blocks_write_to_sealed_artifact(tmp_path: Path):
+    """Aceitação 3: Write em delivery/report.md de run SELADO => exit 2."""
+    run_dir = _sealed_js_run(tmp_path, "sess-seal-1")
+    payload = _fixture(
+        "pre_tool_use",
+        cwd=str(tmp_path),
+        session_id="sess-seal-1",
+        tool_name="Write",
+        tool_input={"file_path": str(run_dir / "delivery" / "report.md")},
+    )
+    proc = _native("PreToolUse", payload, tmp_path)
+    assert proc.returncode == 2, proc.stdout + proc.stderr
+    assert "SEALED_ARTIFACT_WRITE" in proc.stdout
+
+
+def test_pre_tool_use_allows_write_to_non_sealable_file(tmp_path: Path):
+    """Write em manifest.json (não-selável) => allow."""
+    run_dir = _sealed_js_run(tmp_path, "sess-seal-2")
+    payload = _fixture(
+        "pre_tool_use",
+        cwd=str(tmp_path),
+        session_id="sess-seal-2",
+        tool_name="Write",
+        tool_input={"file_path": str(run_dir / "manifest.json")},
+    )
+    proc = _native("PreToolUse", payload, tmp_path)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "SEALED_ARTIFACT_WRITE" not in proc.stdout
+
+
+def test_pre_tool_use_unsealed_run_allows_write(tmp_path: Path):
+    """Run NÃO selado (artifact_hashes vazio) => Write permitido."""
+    runs_root = _runs_root(tmp_path)
+    run_dir, _plan, _manifest = _plan_run(runs_root)
+    _bind(runs_root, "sess-seal-3", _manifest.run_id, run_dir)
+    payload = _fixture(
+        "pre_tool_use",
+        cwd=str(tmp_path),
+        session_id="sess-seal-3",
+        tool_name="Write",
+        tool_input={"file_path": str(run_dir / "delivery" / "report.md")},
+    )
+    proc = _native("PreToolUse", payload, tmp_path)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+def test_pre_tool_use_unbound_write_allows_degraded(tmp_path: Path):
+    """Sessão sem binding => sem contexto de selo => allow."""
+    payload = _fixture(
+        "pre_tool_use",
+        cwd=str(tmp_path),
+        session_id="sess-nobody",
+        tool_name="Write",
+        tool_input={"file_path": str(tmp_path / "delivery" / "report.md")},
+    )
+    proc = _native("PreToolUse", payload, tmp_path)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+def test_pre_tool_use_bash_is_exempt_from_seal_check(tmp_path: Path):
+    """D4: o alvo do check de selo vem de file_path/path/notebook_path — NÃO de
+    `command`. Bash com um path selado no `command` não dispara
+    SEALED_ARTIFACT_WRITE (backstop = verify_hashes no Stop)."""
+    run_dir = _sealed_js_run(tmp_path, "sess-seal-4")
+    payload = _fixture(
+        "pre_tool_use",
+        cwd=str(tmp_path),
+        session_id="sess-seal-4",
+        tool_name="Bash",
+        tool_input={"command": str(run_dir / "delivery" / "report.md")},
+    )
+    proc = _native("PreToolUse", payload, tmp_path)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "SEALED_ARTIFACT_WRITE" not in proc.stdout
+
+
+def test_stop_sealed_js_run_verifies_report_hash(tmp_path: Path):
+    """Aceitação 1/2: run JS-style selado => Stop exit 0 com VERIFIED_REPORT_HASH
+    passado (lineage do manifest validada)."""
+    _sealed_js_run(tmp_path, "sess-seal-stop-1")
+    proc = _native(
+        "Stop",
+        _fixture("stop", cwd=str(tmp_path), session_id="sess-seal-stop-1"),
+        tmp_path,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert _check_passed(proc.stdout, "VERIFIED_REPORT_HASH") is True
+    assert _check_passed(proc.stdout, "INTEGRITY_PASS") is True
+
+
+def test_stop_sealed_js_run_tampered_report_blocks(tmp_path: Path):
+    """Aceitação 1: tamper pós-selo em run JS-style => exit 2 com INTEGRITY_PASS
+    E VERIFIED_REPORT_HASH."""
+    run_dir = _sealed_js_run(tmp_path, "sess-seal-stop-2")
+    with (run_dir / "delivery" / "report.md").open("a", encoding="utf-8") as fh:
+        fh.write("\ntampered after the seal\n")
+    proc = _native(
+        "Stop",
+        _fixture("stop", cwd=str(tmp_path), session_id="sess-seal-stop-2"),
+        tmp_path,
+    )
+    assert proc.returncode == 2, proc.stdout + proc.stderr
+    assert "INTEGRITY_PASS" in proc.stdout
+    assert "VERIFIED_REPORT_HASH" in proc.stdout
+    assert _check_passed(proc.stdout, "VERIFIED_REPORT_HASH") is False
+
+
+# --------------------------------------------------------------------------- #
 # Fase 5: dispatcher dual-mode (plugins/kdr-x/hooks/kdr-hook) — acceptance 1 e 4
 # --------------------------------------------------------------------------- #
 DISPATCHER = REPO_ROOT / "plugins" / "kdr-x" / "hooks" / "kdr-hook"

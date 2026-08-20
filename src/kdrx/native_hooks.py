@@ -26,6 +26,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from kdrx.dag import compile_dag
 from kdrx.hooks import (
+    _WRITE_TOOLS,
     hook_pre_tool_use,
     hook_stop,
     hook_subagent_stop,
@@ -37,7 +38,7 @@ from kdrx.schemas.claims import Claim
 from kdrx.schemas.enums import ClaimImportance, GateKind, Standing, TaskStatus
 from kdrx.schemas.gate import GateCheck, GateDecision
 from kdrx.schemas.plan import AgentResult, ResearchPlan, RunManifest, TaskSpec
-from kdrx.state import RunState
+from kdrx.state import RunState, hash_file
 
 
 # --------------------------------------------------------------------------- #
@@ -374,8 +375,64 @@ def native_task_created(data: dict[str, Any]) -> GateDecision:
     return decision
 
 
+# --------------------------------------------------------------------------- #
+# Selo (D4): sealed paths para o PreToolUse
+# --------------------------------------------------------------------------- #
+def _sealed_paths(run_dir: str | Path) -> list[str] | None:
+    """Rel-paths selados (as_posix) sse ``manifest.artifact_hashes`` não-vazio.
+
+    D4: selado ⟺ artifact_hashes ≠ {} — o selo É o artifact_hashes (mesma
+    regra do ``resume`` e do ``native_stop``; sem flag nova, sem segunda fonte
+    de verdade). Guard ``OSError``/``ValueError`` → ``None`` (sem contexto de
+    selo, decisão degrada para o gate comum).
+    """
+    try:
+        manifest = RunManifest.model_validate_json(
+            (Path(run_dir) / "manifest.json").read_text(encoding="utf-8")
+        )
+    except (OSError, ValueError):
+        return None
+    if not manifest.artifact_hashes:
+        return None
+    return sorted({k.replace("\\", "/") for k in manifest.artifact_hashes})
+
+
+def _sealed_write_target(
+    tool_input: dict[str, Any], run_root: str | Path, sealed_paths: list[str]
+) -> str | None:
+    """Rel-path (as_posix) do alvo de escrita se ∈ sealed_paths; senão None.
+
+    D4: o alvo vem de ``file_path``/``path``/``notebook_path`` — NÃO
+    ``command`` (Bash/exec naturalmente isentos do check de path; o backstop
+    é o ``verify_hashes`` no Stop). Alvo não resolvível ou fora do run root →
+    None (o check WRITE_IN_SCOPE já cobre o escopo).
+    """
+    target = (
+        tool_input.get("file_path")
+        or tool_input.get("path")
+        or tool_input.get("notebook_path")
+        or ""
+    )
+    if not isinstance(target, str) or not target:
+        return None
+    try:
+        root = Path(run_root).resolve()
+        resolved = Path(target)
+        if not resolved.is_absolute():
+            resolved = root / resolved
+        rel = resolved.resolve().relative_to(root).as_posix()
+    except (OSError, ValueError):
+        return None
+    return rel if rel in set(sealed_paths) else None
+
+
 def native_pre_tool_use(data: dict[str, Any]) -> GateDecision:
-    """PreToolUse nativo: gate roda com ``run_root`` quando a sessão é bound."""
+    """PreToolUse nativo: gate roda com ``run_root`` quando a sessão é bound.
+
+    D4: run SELADO (artifact_hashes ≠ {}) bloqueia Write/Edit em artifact
+    selado via ``SEALED_ARTIFACT_WRITE``; Bash/exec isentos por construção
+    (``command`` não é path de arquivo).
+    """
     env = PreToolUseEnvelope.model_validate(data)
     res = resolve_session(data)
     decision = hook_pre_tool_use(
@@ -385,6 +442,22 @@ def native_pre_tool_use(data: dict[str, Any]) -> GateDecision:
     )
     if res.entry is not None:
         decision.run_id = res.entry.run_id
+        sealed_paths = _sealed_paths(res.entry.run_dir)
+        if sealed_paths and (env.tool_name or "").lower() in _WRITE_TOOLS:
+            hit = _sealed_write_target(env.tool_input, res.entry.run_dir, sealed_paths)
+            if hit is not None:
+                checks = [
+                    *decision.checks,
+                    GateCheck(
+                        check_id="SEALED_ARTIFACT_WRITE",
+                        description="sealed artifact is immutable (Write/Edit)",
+                        passed=False,
+                        details=hit,
+                    ),
+                ]
+                decision = GateDecision.compose(
+                    decision.gate_id, decision.kind, checks, run_id=decision.run_id
+                )
     return decision
 
 
@@ -609,6 +682,15 @@ def native_stop(data: dict[str, Any]) -> GateDecision:
         except OSError:
             open_ok = False
 
+    # D5: VERIFIED_REPORT_HASH — lineage do manifest (o hash REIVINDICADO vs os
+    # bytes EM DISCO); claim ausente => "não reivindicado" (passed).
+    verified_hash_ok: bool | None = None
+    if delivery.verified_report_hash:
+        try:
+            verified_hash_ok = hash_file(report_path) == delivery.verified_report_hash
+        except OSError:
+            verified_hash_ok = False
+
     decision = hook_stop(
         dag=dag,
         delivery=delivery,
@@ -616,6 +698,22 @@ def native_stop(data: dict[str, Any]) -> GateDecision:
         secret_scan_clean=security_ok,
         artifact_open_test=open_ok,
         unresolved_critical=_unresolved_critical(run_dir),
+    )
+    checks = [
+        *decision.checks,
+        GateCheck(
+            check_id="VERIFIED_REPORT_HASH",
+            description=(
+                "manifest's verified report hash matches the report bytes on disk"
+                if verified_hash_ok is not None
+                else "no verified report hash claimed by the manifest"
+            ),
+            passed=verified_hash_ok is None or verified_hash_ok,
+            details=verified_hash_ok,
+        ),
+    ]
+    decision = GateDecision.compose(
+        decision.gate_id, decision.kind, checks, run_id=decision.run_id
     )
     decision.run_id = entry.run_id
     return decision
