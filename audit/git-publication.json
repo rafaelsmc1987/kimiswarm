@@ -1,13 +1,67 @@
 {
+  "observed_at_utc": "2026-09-12T11:44:37.855885+00:00",
   "branch": "codex/execute-kimiswarm-plan",
-  "validated_implementation_commit": "b5c9feb4f44b0ae896558b8ff010842fd1fc60da",
+  "target_branch": "main",
+  "validated_implementation_commit": "31410bfefbdf13e32e149da966884458c8105f0a",
   "push_verified": true,
   "pull_request": "https://github.com/rafaelsmc1987/kimiswarm/pull/1",
-  "draft": true,
-  "merged": false,
+  "pull_request_state_at_observation": "OPEN",
+  "draft_at_observation": false,
   "release_published": false,
   "local_validation": "audit/validation.json",
-  "staged_tree_hygiene": "audit/pre-push-hygiene.xml",
-  "secret_scan": "audit/pre-push-secrets.json",
-  "scope": "498 tests per local Python version; full Linux CI is tracked on the pull request"
+  "required_checks": [
+    {
+      "name": "hygiene (repo lint)",
+      "conclusion": "SUCCESS",
+      "url": "https://github.com/rafaelsmc1987/kimiswarm/actions/runs/34691701084/job/103547977579"
+    },
+    {
+      "name": "lint",
+      "conclusion": "SUCCESS",
+      "url": "https://github.com/rafaelsmc1987/kimiswarm/actions/runs/34691701084/job/103547977726"
+    },
+    {
+      "name": "pytest (py3.10)",
+      "conclusion": "SUCCESS",
+      "url": "https://github.com/rafaelsmc1987/kimiswarm/actions/runs/34691701084/job/103547977662"
+    },
+    {
+      "name": "pytest (py3.11)",
+      "conclusion": "SUCCESS",
+      "url": "https://github.com/rafaelsmc1987/kimiswarm/actions/runs/34691701084/job/103547977672"
+    },
+    {
+      "name": "pytest (py3.12)",
+      "conclusion": "SUCCESS",
+      "url": "https://github.com/rafaelsmc1987/kimiswarm/actions/runs/34691701084/job/103547977710"
+    },
+    {
+      "name": "pytest (py3.13)",
+      "conclusion": "SUCCESS",
+      "url": "https://github.com/rafaelsmc1987/kimiswarm/actions/runs/34691701084/job/103547977678"
+    },
+    {
+      "name": "secret scanning",
+      "conclusion": "SUCCESS",
+      "url": "https://github.com/rafaelsmc1987/kimiswarm/actions/runs/34691701098/job/103547977633"
+    },
+    {
+      "name": "dependency audit",
+      "conclusion": "SUCCESS",
+      "url": "https://github.com/rafaelsmc1987/kimiswarm/actions/runs/34691701098/job/103547977719"
+    },
+    {
+      "name": "forbidden-path test",
+      "conclusion": "SUCCESS",
+      "url": "https://github.com/rafaelsmc1987/kimiswarm/actions/runs/34691701098/job/103547977764"
+    }
+  ],
+  "advisory_checks": [
+    {
+      "name": "typecheck",
+      "conclusion": "FAILURE",
+      "url": "https://github.com/rafaelsmc1987/kimiswarm/actions/runs/34691701084/job/103547977771"
+    }
+  ],
+  "scope": "Pre-merge snapshot for the implementation commit; 514 tests per local Python version and required Linux CI on Python 3.10-3.13. The PR is authoritative for subsequent audit commits and merge state. This does not certify completion of the full plan."
 }
