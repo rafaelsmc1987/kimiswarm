@@ -1,0 +1,67 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "0.3",
+      "default": "0.3",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "enabled": {
+      "default": false,
+      "title": "Enabled",
+      "type": "boolean"
+    },
+    "max_messages": {
+      "default": 1000,
+      "maximum": 100000,
+      "minimum": 0,
+      "title": "Max Messages",
+      "type": "integer"
+    },
+    "max_per_minute": {
+      "default": 60,
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Max Per Minute",
+      "type": "integer"
+    },
+    "max_message_bytes": {
+      "default": 16384,
+      "maximum": 65536,
+      "minimum": 256,
+      "title": "Max Message Bytes",
+      "type": "integer"
+    },
+    "max_pending": {
+      "default": 1000,
+      "maximum": 100000,
+      "minimum": 1,
+      "title": "Max Pending",
+      "type": "integer"
+    },
+    "max_subscriptions": {
+      "default": 128,
+      "maximum": 1024,
+      "minimum": 1,
+      "title": "Max Subscriptions",
+      "type": "integer"
+    },
+    "max_delivery_attempts": {
+      "default": 3,
+      "maximum": 20,
+      "minimum": 1,
+      "title": "Max Delivery Attempts",
+      "type": "integer"
+    },
+    "retry_seconds": {
+      "default": 1,
+      "maximum": 3600,
+      "minimum": 0,
+      "title": "Retry Seconds",
+      "type": "number"
+    }
+  },
+  "title": "CoordinationPolicy",
+  "type": "object"
+}

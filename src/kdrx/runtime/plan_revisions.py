@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import nullcontext
 from datetime import datetime, timezone
 
 from kdrx.dag import compile_dag
@@ -78,16 +79,17 @@ def descendants(tasks, roots):
         affected.update(more)
 
 
-def apply_patch(state, patch: PlanPatch) -> dict:
+def apply_patch(state, patch: PlanPatch, *, _db=None) -> dict:
     """Commit the revision, invalidation, audit history and export queue together.
 
     A quiescent task boundary is required. Neither this API nor a patch budget
     authorizes model spending. Corpus refresh requires a new run; invalidation
     repairs outputs from the existing committed inputs.
     """
-    state.flush_exports()
+    if _db is None:
+        state.flush_exports()
     store = state.store
-    with store.transaction() as db:
+    with store.transaction() if _db is None else nullcontext(_db) as db:
         row = db.execute(
             "SELECT payload FROM runs WHERE run_id=?", (state.run_id,)
         ).fetchone()
@@ -303,5 +305,6 @@ def apply_patch(state, patch: PlanPatch) -> dict:
                 **result,
             },
         )
-    state.flush_exports()
+    if _db is None:
+        state.flush_exports()
     return result

@@ -104,6 +104,39 @@ def main():
             )
         )
         run_dir = path / "runs" / demo["run_id"]
+        coordination_policy = path / "coordination.json"
+        coordination_policy.write_text(json.dumps({"enabled": True}), encoding="utf-8")
+        subscription = path / "subscription.json"
+        subscription.write_text(
+            json.dumps({"task_id": "T-VERIFY", "kinds": ["ArtifactCommitted"]}),
+            encoding="utf-8",
+        )
+        run(
+            [
+                *cli,
+                "coordination",
+                "configure",
+                "--run-dir",
+                str(run_dir),
+                "--file",
+                str(coordination_policy),
+            ],
+            path,
+        )
+        run(
+            [
+                *cli,
+                "coordination",
+                "subscribe",
+                "--run-dir",
+                str(run_dir),
+                "--consumer",
+                "reviewer",
+                "--file",
+                str(subscription),
+            ],
+            path,
+        )
         resume = run(
             [*cli, "resume", "--run-dir", str(run_dir), "--corpus", str(corpus)], path
         )
@@ -158,6 +191,28 @@ def main():
         legacy = json.loads(
             run([*cli, "legacy-status", "--source", str(run_dir)], path)
         )
+        received = json.loads(
+            run(
+                [
+                    *cli,
+                    "coordination",
+                    "receive",
+                    "--run-dir",
+                    str(run_dir),
+                    "--consumer",
+                    "reviewer",
+                ],
+                path,
+            )
+        )
+        if (
+            not received["acknowledged"]
+            or not (run_dir / received["retained_path"]).is_file()
+        ):
+            raise ValueError("installed coordination receipt failed")
+        legacy = json.loads(
+            run([*cli, "legacy-status", "--source", str(run_dir)], path)
+        )
         imported = json.loads(
             run(
                 [
@@ -194,6 +249,7 @@ def main():
             "retention_inventory": "passed",
             "plan_patch_and_selective_resume": "passed",
             "legacy_archive_and_read_only_backup": "passed",
+            "coordination_delivery_and_retained_receipt": "passed",
             "host_plugin_tested": False,
             "published": False,
             "limitations": [

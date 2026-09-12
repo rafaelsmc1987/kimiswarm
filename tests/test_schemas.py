@@ -28,6 +28,12 @@ def test_all_canonical_schemas_present():
         "ArtifactRecord",
         "RunManifest",
         "DeliveryManifest",
+        "CoordinationPolicy",
+        "SourceDiscovered",
+        "ClaimChanged",
+        "GapOpened",
+        "HelpRequested",
+        "ArtifactCommitted",
     }
 
 
@@ -80,7 +86,7 @@ def test_gate_compose_warn_is_pass():
 
 def test_export_json_schemas(tmp_path):
     written = export_json_schemas(tmp_path)
-    assert len(written) == 16
+    assert len(written) == 22
     for name, path in written.items():
         schema = json.loads(path.read_text(encoding="utf-8"))
         assert schema.get("type") == "object"

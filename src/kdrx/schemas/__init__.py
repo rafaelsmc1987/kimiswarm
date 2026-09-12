@@ -32,6 +32,14 @@ from .plan import (
     TaskSpec,
 )
 from .request import ResearchContract, ResearchRequest
+from .coordination import (
+    CoordinationPolicy,
+    SourceDiscovered,
+    ClaimChanged,
+    GapOpened,
+    HelpRequested,
+    ArtifactCommitted,
+)
 
 __all__ = [
     "AcceptanceCriteria",
@@ -59,7 +67,7 @@ __all__ = [
     "TaskSpec",
 ]
 
-#: The 15 canonical schemas (plan §41) in priority order.
+#: Canonical schemas, including runtime coordination contracts.
 SCHEMAS: dict[str, type] = {
     "ResearchRequest": ResearchRequest,
     "ResearchContract": ResearchContract,
@@ -77,6 +85,12 @@ SCHEMAS: dict[str, type] = {
     "ArtifactRecord": ArtifactRecord,
     "RunManifest": RunManifest,
     "DeliveryManifest": DeliveryManifest,
+    "CoordinationPolicy": CoordinationPolicy,
+    "SourceDiscovered": SourceDiscovered,
+    "ClaimChanged": ClaimChanged,
+    "GapOpened": GapOpened,
+    "HelpRequested": HelpRequested,
+    "ArtifactCommitted": ArtifactCommitted,
 }
 
 

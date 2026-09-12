@@ -77,6 +77,7 @@ def validate_task_output(task_id: str, value: str) -> str:
         "waves.json",
         "planner-dispositions.json",
         "history",
+        "coordination",
         "legacy",
         "delivery/revisions",
         "verification/seal",
