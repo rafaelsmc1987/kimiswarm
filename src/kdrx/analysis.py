@@ -34,7 +34,9 @@ class Calculation:
     upstream: list[str] = field(default_factory=list)  # dependent calc ids
     notes: str = ""
 
-    def reproducible_from(self, runner: Runner) -> bool:
+    def reproducible_from(
+        self, runner: Runner, resolve_blob: Callable[[str], bytes] | None = None
+    ) -> bool:
         """Re-run the runner on the recorded inputs and compare output hashes.
 
         Note: the runner must be deterministic and receive the same *content*
@@ -42,7 +44,15 @@ class Calculation:
         actually derives from the recorded inputs.
         """
         try:
-            produced = runner(self.inputs)
+            if self.inputs and resolve_blob is None:
+                return False
+            inputs = {}
+            for name, digest in self.inputs.items():
+                data = resolve_blob(digest)
+                if hash_artifact(data) != digest:
+                    return False
+                inputs[name] = data.decode("utf-8")
+            produced = runner(inputs)
             return hash_artifact(produced) == self.output_hash
         except Exception:  # noqa: BLE001 - runner boundary
             return False

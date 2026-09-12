@@ -121,7 +121,7 @@ def test_resume_skips_completed_tasks(tmp_path):
     new_events = events2[pre_events:]
     new_started = [e for e in new_events if e["kind"] == "task_started"]
     assert new_started == [], f"resume NÃO deve re-executar tasks: {new_started}"
-    assert any(e["kind"] == "task_resumed" for e in new_events)
+    assert new_events == []  # Completed replay is read-only, including its event log.
     # provenance: plane re-consumido do disco
     m = state.load_manifest()
     assert m.metadata.get("hash_mismatch") in (None, [])

@@ -5,12 +5,14 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+
+from .versioning import VersionedModel
 
 from .enums import ArtifactKind, SealLevel
 
 
-class ArtifactRecord(BaseModel):
+class ArtifactRecord(VersionedModel):
     """One persisted artifact with provenance and a seal."""
 
     model_config = ConfigDict(extra="forbid")
@@ -26,7 +28,7 @@ class ArtifactRecord(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class DeliveryManifest(BaseModel):
+class DeliveryManifest(VersionedModel):
     """What a run actually delivers (plan §31)."""
 
     model_config = ConfigDict(extra="forbid")
@@ -52,4 +54,6 @@ class DeliveryManifest(BaseModel):
             and self.secret_scan_clean
             and self.artifact_open_test_passed
             and self.artifacts
+            and not self.unresolved_critical_claims
+            and not self.metadata.get("revoked_reason")
         )

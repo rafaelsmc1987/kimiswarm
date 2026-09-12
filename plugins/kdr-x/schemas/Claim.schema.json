@@ -73,6 +73,12 @@
   "additionalProperties": false,
   "description": "An atomic, falsifiable claim (plan \u00a722).\n\nCompound sentences are decomposed into multiple atomic claims before\nstanding is computed. ``scope`` constrains populations/samples/time/geography\nso support edges can be checked for scope match.",
   "properties": {
+    "schema_version": {
+      "const": "0.3",
+      "default": "0.3",
+      "title": "Schema Version",
+      "type": "string"
+    },
     "claim_id": {
       "title": "Claim Id",
       "type": "string"

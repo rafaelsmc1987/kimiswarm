@@ -1,19 +1,10 @@
 ---
-description: "KDR-X: self-check schemas, scheduler and gates"
-argument-hint: ""
+description: "KDR-X: check actual local capability and report unverified integrations"
+argument-hint: "--profile offline|plugin|live [--backend codex|claude-code]"
 ---
 
 # /kdr:doctor
 
-Verify the deterministic core is healthy before trusting a run.
+Invoke `kdr doctor --profile <profile> --json`. For live checks select `--backend codex` or `--backend claude-code`.
 
-## Checks
-
-- all 15 canonical schemas import and round-trip;
-- the DAG compiler rejects cycles, double ownership and self-review;
-- the wave scheduler completes a trivial DAG and reports failures;
-- the eval harness passes its built-in seeded-defect suite;
-- JSON schema export succeeds.
-
-`python3 -m kdrx.cli doctor` runs the smoke check; `python3 -m kdrx.cli eval`
-runs the seeded-defect regression suite.
+Report the returned checks and limitations. An installed or authenticated CLI is not a live execution receipt. This command does not make model calls or read credential contents. Do not change providers, install mutable latest dependencies, or turn failed checks into warnings.

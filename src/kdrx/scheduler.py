@@ -1,7 +1,7 @@
 """Deterministic wave scheduler (plan §16).
 
 The scheduler is the only component allowed to launch agents. It walks the
-compiled DAG wave by wave, enforces the ownership registry, applies retry and
+compiled DAG by dependency readiness, enforces the ownership registry, applies retry and
 no-progress policies, and emits an append-only event stream. The executor is
 injected so the scheduler is fully testable without a live model.
 """
@@ -9,6 +9,9 @@ injected so the scheduler is fully testable without a live model.
 from __future__ import annotations
 
 import itertools
+import threading
+import time
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from typing import Callable
 
@@ -41,6 +44,8 @@ class ScheduleResult:
     failed: list[str] = field(default_factory=list)
     events: list[dict] = field(default_factory=list)
     no_progress_detected: bool = False
+    deliverable: bool | None = None
+    blocking_reasons: list[str] = field(default_factory=list)
 
     @property
     def succeeded_all(self) -> bool:
@@ -61,11 +66,14 @@ def _brief_for(task: TaskSpec) -> AgentBrief:
         read_only=task.read_only,
         source_policy=task.source_policy,
         acceptance=task.acceptance,
+        kind=task.kind,
+        budget=task.budget,
+        retry_policy=task.retry_policy,
     )
 
 
 class WaveScheduler:
-    """Runs a :class:`CompiledDAG` to completion, wave by wave.
+    """Runs a :class:`CompiledDAG` with bounded dependency-ready concurrency.
 
     Parameters
     ----------
@@ -74,9 +82,9 @@ class WaveScheduler:
     emit:
         Optional event sink; receives one dict per lifecycle event.
     max_workers:
-        Upper bound on concurrent agents per wave (the scheduler itself is
-        sequential and deterministic; this only bounds how many it *would*
-        dispatch, surfaced for observability and backpressure).
+        Upper bound on concurrently executing trusted handlers. A descendant
+        can start as soon as its dependencies complete. This is not an OS
+        sandbox for arbitrary agent code.
     """
 
     def __init__(
@@ -84,20 +92,24 @@ class WaveScheduler:
         executor: AgentExecutor,
         emit: EventSink | None = None,
         max_workers: int = 8,
+        validate_result: Callable[[TaskSpec, AgentResult], None] | None = None,
     ) -> None:
         self.executor = executor
         self.emit = emit or (lambda _e: None)
         self.max_workers = max_workers
+        self.validate_result = validate_result
         self._seq = itertools.count(1)
         self._events: list[dict] = []
+        self._event_lock = threading.RLock()
 
     def _event(self, kind: str, **payload: object) -> dict:
         return {"seq": next(self._seq), "kind": kind, **payload}
 
     def _emit(self, event: dict) -> None:
         """Record an event locally and forward it to the sink."""
-        self._events.append(event)
-        self.emit(event)
+        with self._event_lock:
+            self._events.append(event)
+            self.emit(event)
 
     def run(
         self,
@@ -114,6 +126,7 @@ class WaveScheduler:
         if not dag.is_valid:
             raise ValueError("cannot schedule an invalid DAG (issues present)")
 
+        self._events = []
         states: dict[str, TaskState] = {t.task_id: TaskState(task=t) for t in dag.tasks}
         for tid, result_obj in (precompleted or {}).items():
             if tid in states:
@@ -122,9 +135,42 @@ class WaveScheduler:
                 self._emit(self._event("task_resumed", task_id=tid))
         result = ScheduleResult()
 
-        for wave in range(0, dag.max_wave + 1):
-            wave_ids = dag.waves.get(wave, [])
-            self._run_wave(wave, wave_ids, states, result)
+        # Threads here run trusted Python adapters. Untrusted code needs a process
+        # backend whose cancellation terminates the actual subprocess tree.
+        workers = max(1, self.max_workers)
+        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="kdr") as pool:
+            running = {}
+            while True:
+                active_ids = set(running.values())
+                for tid, st in states.items():
+                    if len(running) >= workers:
+                        break
+                    if (
+                        st.status == TaskStatus.PENDING
+                        and not set(st.task.dependencies) & active_ids
+                        and self._dependencies_satisfied(st.task, states)
+                    ):
+                        st.status = TaskStatus.READY
+                        running[pool.submit(self._run_task, tid, states, result)] = tid
+                if running:
+                    done, _ = wait(running, return_when=FIRST_COMPLETED)
+                    for future in done:
+                        running.pop(future)
+                        future.result()
+                    continue
+                pending = [
+                    tid for tid, st in states.items() if st.status == TaskStatus.PENDING
+                ]
+                for tid in pending:
+                    states[tid].status = TaskStatus.BLOCKED
+                    self._emit(
+                        self._event(
+                            "task_blocked",
+                            task_id=tid,
+                            deps=states[tid].task.dependencies,
+                        )
+                    )
+                break
 
         result.completed = [
             tid for tid, s in states.items() if s.status == TaskStatus.SUCCEEDED
@@ -191,8 +237,16 @@ class WaveScheduler:
         task = st.task
         max_attempts = task.retry_policy.max_retries + 1
         no_progress = False
+        deadline = (
+            time.monotonic() + task.budget.wall_seconds
+            if task.budget.wall_seconds is not None
+            else None
+        )
 
         while st.attempts < max_attempts:
+            if deadline is not None and time.monotonic() >= deadline:
+                st.last_error = "task deadline exhausted"
+                break
             st.attempts += 1
             st.status = TaskStatus.RUNNING
             self._emit(
@@ -207,6 +261,8 @@ class WaveScheduler:
                 brief = _brief_for(task)
                 outcome = self.executor(brief)
                 self._validate_outcome(task, outcome)
+                if self.validate_result is not None:
+                    self.validate_result(task, outcome)
                 st.result = outcome
                 st.status = TaskStatus.SUCCEEDED
                 self._emit(
@@ -219,6 +275,8 @@ class WaveScheduler:
                 )
                 return
             except Exception as exc:  # noqa: BLE001 - boundary for untrusted executor
+                if getattr(exc, "committed", False):
+                    raise
                 st.last_error = f"{type(exc).__name__}: {exc}"
                 st.status = TaskStatus.RETRYING
                 self._emit(
@@ -230,6 +288,19 @@ class WaveScheduler:
                     )
                 )
                 no_progress = True
+                if getattr(exc, "code", None) in {
+                    "unauthorized",
+                    "policy_blocked",
+                    "parse_failed",
+                    "cancelled",
+                    "state_conflict",
+                }:
+                    break
+                delay = task.retry_policy.backoff_seconds * (2 ** (st.attempts - 1))
+                if deadline is not None:
+                    delay = min(delay, max(0, deadline - time.monotonic()))
+                if st.attempts < max_attempts and delay:
+                    time.sleep(delay)
 
         st.status = TaskStatus.FAILED
         result.no_progress_detected = result.no_progress_detected or no_progress
@@ -241,6 +312,10 @@ class WaveScheduler:
         # não um AttributeError anônimo achatado pelo retry loop.
         if outcome is None:
             raise ExecutorError("executor returned null result")
+        if outcome.task_id != task.task_id or outcome.agent_role != task.role:
+            raise ExecutorError("result identity mismatch: task or role")
+        if set(outcome.outputs_produced) - set(task.outputs):
+            raise ExecutorError("unauthorized extra outputs")
         if not outcome.covers_outputs(task.outputs):
             missing = set(task.outputs) - set(outcome.outputs_produced)
             raise ExecutorError(f"agent did not produce outputs {sorted(missing)}")

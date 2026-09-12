@@ -30,6 +30,12 @@
   "additionalProperties": false,
   "description": "One persisted artifact with provenance and a seal.",
   "properties": {
+    "schema_version": {
+      "const": "0.3",
+      "default": "0.3",
+      "title": "Schema Version",
+      "type": "string"
+    },
     "artifact_id": {
       "title": "Artifact Id",
       "type": "string"

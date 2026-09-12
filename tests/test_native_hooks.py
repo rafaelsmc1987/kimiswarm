@@ -159,10 +159,11 @@ def test_registry_load_tolerates_corruption(tmp_path: Path):
     path.write_text("{not json", encoding="utf-8")
     reg = SessionRegistry(path)
     assert reg.get("sess-1") is None
-    reg.bind("sess-2", run_id="run-2", run_dir="x", binding="explicit")
-    entry = SessionRegistry(path).get("sess-2")
-    assert entry is not None
-    assert entry.run_id == "run-2"
+    assert reg.degraded
+    with pytest.raises(ValueError, match="corrupt"):
+        reg.bind("sess-2", run_id="run-2", run_dir="x", binding="explicit")
+    assert path.read_text(encoding="utf-8") == "{not json"
+    assert dispatch("Stop", {"cwd": str(tmp_path)}).blocking()
 
 
 def test_registry_sessions_are_isolated(tmp_path: Path):
@@ -535,77 +536,19 @@ def test_stop_allows_complete_intact_run(tmp_path: Path, corpus: Path):
 # --------------------------------------------------------------------------- #
 # SW-03 PR-A Fase 3: SEALED_ARTIFACT_WRITE (D4) + VERIFIED_REPORT_HASH (D5)
 # --------------------------------------------------------------------------- #
-def _sealed_js_run(tmp_path: Path, session_id: str) -> Path:
-    """Run JS-style SELADO: ``kdr plan`` (bound) + corpus/evidence/claims/
-    report fabricados + ``kdr seal`` (exit 0)."""
-    from datetime import datetime, timezone
-
-    from kdrx.schemas.claims import Claim
-    from kdrx.schemas.corpus import EvidenceSpan, Locator, SourceRecord
-    from kdrx.schemas.enums import (
-        ClaimImportance,
-        EvidenceType,
-        ExtractionStatus,
-        SourceType,
-        Standing,
-    )
+def _sealed_kernel_run(tmp_path: Path, session_id: str) -> Path:
+    """Host hook fixture with real kernel receipts and exact source snapshots."""
+    from kdrx.runner import run_file_research
 
     runs_root = _runs_root(tmp_path)
-    plan = _cli(
-        "plan",
-        "--objective",
-        "system latency",
-        "--out",
-        str(runs_root),
-        "--session-id",
-        session_id,
-        "--json",
+    corpus = tmp_path / "hook-corpus"
+    corpus.mkdir(exist_ok=True)
+    (corpus / "study.txt").write_text(
+        "The system latency is 5 ms in 2025.", encoding="utf-8"
     )
-    assert plan.returncode == 0, plan.stderr
-    run_dir = Path(json.loads(plan.stdout)["run_dir"])
-    statement = "The system latency is 5 ms in 2025."
-    sources = [
-        SourceRecord(
-            source_id="src-1",
-            canonical_uri="file:///corpus/doc-1.txt",
-            title="doc-1.txt",
-            source_type=SourceType.DATASET,
-            content_hash="sha256:abcd1234",
-            date=datetime.now(timezone.utc),
-            extraction_status=ExtractionStatus.EXTRACTED,
-        )
-    ]
-    spans = [
-        EvidenceSpan(
-            evidence_id="EV-1",
-            source_id="src-1",
-            locator=Locator(char_start=0, char_end=10),
-            verbatim_span=statement,
-            evidence_type=EvidenceType.VERBATIM,
-            verified=True,
-        )
-    ]
-    claims = [
-        Claim(
-            claim_id="CL-1",
-            statement=statement,
-            importance=ClaimImportance.MAJOR,
-            standing=Standing.UNRESOLVED,
-            support_edges=["EV-1"],
-        )
-    ]
-    (run_dir / "corpus" / "sources.jsonl").write_text(
-        "\n".join(s.model_dump_json() for s in sources) + "\n", encoding="utf-8"
-    )
-    (run_dir / "evidence" / "spans.jsonl").write_text(
-        "\n".join(s.model_dump_json() for s in spans) + "\n", encoding="utf-8"
-    )
-    (run_dir / "claims" / "claims.jsonl").write_text(
-        "\n".join(c.model_dump_json() for c in claims) + "\n", encoding="utf-8"
-    )
-    (run_dir / "delivery" / "report.md").write_text(
-        f"# Report\n\n{statement} [cite: src-1]\n", encoding="utf-8"
-    )
+    summary = run_file_research(corpus, "system latency", runs_root)
+    run_dir = runs_root / summary["run_id"]
+    _bind(runs_root, session_id, summary["run_id"], run_dir)
     seal = _cli("seal", "--run-dir", str(run_dir), "--json")
     assert seal.returncode == 0, seal.stdout + seal.stderr
     return run_dir
@@ -621,7 +564,7 @@ def _check_passed(stdout: str, check_id: str) -> bool:
 
 def test_pre_tool_use_blocks_write_to_sealed_artifact(tmp_path: Path):
     """Aceitação 3: Write em delivery/report.md de run SELADO => exit 2."""
-    run_dir = _sealed_js_run(tmp_path, "sess-seal-1")
+    run_dir = _sealed_kernel_run(tmp_path, "sess-seal-1")
     payload = _fixture(
         "pre_tool_use",
         cwd=str(tmp_path),
@@ -636,7 +579,7 @@ def test_pre_tool_use_blocks_write_to_sealed_artifact(tmp_path: Path):
 
 def test_pre_tool_use_allows_write_to_non_sealable_file(tmp_path: Path):
     """Write em manifest.json (não-selável) => allow."""
-    run_dir = _sealed_js_run(tmp_path, "sess-seal-2")
+    run_dir = _sealed_kernel_run(tmp_path, "sess-seal-2")
     payload = _fixture(
         "pre_tool_use",
         cwd=str(tmp_path),
@@ -682,7 +625,7 @@ def test_pre_tool_use_bash_is_exempt_from_seal_check(tmp_path: Path):
     """D4: o alvo do check de selo vem de file_path/path/notebook_path — NÃO de
     `command`. Bash com um path selado no `command` não dispara
     SEALED_ARTIFACT_WRITE (backstop = verify_hashes no Stop)."""
-    run_dir = _sealed_js_run(tmp_path, "sess-seal-4")
+    run_dir = _sealed_kernel_run(tmp_path, "sess-seal-4")
     payload = _fixture(
         "pre_tool_use",
         cwd=str(tmp_path),
@@ -698,7 +641,7 @@ def test_pre_tool_use_bash_is_exempt_from_seal_check(tmp_path: Path):
 def test_stop_sealed_js_run_verifies_report_hash(tmp_path: Path):
     """Aceitação 1/2: run JS-style selado => Stop exit 0 com VERIFIED_REPORT_HASH
     passado (lineage do manifest validada)."""
-    _sealed_js_run(tmp_path, "sess-seal-stop-1")
+    _sealed_kernel_run(tmp_path, "sess-seal-stop-1")
     proc = _native(
         "Stop",
         _fixture("stop", cwd=str(tmp_path), session_id="sess-seal-stop-1"),
@@ -712,7 +655,7 @@ def test_stop_sealed_js_run_verifies_report_hash(tmp_path: Path):
 def test_stop_sealed_js_run_tampered_report_blocks(tmp_path: Path):
     """Aceitação 1: tamper pós-selo em run JS-style => exit 2 com INTEGRITY_PASS
     E VERIFIED_REPORT_HASH."""
-    run_dir = _sealed_js_run(tmp_path, "sess-seal-stop-2")
+    run_dir = _sealed_kernel_run(tmp_path, "sess-seal-stop-2")
     with (run_dir / "delivery" / "report.md").open("a", encoding="utf-8") as fh:
         fh.write("\ntampered after the seal\n")
     proc = _native(

@@ -41,9 +41,9 @@ def has_symlink_component(path: str | Path) -> bool:
     """True if any component of ``path`` is a symlink (symlink guard)."""
     path = Path(path)
     for part in path.parents:
-        if part.is_symlink():
+        if part.is_symlink() or (hasattr(part, "is_junction") and part.is_junction()):
             return True
-    return path.is_symlink()
+    return path.is_symlink() or (hasattr(path, "is_junction") and path.is_junction())
 
 
 def path_traversal_attempt(rel_path: str) -> bool:

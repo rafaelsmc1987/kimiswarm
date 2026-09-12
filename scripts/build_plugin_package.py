@@ -13,12 +13,10 @@ Determinismo do zip por construção:
 - ``external_attr`` fixo (0644) — sem vazamento do umask da máquina;
 - ``__pycache__``/``*.pyc`` excluídos (artefatos de runtime, não de release).
 
-Sem ``--no-wheel``, também roda ``pip wheel . --no-deps -w <out>`` e registra
-o hash do wheel em ``SHA256SUMS``. A reprodutibilidade bit-a-bit do wheel
-**não** é assertada: o setuptools carimba os entries do zip interno com o
-timestamp do build (e o RECORD é regravado a cada geração), então dois builds
-diferem em bytes embora o conteúdo seja equivalente. O artefato cuja
-reprodutibilidade é garantida — e testada — é o zip do plugin.
+Sem ``--no-wheel``, também gera wheel usando o toolchain instalado e
+``SOURCE_DATE_EPOCH`` fixo. Instale requirements-build.txt antes do build.
+``verify_distribution.py`` compara dois builds byte a byte e instala o wheel
+fora do checkout. Essa prova local não implica reprodutibilidade entre SOs.
 
 Stdlib only; zero dependências novas (constraint SW-01).
 """
@@ -28,6 +26,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import zipfile
@@ -58,6 +57,8 @@ def iter_plugin_files() -> list[Path]:
     """Arquivos do plugin em ordem determinística, sem artefatos de runtime."""
     entries = []
     for path in PLUGIN_DIR.rglob("*"):
+        if path.is_symlink() or getattr(path, "is_junction", lambda: False)():
+            raise ValueError(f"package cannot include links: {path}")
         if not path.is_file():
             continue
         rel = path.relative_to(PLUGIN_DIR)
@@ -88,10 +89,23 @@ def build_plugin_zip(version: str, out_dir: Path) -> Path:
 
 def build_wheel(version: str, out_dir: Path) -> Path:
     """Wheel pure-Python via pip (setuptools já é o build backend do repo)."""
+    environment = os.environ.copy()
+    environment["SOURCE_DATE_EPOCH"] = "315532800"
     subprocess.run(
-        [sys.executable, "-m", "pip", "wheel", ".", "--no-deps", "-w", str(out_dir)],
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "wheel",
+            ".",
+            "--no-deps",
+            "--no-build-isolation",
+            "-w",
+            str(out_dir),
+        ],
         cwd=REPO_ROOT,
         check=True,
+        env=environment,
     )
     wheels = sorted(out_dir.glob(f"kdrx-{version}-*.whl"))
     if not wheels:

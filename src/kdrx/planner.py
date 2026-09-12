@@ -50,6 +50,15 @@ def plan_gate(
         )
     check("HAS_TASKS", "plan contains at least one task", len(plan.tasks) > 0)
     check("HAS_PLAN_MD", "plan.md text is present", bool(plan.plan_md.strip()))
+    from kdrx.runtime.executors import EXECUTORS
+
+    capability_issues = EXECUTORS.issues(plan)
+    check(
+        "CAPABILITIES_AVAILABLE",
+        "every task has an implemented executor for the selected backend",
+        not capability_issues,
+        details=capability_issues,
+    )
 
     dag: CompiledDAG = compile_dag(plan.tasks)
     check(

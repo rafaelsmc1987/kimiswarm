@@ -35,6 +35,12 @@
   "additionalProperties": false,
   "description": "The materialized agreement that constrains all downstream agents (\u00a712).\n\nThe contract exists so that no agent can reinterpret the objective in an\nincompatible way. Every field is either filled by intake or defaulted to a\nsafe, explicit value \u2014 nothing is silently left open.",
   "properties": {
+    "schema_version": {
+      "const": "0.3",
+      "default": "0.3",
+      "title": "Schema Version",
+      "type": "string"
+    },
     "contract_id": {
       "title": "Contract Id",
       "type": "string"

@@ -1,7 +1,7 @@
 {
   "name": "kdr-x",
-  "version": "0.2.0",
-  "description": "KDR-X — KimiSwarm Deep Research eXtended. A claim-evidence operating system for state-of-the-art deep research: research contract, DAG control plane, source-trust chain, atomic claim/evidence graph, contradiction & falsification swarm, deterministic gates and a seeded-defect eval harness.",
+  "version": "0.3.0",
+  "description": "Research kernel with persistent plans, local evidence snapshots, delivery validation and selectable Codex/Claude Code inference backends. Live host and comparative evaluation remain unverified.",
   "author": {
     "name": "KDR-X contributors"
   },

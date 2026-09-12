@@ -28,7 +28,52 @@ def _build_parser() -> argparse.ArgumentParser:
         "--out", default="plugins/kdr-x/schemas", help="output directory"
     )
 
-    sub.add_parser("doctor", help="self-check imports, schemas and a smoke run")
+    doctor = sub.add_parser(
+        "doctor", help="self-check imports, schemas and a smoke run"
+    )
+    doctor.add_argument(
+        "--profile", choices=["offline", "plugin", "live"], default=None
+    )
+    doctor.add_argument("--json", action="store_true")
+    doctor.add_argument("--backend", choices=["codex", "claude-code"], default="codex")
+    verify_delivery = sub.add_parser(
+        "verify-delivery", help="verify delivery certificate offline"
+    )
+    verify_delivery.add_argument("--run-dir", required=True)
+    request = sub.add_parser(
+        "request", help="execute a versioned kernel request without shell interpolation"
+    )
+    request.add_argument("--payload-base64", required=True)
+    recover = sub.add_parser(
+        "recover-exports",
+        help="explicitly regenerate database-owned exports after recovery",
+    )
+    recover.add_argument("--run-dir", required=True)
+    patch = sub.add_parser(
+        "patch-plan", help="apply an explicit revision or selective invalidation"
+    )
+    patch.add_argument("--run-dir", required=True)
+    patch.add_argument("--patch", required=True, help="versioned PlanPatch JSON file")
+    legacy_status = sub.add_parser(
+        "legacy-status", help="verify an old directory or backup ZIP read-only"
+    )
+    legacy_status.add_argument("--source", required=True)
+    migrate = sub.add_parser(
+        "migrate-legacy",
+        help="import a verified legacy snapshot as a read-only archive",
+    )
+    migrate.add_argument("--source", required=True)
+    migrate.add_argument("--runs-root", required=True)
+    gc = sub.add_parser(
+        "gc", help="inventory abandoned runtime data; optionally quarantine it"
+    )
+    gc.add_argument("--runs-root", required=True)
+    gc.add_argument("--retention-days", type=float, default=7)
+    gc.add_argument(
+        "--apply",
+        action="store_true",
+        help="move eligible files into reversible quarantine",
+    )
 
     p_eval = sub.add_parser("eval", help="run the seeded-defect eval harness")
     p_eval.add_argument("--json", action="store_true", help="emit JSON")
@@ -89,6 +134,9 @@ def _build_parser() -> argparse.ArgumentParser:
     p_plan.add_argument("--out", default=".research/runs", help="runs root directory")
     p_plan.add_argument("--run-id", default=None)
     p_plan.add_argument(
+        "--backend", choices=["offline", "codex", "claude-code"], default="offline"
+    )
+    p_plan.add_argument(
         "--session-id",
         default=None,
         help="bind this Claude Code session to the run (env KDR_SESSION_ID)",
@@ -126,6 +174,10 @@ def _build_parser() -> argparse.ArgumentParser:
     p_run = sub.add_parser("run", help="execute a persisted plan (see `kdr plan`)")
     p_run.add_argument("--run-dir", required=True)
     p_run.add_argument(
+        "--backend-config",
+        help="local model configuration JSON; contains no credentials",
+    )
+    p_run.add_argument(
         "--session-id",
         default=None,
         help="bind this Claude Code session to the run (env KDR_SESSION_ID)",
@@ -138,6 +190,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
     p_resume = sub.add_parser("resume", help="verify hashes and reload manifest")
     p_resume.add_argument("--run-dir", required=True)
+    p_resume.add_argument(
+        "--backend-config",
+        help="local model configuration JSON; contains no credentials",
+    )
     p_resume.add_argument(
         "--session-id",
         default=None,
@@ -214,6 +270,10 @@ def cmd_plan(args: argparse.Namespace) -> int:
         corpus_size = len(FileCorpus(args.corpus).scan())
     contract = build_contract(objective)
     plan = build_plan(contract, corpus_size)
+    if getattr(args, "backend", "offline") != "offline":
+        from kdrx.application.live import add_live_tasks
+
+        plan = add_live_tasks(plan, args.backend)
     gate = plan_gate(plan, contract)
     if gate.blocking():
         print("plan gate BLOCKED:", file=sys.stderr)
@@ -327,16 +387,6 @@ def cmd_import_plan(args: argparse.Namespace) -> int:
         if exc.details:
             print(json.dumps(exc.details, indent=2, default=str), file=sys.stderr)
         return exc.exit_code
-
-    # D7: warning não-bloqueante para task ids fora do executor offline
-    known_ids = {"T-RETRIEVE", "T-VERIFY", "T-SYNTHESIZE", "T-INTEGRITY"}
-    unknown = sorted({t.task_id for t in plan.tasks} - known_ids)
-    if unknown:
-        print(
-            f"warning: task ids {unknown} não são executáveis pelo executor "
-            "offline `kdr run`; use /kdr-x:kdr-run",
-            file=sys.stderr,
-        )
 
     gate = plan_gate(plan, contract)  # passa por construção (import já bloqueou)
     waves = sorted(plan.waves)
@@ -473,6 +523,16 @@ def _check_research_writable() -> str | None:
 
 
 def cmd_doctor(args: argparse.Namespace) -> int:
+    if getattr(args, "profile", None) or getattr(args, "json", False):
+        from kdrx.application.capabilities import doctor
+
+        result = doctor(
+            args.profile or "offline",
+            plugin_root=_find_plugin_root(),
+            backend=getattr(args, "backend", "codex"),
+        )
+        print(json.dumps(result, indent=2))
+        return 0 if result["healthy"] else 1
     import kdrx
     import pydantic
     from kdrx.schemas import SCHEMAS
@@ -692,6 +752,22 @@ def cmd_demo(args: argparse.Namespace) -> int:
     return summary.get("exit_code", 0)
 
 
+def _model_config(args, plan):
+    from kdrx.integrations.model_cli import ModelConfig
+
+    configured = getattr(args, "backend_config", None)
+    if plan.execution_backend == "offline":
+        if configured:
+            raise ValueError(
+                "create a plan with --backend before supplying model configuration"
+            )
+        return None
+    path = Path(
+        configured or os.environ.get("KDR_BACKEND_CONFIG", "kdr-backend.local.json")
+    )
+    return ModelConfig.model_validate_json(path.read_bytes())
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     from kdrx.planner import plan_gate
     from kdrx.retrieval import FileCorpus
@@ -736,7 +812,9 @@ def cmd_run(args: argparse.Namespace) -> int:
     state = RunState(run_dir.parent, manifest.run_id)
     corpus = FileCorpus(args.corpus)
     docs = corpus.scan()
-    result, executor = execute_plan(plan, contract, corpus, state)
+    result, executor = execute_plan(
+        plan, contract, corpus, state, model_config=_model_config(args, plan)
+    )
     summary = {
         "run_id": manifest.run_id,
         "documents": len(docs),
@@ -744,14 +822,18 @@ def cmd_run(args: argparse.Namespace) -> int:
         "spans": len(executor.spans),
         "completed_tasks": result.completed,
         "failed_tasks": result.failed,
+        "deliverable": result.deliverable,
+        "blocking_reasons": result.blocking_reasons,
         "report": str(state.run_dir / "delivery" / "report.md"),
     }
     print(json.dumps(summary, indent=2))
-    return 0 if not result.failed else 1
+    return 0 if result.deliverable else 1
 
 
 def cmd_status(args: argparse.Namespace) -> int:
     from kdrx.state import hash_file, load_manifest_from_dir
+    from kdrx.application.delivery import delivery_status
+    from kdrx.state import RunState
 
     m = load_manifest_from_dir(args.run_dir)
     plan_meta = m.metadata.get("plan")
@@ -762,6 +844,7 @@ def cmd_status(args: argparse.Namespace) -> int:
         plan_blob["plan_hash_match"] = bool(
             stored and plan_path.is_file() and hash_file(plan_path) == stored
         )
+        directory = Path(args.run_dir).absolute()
         print(
             json.dumps(
                 {
@@ -770,6 +853,7 @@ def cmd_status(args: argparse.Namespace) -> int:
                     "completed": m.completed_tasks,
                     "failed": m.failed_tasks,
                     "plan": plan_blob,
+                    **delivery_status(RunState(directory.parent, directory.name)),
                 },
                 indent=2,
             )
@@ -839,316 +923,259 @@ def cmd_resume(args: argparse.Namespace) -> int:
     from kdrx.retrieval import FileCorpus
 
     corpus = FileCorpus(corpus_arg)
-    result, _ex = resume_run(rs, corpus)
-    print(f"resumed {m.run_id}: completed={result.completed} failed={result.failed}")
-    return 0 if not result.failed else 1
+    from kdrx.schemas.plan import ResearchPlan
+
+    plan = ResearchPlan.model_validate_json(rs.read_text("plan.json"))
+    result, _ex = resume_run(rs, corpus, model_config=_model_config(args, plan))
+    print(
+        f"resumed {m.run_id}: completed={result.completed} failed={result.failed} deliverable={result.deliverable}"
+    )
+    return 0 if result.deliverable else 1
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
-    """Re-run source/claim/integrity gates over persisted run artifacts."""
-    from kdrx.reporting import citation_integrity_gate
-    from kdrx.schemas.claims import Claim
-    from kdrx.schemas.corpus import EvidenceSpan, SourceRecord
-    from kdrx.security import security_gate
-    from kdrx.verification import source_trust_gate
+    from kdrx.application.delivery import verify_snapshot, revoke_delivery
+    from kdrx.state import RunState
 
-    run_dir = Path(args.run_dir)
-
-    def _jsonl(path: Path, model: type) -> list:
-        return [
-            model.model_validate_json(line)
-            for line in path.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
-
-    sources_p = run_dir / "corpus" / "sources.jsonl"
-    spans_p = run_dir / "evidence" / "spans.jsonl"
-    claims_p = run_dir / "claims" / "claims.jsonl"
-    missing = [str(p) for p in (sources_p, spans_p) if not p.exists()]
-    if missing:
-        print(
-            f"error: artifacts ausentes {missing} — execute `kdr run` primeiro",
-            file=sys.stderr,
-        )
+    state = RunState(Path(args.run_dir).absolute().parent, Path(args.run_dir).name)
+    try:
+        check = verify_snapshot(state)
+    except (OSError, ValueError) as exc:
+        revoke_delivery(state, "verification input corrupt or missing")
+        print(f"error: {exc}", file=sys.stderr)
         return 2
-    sources = _jsonl(sources_p, SourceRecord)
-    spans = _jsonl(spans_p, EvidenceSpan)
-    claims = _jsonl(claims_p, Claim) if claims_p.exists() else []
-
-    # B-06/T-04-07: empty corpus NÃO retorna sucesso (existência é blocking).
-    # E WARN não conta como PASS no E2E — delivery limpo exige verdict "pass".
-    from kdrx.schemas.enums import GateVerdict
-
-    src_pass = bool(sources) and all(
-        g.verdict == GateVerdict.PASS for g in (source_trust_gate(s) for s in sources)
-    )
-    report_p = run_dir / "delivery" / "report.md"
-    if report_p.exists():
-        report_text = report_p.read_text(encoding="utf-8")
-    else:
-        report_text = ""
-        print("warning: delivery/report.md ausente — citation gate sobre texto vazio")
-    citation = citation_integrity_gate(
-        report_text, sources=sources, claims=claims, spans=spans
-    )
-    security = security_gate(run_dir)
-    # SW-02: recheck do plano/DAG persistido (informativo; all_pass não muda)
-    plan_dag = "fail"
-    plan_p = run_dir / "plan.json"
-    if plan_p.exists():
-        from pydantic import ValidationError
-
-        from kdrx.dag import compile_dag
-        from kdrx.schemas.plan import ResearchPlan
-
-        try:
-            persisted_plan = ResearchPlan.model_validate_json(
-                plan_p.read_text(encoding="utf-8")
-            )
-            plan_dag = "pass" if compile_dag(persisted_plan.tasks).is_valid else "fail"
-        except (OSError, ValidationError):
-            plan_dag = "fail"
-    results = {
-        "source_trust": "pass" if src_pass else "fail",
-        "citation_integrity": citation.verdict.value,
-        "security": security.verdict.value,
-        "plan_dag": plan_dag,
-    }
-    print(json.dumps(results, indent=2))
-    all_pass = (
-        src_pass
-        and citation.verdict == GateVerdict.PASS
-        and security.verdict == GateVerdict.PASS
-    )
-    print(f"verify: {'PASS' if all_pass else 'FAIL'}")
-    return 0 if all_pass else 1
+    if not check.deliverable:
+        revoke_delivery(state, "; ".join(check.blocking_reasons))
+    print(json.dumps(check.as_dict(), indent=2))
+    return 0 if check.deliverable else 1
 
 
 def cmd_seal(args: argparse.Namespace) -> int:
-    """D1: verify-then-seal determinístico sobre os bytes finais do report.
-
-    Exit codes: 0 selado · 1 gate falhou (verdicts persistidos, selo NÃO
-    escrito) · 2 usage/IO (manifest/plan/report/sources ausentes) · 3 pydantic
-    (plan.json corrompido).
-    """
     from datetime import datetime, timezone
-
-    from pydantic import ValidationError
-
-    from kdrx.reporting import citation_integrity_gate
-    from kdrx.runner import (
-        _sealable_hashes,
-        seal_delivery,
-        unresolved_critical_claims,
+    from kdrx.application.delivery import (
+        POLICY_VERSION,
+        verify_snapshot,
+        revoke_delivery,
     )
-    from kdrx.schemas.claims import Claim
-    from kdrx.schemas.corpus import EvidenceSpan, SourceRecord
-    from kdrx.schemas.enums import GateVerdict
+    from kdrx.runner import _sealable_hashes, seal_delivery
     from kdrx.schemas.plan import ResearchPlan
-    from kdrx.security import security_gate
-    from kdrx.state import RunState, hash_bytes, load_manifest_from_dir
-    from kdrx.verification import source_trust_gate
+    from kdrx.state import RunState, hash_file
 
-    run_dir = Path(args.run_dir)
-
-    # 1-2. manifest.json (existência + shape) -> 2
+    state = RunState(Path(args.run_dir).absolute().parent, Path(args.run_dir).name)
     try:
-        manifest = load_manifest_from_dir(run_dir)
-    except (OSError, ValidationError) as exc:
-        print(f"error: manifest.json ausente/corrompido: {exc}", file=sys.stderr)
-        return 2
-
-    # 3. plan.json: ausente -> 2; ValidationError -> 3
-    plan_p = run_dir / "plan.json"
-    if not plan_p.exists():
-        print(
-            f"error: {run_dir} sem plan.json — crie o run com `kdr plan` primeiro",
-            file=sys.stderr,
-        )
+        manifest = state.load_manifest()
+        plan_bytes = state.read_text("plan.json")
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
         return 2
     try:
-        plan = ResearchPlan.model_validate_json(plan_p.read_text(encoding="utf-8"))
-    except ValidationError as exc:
-        print(f"error: plan.json corrompido: {exc}", file=sys.stderr)
+        ResearchPlan.model_validate_json(plan_bytes)
+    except ValueError as exc:
+        revoke_delivery(state, "invalid plan")
+        print(f"error: plan.json: {exc}", file=sys.stderr)
         return 3
-
-    # 4. compile_dag: inválido conta como gate fail (não usage error)
-    from kdrx.dag import compile_dag
-
-    dag_ok = compile_dag(plan.tasks).is_valid
-    plan_dag = "pass" if dag_ok else "fail"
-
-    # 5. corpus/evidence/claims: ausentes -> 2 (parity cmd_verify); claims vazio ok
-    def _jsonl(path: Path, model: type) -> list:
-        try:
-            lines = path.read_text(encoding="utf-8").splitlines()
-        except OSError as exc:
-            print(f"error: falha ao ler {path}: {exc}", file=sys.stderr)
-            raise SystemExit(2)
-        out = []
-        for num, line in enumerate(lines, start=1):
-            if not line.strip():
-                continue
-            try:
-                out.append(model.model_validate_json(line))
-            except (ValidationError, json.JSONDecodeError) as exc:
-                print(
-                    f"error: {path.name} linha {num} corrompida: {exc}",
-                    file=sys.stderr,
-                )
-                raise SystemExit(2)
-        return out
-
-    sources_p = run_dir / "corpus" / "sources.jsonl"
-    spans_p = run_dir / "evidence" / "spans.jsonl"
-    claims_p = run_dir / "claims" / "claims.jsonl"
-    missing = [str(p) for p in (sources_p, spans_p, claims_p) if not p.exists()]
-    if missing:
-        print(
-            f"error: artifacts ausentes {missing} — execute `kdr run`/workflow primeiro",
-            file=sys.stderr,
-        )
-        return 2
-    sources = _jsonl(sources_p, SourceRecord)
-    spans = _jsonl(spans_p, EvidenceSpan)
-    claims = _jsonl(claims_p, Claim)
-
-    # 6. report.md em BYTES (CRLF-safe); ausente/ilegível -> 2
-    report_p = run_dir / "delivery" / "report.md"
-    if not report_p.exists():
-        print(
-            f"error: sem relatório em {report_p} — o selo hasheia os bytes finais",
-            file=sys.stderr,
-        )
-        return 2
     try:
-        report_bytes = report_p.read_bytes()
-        report_text = report_bytes.decode("utf-8")
-    except (OSError, UnicodeDecodeError) as exc:
-        print(f"error: report ilegível: {exc}", file=sys.stderr)
+        check = verify_snapshot(state)
+    except (OSError, ValueError) as exc:
+        revoke_delivery(state, "verification input corrupt or missing")
+        print(f"error: {exc}", file=sys.stderr)
         return 2
-    report_hash = hash_bytes(report_bytes)
-
-    # 7. Gates canônicos sobre os bytes finais
-    src_pass = bool(sources) and all(
-        g.verdict == GateVerdict.PASS for g in (source_trust_gate(s) for s in sources)
-    )
-    citation = citation_integrity_gate(
-        report_text, sources=sources, claims=claims, spans=spans
-    )
-    security = security_gate(run_dir)
-    gate_results = {
-        "source_trust": "pass" if src_pass else "fail",
-        "citation_integrity": citation.verdict.value,
-        "security": security.verdict.value,
-        "plan_dag": plan_dag,
-    }
-
-    # 8. Verdicts persistidos SEMPRE (trilha de auditoria; validate-then-write:
-    # o que NÃO se escreve em fail é o SELO — passos 10-11)
-    state = RunState(run_dir.parent, run_dir.name)
-    gate_ts = datetime.now(timezone.utc).isoformat()
-    integrity_ok = src_pass and citation.verdict == GateVerdict.PASS and dag_ok
-    state.write_text(
-        "verification/integrity.json",
-        json.dumps(
+    timestamp = datetime.now(timezone.utc).isoformat()
+    verification_files = {
+        "verification/seal/integrity.json": json.dumps(
             {
-                "verdict": "pass" if integrity_ok else "fail",
-                "source_trust": "pass" if src_pass else "fail",
-                "citation_integrity": citation.verdict.value,
-                "plan_dag": plan_dag,
-                "timestamp": gate_ts,
-            },
-            indent=2,
+                "verdict": "pass" if check.deliverable else "fail",
+                **check.gate_results,
+                "timestamp": timestamp,
+            }
         ),
-    )
-    state.write_text(
-        "verification/security.json",
-        json.dumps({"verdict": security.verdict.value, "timestamp": gate_ts}, indent=2),
-    )
-
-    all_pass = integrity_ok and security.verdict == GateVerdict.PASS
-    if not all_pass:
-        blocking_reasons: list[str] = []
-        if not src_pass:
-            blocking_reasons.append(
-                "source_trust: nem todas as fontes passaram no trust gate"
-            )
-        blocking_reasons.extend(citation.blocking_reasons)
-        blocking_reasons.extend(security.blocking_reasons)
-        if not dag_ok:
-            blocking_reasons.append("plan_dag: plan.json não compila")
-        out = {
-            "verdict": "fail",
-            "sealed": False,
-            "verified_report_hash": None,
-            "gate_results": gate_results,
-            "blocking_reasons": blocking_reasons,
-        }
-        if args.json:
-            print(json.dumps(out, indent=2))
-        else:
-            print(json.dumps(out, indent=2))
-            print("seal: FAIL")
-        return 1
-
-    # 10. Selo (validate-then-write: todos os gates passaram)
-    sealed_at = datetime.now(timezone.utc).isoformat()
-    previous = manifest.metadata.get("seal") or {}
-    revision = int(previous.get("revision", 0)) + 1
-    manifest.artifact_hashes = _sealable_hashes(state)
-    manifest.gate_results = {"integrity": "pass", "security": "pass"}
-    manifest.metadata["seal"] = {
-        "verified_report_hash": report_hash,
-        "sealed_at": sealed_at,
-        "revision": revision,
+        "verification/seal/security.json": json.dumps(
+            {"verdict": check.gate_results["security"], "timestamp": timestamp}
+        ),
     }
-    state.save_manifest(manifest)
-    unresolved = unresolved_critical_claims(run_dir)
-    dm = seal_delivery(
+    if not check.deliverable:
+        revoke_delivery(
+            state,
+            "; ".join(check.blocking_reasons),
+            verification_files=verification_files,
+        )
+        print(json.dumps({**check.as_dict(), "sealed": False}, indent=2))
+        return 1
+    for rel, expected in check.input_hashes.items():
+        if hash_file(state._resolve(rel)) != expected:
+            revoke_delivery(
+                state,
+                "input changed during verification",
+                verification_files=verification_files,
+            )
+            print(
+                json.dumps(
+                    {
+                        "verdict": "fail",
+                        "sealed": False,
+                        "blocking_reasons": ["input changed during verification"],
+                    }
+                )
+            )
+            return 1
+    revision = int(manifest.metadata.get("seal", {}).get("revision", 0)) + 1
+    timestamps = {key: timestamp for key in check.gate_results}
+    timestamps["sealed_at"] = timestamp
+    manifest.gate_results = {"integrity": "pass", "security": "pass"}
+    delivery = seal_delivery(
         state,
         manifest,
         produced_by="kdr:seal",
-        gate_timestamps={
-            "source_trust": gate_ts,
-            "citation_integrity": gate_ts,
-            "security": gate_ts,
-            "plan_dag": gate_ts,
-            "sealed_at": sealed_at,
+        gate_timestamps=timestamps,
+        unresolved_critical=list(check.unresolved_critical),
+        verified_report_bytes=check.report_bytes,
+        verification_files=verification_files,
+        verification_context={
+            "policy_version": POLICY_VERSION,
+            "plan_hash": check.plan_hash,
+            "graph_revision": check.graph_hash,
+            "revision": revision,
         },
-        unresolved_critical=unresolved,
     )
+    # A publisher may race with direct filesystem changes: never endorse the new bytes.
+    if any(
+        hash_file(state._resolve(rel)) != expected
+        for rel, expected in check.input_hashes.items()
+    ):
+        manifest.metadata["seal"] = {"eligible": False, "revision": revision}
+        state.save_manifest(manifest)
+        revoke_delivery(state, "input changed during publication")
+        print(
+            json.dumps(
+                {
+                    "verdict": "fail",
+                    "sealed": False,
+                    "blocking_reasons": ["input changed during publication"],
+                }
+            )
+        )
+        return 1
+    manifest.artifact_hashes = _sealable_hashes(state)
+    manifest.metadata["seal"] = {
+        "verified_report_hash": check.report_hash,
+        "sealed_at": timestamp,
+        "revision": revision,
+        "eligible": True,
+        "policy_version": POLICY_VERSION,
+    }
+    state.save_manifest(manifest)
     state.append_event(
         {
             "kind": "delivery_sealed",
-            "run_id": manifest.run_id,
-            "verified_report_hash": report_hash,
-            "sealed_at": sealed_at,
+            "run_id": state.run_id,
+            "verified_report_hash": check.report_hash,
+            "sealed_at": timestamp,
         }
     )
-    if unresolved:
+    print(
+        json.dumps(
+            {
+                **check.as_dict(),
+                "sealed": True,
+                "run_dir": str(state.run_dir),
+                "delivered_at": delivery.delivered_at.isoformat(),
+                "gate_timestamps": timestamps,
+            },
+            indent=2,
+        )
+    )
+    return 0
+
+
+def cmd_verify_delivery(args: argparse.Namespace) -> int:
+    from kdrx.application.delivery import verify_delivery
+
+    try:
+        result = verify_delivery(Path(args.run_dir).absolute())
+    except (ValueError, OSError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    print(json.dumps(result, indent=2))
+    return 0 if result["deliverable"] else 1
+
+
+def cmd_recover_exports(args: argparse.Namespace) -> int:
+    from kdrx.state import RunState
+
+    directory = Path(args.run_dir).absolute()
+    if not (directory.parent / ".kdr-state.sqlite3").is_file():
+        raise ValueError("committed database required for export recovery")
+    state = RunState(directory.parent, directory.name)
+    state.rebuild_exports()
+    print(json.dumps({"run_id": state.run_id, "exports_rebuilt": True}))
+    return 0
+
+
+def cmd_legacy_status(args: argparse.Namespace) -> int:
+    from kdrx.runtime.migrations import inspect_legacy
+
+    print(json.dumps(inspect_legacy(Path(args.source)), indent=2))
+    return 0
+
+
+def cmd_migrate_legacy(args: argparse.Namespace) -> int:
+    from kdrx.runtime.migrations import migrate_run
+
+    print(json.dumps(migrate_run(Path(args.source), Path(args.runs_root)), indent=2))
+    return 0
+
+
+def cmd_patch_plan(args: argparse.Namespace) -> int:
+    from kdrx.runtime.plan_revisions import apply_patch
+    from kdrx.schemas.plan import PlanPatch
+    from kdrx.state import RunState
+
+    directory = Path(args.run_dir).absolute()
+    patch = PlanPatch.model_validate_json(Path(args.patch).read_bytes())
+    print(
+        json.dumps(
+            apply_patch(RunState(directory.parent, directory.name), patch), indent=2
+        )
+    )
+    return 0
+
+
+def cmd_gc(args: argparse.Namespace) -> int:
+    from kdrx.runtime.maintenance import collect_abandoned
+    from kdrx.runtime.store import SQLiteStore
+
+    database = Path(args.runs_root).absolute() / ".kdr-state.sqlite3"
+    if not database.is_file():
+        raise ValueError("committed database required for retention analysis")
+    print(
+        json.dumps(
+            collect_abandoned(
+                SQLiteStore(database),
+                retention_seconds=args.retention_days * 86400,
+                apply=args.apply,
+            ),
+            indent=2,
+        )
+    )
+    return 0
+
+
+def cmd_request(args: argparse.Namespace) -> int:
+    from kdrx.application.service import ApplicationService, decode_request
+
+    try:
+        request = decode_request(args.payload_base64)
+        response = ApplicationService(Path(request.runs_root)).dispatch(request)
+    except (ValueError, OSError) as exc:
         print(
-            f"warning: {len(unresolved)} claim(s) CRITICAL não resolvida(s) — "
-            "kdr seal atesta hash/gates; a resolução de claims críticas "
-            "permanece gate do Stop hook (CRITICAL_RESOLVED)",
+            json.dumps({"schema_version": "0.3", "error": str(exc), "blocking": True}),
             file=sys.stderr,
         )
-
-    # 11. stdout JSON -> exit 0
-    out = {
-        "verdict": "pass",
-        "sealed": True,
-        "run_dir": str(run_dir),
-        "verified_report_hash": report_hash,
-        "delivered_at": dm.delivered_at.isoformat() if dm.delivered_at else None,
-        "gate_timestamps": dm.gate_timestamps,
-    }
-    if args.json:
-        print(json.dumps(out, indent=2))
-    else:
-        print(json.dumps(out, indent=2))
-        print("seal: PASS")
-    return 0
+        return 2
+    print(json.dumps(response, ensure_ascii=False, indent=2))
+    return (
+        1 if response.get("failed_tasks") or response.get("deliverable") is False else 0
+    )
 
 
 def cmd_report(args: argparse.Namespace) -> int:
@@ -1227,6 +1254,13 @@ def cmd_monitor(args: argparse.Namespace) -> int:
 _CMDS = {
     "schema": cmd_schema,
     "doctor": cmd_doctor,
+    "verify-delivery": cmd_verify_delivery,
+    "request": cmd_request,
+    "recover-exports": cmd_recover_exports,
+    "patch-plan": cmd_patch_plan,
+    "legacy-status": cmd_legacy_status,
+    "migrate-legacy": cmd_migrate_legacy,
+    "gc": cmd_gc,
     "eval": cmd_eval,
     "hook": cmd_hook,
     "demo": cmd_demo,
@@ -1251,6 +1285,16 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return handler(args)
     except FileNotFoundError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    except (ValueError, OSError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    except RuntimeError as exc:
+        from kdrx.integrations.model_cli import ModelError
+
+        if not isinstance(exc, ModelError):
+            raise
         print(f"error: {exc}", file=sys.stderr)
         return 2
 

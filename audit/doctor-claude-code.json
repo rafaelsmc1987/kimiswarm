@@ -1,0 +1,88 @@
+{
+  "profile": "live",
+  "healthy": false,
+  "checks": [
+    {
+      "name": "database",
+      "passed": true,
+      "detail": "SQLite 3.53.1; journal=wal; synchronous=FULL"
+    },
+    {
+      "name": "artifact_roundtrip",
+      "passed": true,
+      "detail": "temporary file write/read verified"
+    },
+    {
+      "name": "disk_space",
+      "passed": true,
+      "detail": "requires 32 MiB free"
+    },
+    {
+      "name": "provider_installed",
+      "passed": true,
+      "detail": "claude-code: 2.1.233 (Claude Code)"
+    },
+    {
+      "name": "provider_authenticated",
+      "passed": false,
+      "detail": "local status only; no inference call"
+    },
+    {
+      "name": "live_probe",
+      "passed": false,
+      "detail": "explicit provider and finite budget required; no provider call made"
+    }
+  ],
+  "version": "0.3.0",
+  "import_origin": "C:\\kimiswarm\\src\\kdrx\\__init__.py",
+  "sqlite_version": "3.53.1",
+  "wal_supported": true,
+  "optional_extractors": {
+    "pypdf": false,
+    "docx": false,
+    "openpyxl": false
+  },
+  "capabilities": [
+    {
+      "id": "file_research",
+      "state": "implemented-offline",
+      "backend": "python",
+      "evidence": "tests/test_plan_regressions.py"
+    },
+    {
+      "id": "http_fetch",
+      "state": "external-unverified",
+      "backend": "safe-http",
+      "reason": "contract tests do not establish live provider availability"
+    },
+    {
+      "id": "live_agents",
+      "state": "external-unverified",
+      "backends": [
+        "claude-code",
+        "codex"
+      ],
+      "reason": "CLI adapters and five-specialist local-corpus DAG implemented; provider E2E and hostile-code OS sandbox unverified"
+    },
+    {
+      "id": "semantic_entailment",
+      "state": "planned",
+      "reason": "current verifier is a deterministic lexical baseline"
+    },
+    {
+      "id": "neural_retrieval",
+      "state": "planned",
+      "reason": "char-ngram retrieval is not a neural embedding"
+    },
+    {
+      "id": "kimi_comparison",
+      "state": "planned",
+      "reason": "no authorized paired product evaluation recorded"
+    },
+    {
+      "id": "image_audio",
+      "state": "disabled",
+      "reason": "external gateway access and redistribution rights unresolved"
+    }
+  ]
+}

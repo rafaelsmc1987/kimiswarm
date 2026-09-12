@@ -24,6 +24,12 @@
   "additionalProperties": false,
   "description": "Raw user request captured at intake, before any interpretation.",
   "properties": {
+    "schema_version": {
+      "const": "0.3",
+      "default": "0.3",
+      "title": "Schema Version",
+      "type": "string"
+    },
     "request_id": {
       "title": "Request Id",
       "type": "string"

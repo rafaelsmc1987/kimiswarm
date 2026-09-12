@@ -529,8 +529,8 @@ def test_import_plan_dispositions_persist_and_validate(corpus: Path, runs_root: 
     assert proc2.returncode == 3
 
 
-def test_import_plan_warns_unknown_task_ids(corpus: Path, runs_root: Path):
-    """D7: warning não-bloqueante para ids fora do executor offline."""
+def test_import_plan_blocks_missing_capability(corpus: Path, runs_root: Path):
+    """An arbitrary ID is valid; an absent capability must block approval."""
     run_dir = _scaffold_run(runs_root)
     plan = _read_plan(run_dir)
     plan["tasks"].append(
@@ -548,9 +548,9 @@ def test_import_plan_warns_unknown_task_ids(corpus: Path, runs_root: Path):
     proc = _import_cli(
         "--run-dir", str(run_dir), "--stdin", "--json", payload=json.dumps(plan)
     )
-    assert proc.returncode == 0, proc.stderr
+    assert proc.returncode == 1, proc.stderr
     assert "T-CUSTOM" in proc.stderr
-    assert "warning" in proc.stderr
+    assert "set task.kind" in proc.stderr
 
 
 def test_plan_objective_file_preserves_quotes_newlines(corpus: Path, runs_root: Path):
@@ -594,70 +594,27 @@ SEAL_REPORT = f"# Report\n\n{SEAL_STATEMENT} [cite: src-1]\n"
 SEAL_REPORT_CRLF = SEAL_REPORT.replace("\n", "\r\n").encode("utf-8")
 
 
-def _js_style_run(runs_root: Path, report: bytes | str | None = SEAL_REPORT) -> Path:
-    """Run "JS-style": scaffold via `kdr plan` + corpus/evidence/claims/report
-    fabricados com model constructors (o workflow JS produz esses arquivos sem
-    passar pelo executor offline)."""
-    from datetime import datetime, timezone
+def _kernel_seal_run(runs_root: Path, report: bytes | str | None = SEAL_REPORT) -> Path:
+    """Real kernel commits and immutable evidence precede publication tests."""
+    from kdrx.runner import run_file_research
+    from kdrx.state import RunState
 
-    from kdrx.schemas.claims import Claim
-    from kdrx.schemas.corpus import EvidenceSpan, Locator, SourceRecord
-    from kdrx.schemas.enums import (
-        ClaimImportance,
-        EvidenceType,
-        ExtractionStatus,
-        SourceType,
-        Standing,
-    )
-
-    run_dir = _scaffold_run(runs_root)
-    sources = [
-        SourceRecord(
-            source_id="src-1",
-            canonical_uri="file:///corpus/doc-1.txt",
-            title="doc-1.txt",
-            source_type=SourceType.DATASET,
-            content_hash="sha256:abcd1234",
-            date=datetime.now(timezone.utc),
-            extraction_status=ExtractionStatus.EXTRACTED,
-        )
+    corpus = runs_root.parent / "seal-corpus"
+    corpus.mkdir(exist_ok=True)
+    (corpus / "doc-1.txt").write_text(SEAL_STATEMENT, encoding="utf-8")
+    summary = run_file_research(corpus, "system latency", runs_root)
+    assert summary["exit_code"] == 0
+    state = RunState(runs_root, summary["run_id"])
+    source_id = json.loads(state.read_text("corpus/sources.jsonl").splitlines()[0])[
+        "source_id"
     ]
-    spans = [
-        EvidenceSpan(
-            evidence_id="EV-1",
-            source_id="src-1",
-            locator=Locator(char_start=0, char_end=10),
-            verbatim_span=SEAL_STATEMENT,
-            evidence_type=EvidenceType.VERBATIM,
-            verified=True,
-        )
-    ]
-    claims = [
-        Claim(
-            claim_id="CL-1",
-            statement=SEAL_STATEMENT,
-            importance=ClaimImportance.MAJOR,
-            standing=Standing.UNRESOLVED,
-            support_edges=["EV-1"],
-        )
-    ]
-    (run_dir / "corpus" / "sources.jsonl").write_text(
-        "\n".join(s.model_dump_json() for s in sources) + "\n", encoding="utf-8"
-    )
-    (run_dir / "evidence" / "spans.jsonl").write_text(
-        "\n".join(s.model_dump_json() for s in spans) + "\n", encoding="utf-8"
-    )
-    (run_dir / "claims" / "claims.jsonl").write_text(
-        "\n".join(c.model_dump_json() for c in claims) + "\n", encoding="utf-8"
-    )
-    if report is not None:
-        report_path = run_dir / "delivery" / "report.md"
-        report_path.parent.mkdir(parents=True, exist_ok=True)
-        if isinstance(report, bytes):
-            report_path.write_bytes(report)
-        else:
-            report_path.write_text(report, encoding="utf-8")
-    return run_dir
+    path = state._resolve("delivery/report.md")
+    if report is None:
+        path.unlink()
+    else:
+        data = report.encode("utf-8") if isinstance(report, str) else report
+        path.write_bytes(data.replace(b"src-1", source_id.encode()))
+    return state.run_dir
 
 
 def _seal(run_dir: Path) -> subprocess.CompletedProcess:
@@ -669,7 +626,7 @@ def test_seal_js_style_run_end_to_end(runs_root: Path):
     verdicts + evento + gate_timestamps."""
     from kdrx.state import hash_file
 
-    run_dir = _js_style_run(runs_root)
+    run_dir = _kernel_seal_run(runs_root)
     proc = _seal(run_dir)
     assert proc.returncode == 0, proc.stdout + proc.stderr
     out = json.loads(proc.stdout)
@@ -696,12 +653,16 @@ def test_seal_js_style_run_end_to_end(runs_root: Path):
     assert manifest["metadata"]["seal"]["revision"] == 1
 
     integrity = json.loads(
-        (run_dir / "verification" / "integrity.json").read_text(encoding="utf-8")
+        (run_dir / "verification" / "seal" / "integrity.json").read_text(
+            encoding="utf-8"
+        )
     )
     assert integrity["verdict"] == "pass"
     assert integrity["timestamp"]
     security = json.loads(
-        (run_dir / "verification" / "security.json").read_text(encoding="utf-8")
+        (run_dir / "verification" / "seal" / "security.json").read_text(
+            encoding="utf-8"
+        )
     )
     assert security["verdict"] == "pass"
 
@@ -719,18 +680,21 @@ def test_seal_report_crlf_hash_matches_bytes(runs_root: Path):
     """Lição SW-02: hash dos bytes EM DISCO — CRLF não normaliza o hash."""
     from kdrx.state import hash_file
 
-    run_dir = _js_style_run(runs_root, report=SEAL_REPORT_CRLF)
+    run_dir = _kernel_seal_run(runs_root, report=SEAL_REPORT_CRLF)
     proc = _seal(run_dir)
     assert proc.returncode == 0, proc.stdout + proc.stderr
     out = json.loads(proc.stdout)
     assert out["verified_report_hash"] == hash_file(run_dir / "delivery" / "report.md")
-    assert (run_dir / "delivery" / "report.md").read_bytes() == SEAL_REPORT_CRLF
+    assert b"\r\n" in (run_dir / "delivery" / "report.md").read_bytes()
+    assert b"\n" not in (run_dir / "delivery" / "report.md").read_bytes().replace(
+        b"\r\n", b""
+    )
 
 
 def test_seal_gate_fail_writes_verdicts_but_not_seal(runs_root: Path):
     """Validate-then-write: gate FAIL => exit 1, selo NÃO escrito, verdicts
     persistidos com fail, delivery-manifest ausente, artifact_hashes intocado."""
-    run_dir = _js_style_run(
+    run_dir = _kernel_seal_run(
         runs_root, report=f"# Report\n\n{SEAL_STATEMENT} [cite: src-nope]\n"
     )
     proc = _seal(run_dir)
@@ -743,25 +707,32 @@ def test_seal_gate_fail_writes_verdicts_but_not_seal(runs_root: Path):
 
     # scaffold toca delivery-manifest.json como placeholder vazio (CANONICAL_FILES);
     # o seal em fail NÃO o (re)escreve — validate-then-write.
-    assert (run_dir / "delivery-manifest.json").stat().st_size == 0
+    assert (
+        json.loads((run_dir / "delivery-manifest.json").read_text())[
+            "final_integrity_pass"
+        ]
+        is False
+    )
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["artifact_hashes"] == {}
+    assert manifest["metadata"]["seal"]["eligible"] is False
     integrity = json.loads(
-        (run_dir / "verification" / "integrity.json").read_text(encoding="utf-8")
+        (run_dir / "verification" / "seal" / "integrity.json").read_text(
+            encoding="utf-8"
+        )
     )
     assert integrity["verdict"] == "fail"
     assert integrity["timestamp"]
 
 
 def test_seal_missing_report_exit_2(runs_root: Path):
-    run_dir = _js_style_run(runs_root, report=None)
+    run_dir = _kernel_seal_run(runs_root, report=None)
     proc = _seal(run_dir)
     assert proc.returncode == 2
     assert "report" in proc.stderr
 
 
 def test_seal_corrupted_plan_exit_3(runs_root: Path):
-    run_dir = _js_style_run(runs_root)
+    run_dir = _kernel_seal_run(runs_root)
     (run_dir / "plan.json").write_text("garbage not json", encoding="utf-8")
     proc = _seal(run_dir)
     assert proc.returncode == 3
@@ -782,7 +753,7 @@ def test_seal_missing_sources_exit_2(runs_root: Path):
 def test_seal_idempotent_reseal_same_hash(runs_root: Path):
     """D7: re-seal re-roda gates e re-emite manifest idempotente (mesmo hash,
     revision incrementada)."""
-    run_dir = _js_style_run(runs_root)
+    run_dir = _kernel_seal_run(runs_root)
     first = _seal(run_dir)
     assert first.returncode == 0, first.stdout + first.stderr
     second = _seal(run_dir)
@@ -798,14 +769,15 @@ def test_seal_reseal_after_edit_new_hash(runs_root: Path):
     """D7 revision-safe: edição no report + re-seal => novo hash consistente."""
     from kdrx.state import hash_file
 
-    run_dir = _js_style_run(runs_root)
+    run_dir = _kernel_seal_run(runs_root)
     first = _seal(run_dir)
     assert first.returncode == 0, first.stdout + first.stderr
     old_hash = json.loads(first.stdout)["verified_report_hash"]
 
     report_path = run_dir / "delivery" / "report.md"
     report_path.write_text(
-        SEAL_REPORT + "\nAdditional context note.\n", encoding="utf-8"
+        report_path.read_text(encoding="utf-8") + "\nAdditional context note.\n",
+        encoding="utf-8",
     )
     second = _seal(run_dir)
     assert second.returncode == 0, second.stdout + second.stderr

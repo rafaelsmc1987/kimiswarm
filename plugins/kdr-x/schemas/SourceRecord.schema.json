@@ -69,6 +69,12 @@
   "additionalProperties": false,
   "description": "Canonical, normalized representation of one document (plan \u00a719).\n\nA ``SourceRecord`` is the identity anchor of the corpus layer. Every piece of\nevidence ultimately points back to one of these. Fields follow the JSON in\n\u00a719 verbatim so the schema, prompts and gate code agree.",
   "properties": {
+    "schema_version": {
+      "const": "0.3",
+      "default": "0.3",
+      "title": "Schema Version",
+      "type": "string"
+    },
     "source_id": {
       "title": "Source Id",
       "type": "string"

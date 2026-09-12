@@ -43,6 +43,17 @@ def test_unsupported_sentence_flags_number_without_backing():
     assert len(flagged) == 1
 
 
+def test_reference_coordinates_are_not_assertions_but_trailing_claims_are():
+    text = "1. [Study](file:///tmp/run-123/study.txt) Revenue is 50 million.\n"
+    assert unsupported_sentence_detector(text, set()) == ["Revenue is 50 million."]
+    assert (
+        unsupported_sentence_detector(
+            "[cite:SRC-a123]\n1. [Study](file:///tmp/run-123/study.txt)", set()
+        )
+        == []
+    )
+
+
 def test_citation_integrity_gate_passes_backed_report():
     s1 = SourceRecord(
         source_id="S1",
@@ -161,11 +172,15 @@ def test_calculation_reproducible():
         return "sum=" + str(sum(int(v) for v in inputs.values()))
 
     calc = Calculation(
-        calc_id="c1", inputs={"a": "1", "b": "2"}, output_hash=hash_artifact("sum=3")
+        calc_id="c1",
+        inputs={"a": hash_artifact("1"), "b": hash_artifact("2")},
+        output_hash=hash_artifact("sum=3"),
     )
-    assert calc.reproducible_from(runner)
+    blobs = {hash_artifact("1"): b"1", hash_artifact("2"): b"2"}
+    assert not calc.reproducible_from(runner)  # hashes are never passed as input values
+    assert calc.reproducible_from(runner, blobs.__getitem__)
     calc.output_hash = hash_artifact("sum=999")
-    assert not calc.reproducible_from(runner)
+    assert not calc.reproducible_from(runner, blobs.__getitem__)
 
 
 def test_calculation_ledger_verify_all():

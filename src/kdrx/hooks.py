@@ -70,7 +70,14 @@ def hook_task_created(task: TaskSpec) -> GateDecision:
         _check(
             "BUDGET",
             "task budget is non-negative",
-            task.budget.tokens >= 0 and task.budget.queries >= 0,
+            all(
+                v is None or v >= 0
+                for v in (
+                    task.budget.tokens,
+                    task.budget.queries,
+                    task.budget.wall_seconds,
+                )
+            ),
         ),
     ]
     return GateDecision.compose(

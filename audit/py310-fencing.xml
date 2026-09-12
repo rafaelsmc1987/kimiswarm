@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="0.168" timestamp="2026-09-11T12:27:12.151257-03:00" hostname="DESKTOP-AA6P1ID"><testcase classname="tests.test_runtime_store" name="test_expired_worker_cannot_publish" time="0.047" /></testsuite></testsuites>

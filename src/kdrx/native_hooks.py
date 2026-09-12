@@ -112,6 +112,7 @@ class SessionRegistry:
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
         self._sessions: dict[str, SessionEntry] = {}
+        self.degraded = False
         self.load()
 
     @classmethod
@@ -125,10 +126,15 @@ class SessionRegistry:
         return cls(Path(runs_root).parent / "session-registry.json")
 
     def load(self) -> None:
+        self.degraded = False
+        if not self.path.exists():
+            self._sessions = {}
+            return
         try:
             raw = json.loads(self.path.read_text(encoding="utf-8"))
             if not isinstance(raw, dict) or not isinstance(raw.get("sessions"), dict):
                 self._sessions = {}
+                self.degraded = True
                 return
             self._sessions = {
                 sid: SessionEntry.model_validate(entry)
@@ -136,6 +142,52 @@ class SessionRegistry:
             }
         except (OSError, ValueError):
             self._sessions = {}
+            self.degraded = True
+
+    def _mutate_session(self, session_id: str, change) -> SessionEntry | None:
+        from kdrx.runtime.store import SQLiteStore
+        import uuid
+
+        if self.degraded:
+            raise ValueError(
+                "session registry corrupt; repair before privileged actions"
+            )
+        store = SQLiteStore(self.path.with_suffix(".sqlite3"))
+        with store.transaction() as db:
+            for sid, entry in self._sessions.items():
+                db.execute(
+                    "INSERT OR IGNORE INTO sessions VALUES(?,?)",
+                    (sid, entry.model_dump_json()),
+                )
+            row = db.execute(
+                "SELECT payload FROM sessions WHERE session_id=?", (session_id,)
+            ).fetchone()
+            entry = SessionEntry.model_validate_json(row[0]) if row else None
+            entry = change(entry)
+            if entry is not None:
+                db.execute(
+                    "INSERT INTO sessions VALUES(?,?) ON CONFLICT(session_id) DO UPDATE SET payload=excluded.payload",
+                    (session_id, entry.model_dump_json()),
+                )
+            rows = db.execute(
+                "SELECT session_id,payload FROM sessions ORDER BY session_id"
+            ).fetchall()
+            self._sessions = {
+                row[0]: SessionEntry.model_validate_json(row[1]) for row in rows
+            }
+            payload = {
+                "version": self.VERSION,
+                "sessions": {
+                    sid: e.model_dump(mode="json") for sid, e in self._sessions.items()
+                },
+            }
+            temp = self.path.with_name(".registry-" + uuid.uuid4().hex)
+            try:
+                temp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+                os.replace(temp, self.path)
+            finally:
+                temp.unlink(missing_ok=True)
+            return entry
 
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -162,25 +214,25 @@ class SessionRegistry:
         self, session_id: str, *, run_id: str, run_dir: str, binding: str
     ) -> SessionEntry:
         """Upsert do binding, preservando os mapas tasks/agents já gravados."""
-        entry = self._sessions.get(session_id)
-        if entry is None:
-            entry = SessionEntry(run_id=run_id, run_dir=run_dir, binding=binding)
-            self._sessions[session_id] = entry
-        else:
-            entry.run_id = run_id
-            entry.run_dir = run_dir
+
+        def change(entry):
+            if entry is None or entry.run_id != run_id or entry.run_dir != run_dir:
+                entry = SessionEntry(run_id=run_id, run_dir=run_dir, binding=binding)
             entry.binding = binding
-        entry.bound_at = int(time.time())
-        self.save()
-        return entry
+            entry.bound_at = int(time.time())
+            return entry
+
+        return self._mutate_session(session_id, change)
 
     def map_task(self, session_id: str, native_task_id: str, kdr_task_id: str) -> None:
         """Grava o mapeamento lazy native task_id -> kdr task_id (D2)."""
-        entry = self._sessions.get(session_id)
-        if entry is None:
-            return
-        entry.tasks[native_task_id] = kdr_task_id
-        self.save()
+
+        def change(entry):
+            if entry is not None:
+                entry.tasks[native_task_id] = kdr_task_id
+            return entry
+
+        self._mutate_session(session_id, change)
 
 
 def _active_runs(runs_root: str | Path) -> list[tuple[str, Path]]:
@@ -528,29 +580,16 @@ def _load_gate_passed(path: Path) -> bool:
     return data.get("verdict") == "pass"
 
 
-def _unresolved_critical(run_dir: Path) -> list[str]:
-    """claim_ids com ``importance == CRITICAL`` e ``standing == UNRESOLVED``."""
-    path = run_dir / "claims" / "claims.jsonl"
-    if not path.is_file():
-        return []
-    out: list[str] = []
-    try:
-        lines = path.read_text(encoding="utf-8").splitlines()
-    except OSError:
-        return []
-    for line in lines:
-        if not line.strip():
-            continue
-        try:
-            claim = Claim.model_validate_json(line)
-        except ValueError:
-            continue
-        if (
-            claim.importance == ClaimImportance.CRITICAL
-            and claim.standing == Standing.UNRESOLVED
-        ):
-            out.append(claim.claim_id)
-    return out
+def _unresolved_critical(run_dir: str | Path) -> list[str]:
+    from kdrx.application.artifacts import load_jsonl
+
+    claims = load_jsonl(Path(run_dir) / "claims/claims.jsonl", Claim)
+    return [
+        c.claim_id
+        for c in claims
+        if c.importance == ClaimImportance.CRITICAL
+        and c.standing == Standing.UNRESOLVED
+    ]
 
 
 def native_stop(data: dict[str, Any]) -> GateDecision:
@@ -648,13 +687,23 @@ def native_stop(data: dict[str, Any]) -> GateDecision:
         except OSError:
             verified_hash_ok = False
 
+    from kdrx.application.delivery import verify_snapshot
+
+    try:
+        canonical = verify_snapshot(state)
+        integrity_ok = integrity_ok and canonical.deliverable
+        unresolved = list(canonical.unresolved_critical)
+    except (OSError, ValueError):
+        integrity_ok = False
+        unresolved = ["corrupt-or-missing-evidence"]
+
     decision = hook_stop(
         dag=dag,
         delivery=delivery,
         integrity_pass=integrity_ok,
         secret_scan_clean=security_ok,
         artifact_open_test=open_ok,
-        unresolved_critical=_unresolved_critical(run_dir),
+        unresolved_critical=unresolved,
         verified_report_hash_match=verified_hash_ok,
     )
     decision.run_id = entry.run_id
@@ -692,4 +741,13 @@ def dispatch(hook_name: str, data: dict[str, Any]) -> GateDecision:
     key = _ALIASES.get(_normalize_name(name))
     if key is None:
         raise ValueError(f"unknown native hook {hook_name}")
+    registry = SessionRegistry.for_cwd(data.get("cwd") or os.getcwd())
+    if registry.degraded:
+        return _degraded(
+            "hook:registry:corrupt",
+            GateKind.SECURITY,
+            "REGISTRY_CORRUPT",
+            "session registry corrupt; privileged actions blocked",
+            passed=False,
+        )
     return _ADAPTERS[key](data)

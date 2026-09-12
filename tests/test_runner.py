@@ -56,14 +56,14 @@ def test_run_file_research_end_to_end(tmp_path):
     assert "standing" in standings
 
 
-def test_run_file_research_blocks_on_bad_plan(tmp_path):
-    # A corpus with no text still yields a valid plan gate; the pipeline must
-    # complete without failing even with zero documents.
+def test_run_file_research_blocks_delivery_without_source_text(tmp_path):
     corpus = tmp_path / "corpus"
     corpus.mkdir()
     (corpus / "empty.txt").write_text("")
     summary = run_file_research(corpus, "anything", tmp_path / "runs")
-    assert summary["exit_code"] == 0
+    assert summary["exit_code"] == 1
+    assert summary["deliverable"] is False
+    assert summary["blocking_reasons"]
     assert summary["documents"] == 1
 
 
@@ -90,7 +90,10 @@ def test_run_dir_persists_real_outputs_per_task(tmp_path):
     for rel in declared:
         path = run_dir / rel
         assert path.is_file(), f"output declarado ausente no disco: {rel}"
-        assert path.stat().st_size > 0, f"output declarado vazio: {rel}"
+        # An observed empty counterevidence collection is a valid JSONL output.
+        assert path.stat().st_size > 0 or rel == "claims/counterevidence.jsonl", (
+            f"output declarado vazio: {rel}"
+        )
 
     # claims persistidas DEPOIS do standing final (bug corrigido na PR-01)
     claims = [
@@ -245,7 +248,8 @@ def test_unresolved_critical_claims_filters_critical_unresolved(tmp_path):
         "\n".join(c.model_dump_json() for c in claims) + "\n", encoding="utf-8"
     )
     assert unresolved_critical_claims(run_dir) == ["C-crit-unresolved"]
-    assert unresolved_critical_claims(tmp_path / "runs" / "no-such-run") == []
+    with pytest.raises(FileNotFoundError):
+        unresolved_critical_claims(tmp_path / "runs" / "no-such-run")
 
 
 def test_seal_delivery_persists_produced_by_and_gate_timestamps(tmp_path):

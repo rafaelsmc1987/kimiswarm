@@ -1,0 +1,1671 @@
+{
+  "inventory": {
+    "commit": "2e2851d820cbed7060064a6584e7eb7f26b25885",
+    "files": [
+      {
+        "path": ".claude/agents/kdr-coder.md",
+        "size": 569,
+        "sha256": "1dee42f3f4c233bbf6e34a763538a614ca199765b5e2ada4c07cfb0a563082e6",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": ".claude/agents/kdr-plan-guard.md",
+        "size": 550,
+        "sha256": "af85f66af399ae0a3b6e55a4a36b7d8e524b5d92b59d8789e4bbe593ea2e8bd7",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": ".claude/commands/kdr/doctor.md",
+        "size": 577,
+        "sha256": "845edb289d2354d32be101d7f2f3f1e0003062ad75758ab4a2778c5acc546999",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": ".claude/commands/kdr/eval.md",
+        "size": 798,
+        "sha256": "5f2396b4fdd4e407cbee0a3799170592349565872cf33e467ba1295bb17b4d42",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": ".claude/commands/kdr/monitor.md",
+        "size": 870,
+        "sha256": "434c69c87dd06c706337c44c0c2233d1b0e15d0eb70a6b0599ede827d6a79c15",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": ".claude/commands/kdr/plan.md",
+        "size": 1628,
+        "sha256": "d35c59075307717e21d47f77b8cbe3f406feeb4ac1c3f7c17a09ff14a3eb5cb3",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": ".claude/commands/kdr/report.md",
+        "size": 923,
+        "sha256": "a81c13f4f4849cd5bac16ac06508d4a981d447eff98393b0c69dfdce4121a2dc",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": ".claude/commands/kdr/resume.md",
+        "size": 763,
+        "sha256": "e6d2fa30e29826093b00695228d083b26c8c291729b023d9da68e69adf66c6eb",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": ".claude/commands/kdr/run.md",
+        "size": 1187,
+        "sha256": "cfaebe047bd8949cf5911822b0be60995fbbe1aae0608f459c372c5a493c892a",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": ".claude/commands/kdr/status.md",
+        "size": 572,
+        "sha256": "75e3e0ab0da2bfac462bc54ff8e65e49bea4359208d913833f60ef5a9f53cbb0",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": ".claude/commands/kdr/verify.md",
+        "size": 852,
+        "sha256": "55d13b7d8382f7627ff03584967575cce919386e165e1c434bc49770d4e3b54b",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": ".claude/settings.json",
+        "size": 666,
+        "sha256": "6c8c5408be3e1c95cff58096e378b78283e70d10376bf60fc0699a6947a8266e",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": ".gitattributes",
+        "size": 66,
+        "sha256": "1a1dbe176bc233b499d35a57db7513f2941c99ab9759f177830c9149be99005b",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": ".github/governance-policy.json",
+        "size": 439,
+        "sha256": "85ceb73888d14d8e19f9aaec131165644ac16fe3be0d50922a6a41f2de3e97e7",
+        "classification": "operations",
+        "manual_review_required": false
+      },
+      {
+        "path": ".github/workflows/ci.yml",
+        "size": 2588,
+        "sha256": "a11ffe7af60c76bd2146c96b7ddd11a35ba1760ad72df776f4bd702da2a88629",
+        "classification": "operations",
+        "manual_review_required": false
+      },
+      {
+        "path": ".github/workflows/governance-verification.yml",
+        "size": 7685,
+        "sha256": "da31a3c28f39b916743770e64c8f1bd0cea3d23f7fa8d846116a777db6ec1c3f",
+        "classification": "operations",
+        "manual_review_required": false
+      },
+      {
+        "path": ".github/workflows/security.yml",
+        "size": 1502,
+        "sha256": "e95654fd6ed3c5c09dc5a97a873dcf41327a7764f1fd78e465f59607bf818c7b",
+        "classification": "operations",
+        "manual_review_required": false
+      },
+      {
+        "path": ".gitignore",
+        "size": 1112,
+        "sha256": "e010cdebc59e56844588b3f392b896690bf99c815948998ec2e45006b6a80c44",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": ".gitleaks.toml",
+        "size": 439,
+        "sha256": "e76acec3e97be2581ecfe2690ebb5be658cb6c8e3ad820a074a9f29839fd7b7e",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": ".secrets.baseline",
+        "size": 3542,
+        "sha256": "a0c8b1afd7e978f390dbfdfc0f63cc63c2dd27f62ab072f37eb1bfee21d7dc43",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "LICENSE",
+        "size": 1599,
+        "sha256": "80ef7e5ae9b88719f522f5f2cd9c640cd0a86aebca94d9c033b1d72c0b544bb3",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "README.md",
+        "size": 5750,
+        "sha256": "c969c055c20dac95df2708eedfe906135ebb053903fdec931821f5715a25e818",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "SECURITY.md",
+        "size": 1259,
+        "sha256": "a4ea9bb0645043b493b627dd80ac12d1cc31b91c7b6080c67c75269d78ef910f",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "auditoria/AUDITORIA_KIMISWARM_E_PLANO_DE_CORRECAO.md",
+        "size": 22975,
+        "sha256": "a8fd7b3294ea003ea55610e8bea6c134bf61f60474a77f49a8f8afda9be8f943",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "auditoria/BLOCKERS_IMEDIATOS.md",
+        "size": 2184,
+        "sha256": "177401593efd1c1ac98c66c36754154b2741d5c462e4e459bb6808588dec8116",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "auditoria/DOD_VERIFICATION.md",
+        "size": 5863,
+        "sha256": "5c060c642767889e3dbca9e53da86080d3888a237306b4568c41c982f5556fd3",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "auditoria/GAP_MATRIX.json",
+        "size": 9326,
+        "sha256": "a9a277f3287a5fd0087d6c726b1b2aa3ce755a2e6a9e1934ad17c0c3e202735b",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "auditoria/QA_REPORT.json",
+        "size": 514,
+        "sha256": "a35c717155464c2faa3d3531ea3e7e52df6d097800e5905d7eeaa68adfaf818d",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "auditoria/REAUDITORIA_2026-08-19.md",
+        "size": 7527,
+        "sha256": "2ab35904e3e0f77acfd3f72203ee8dde88d8b3e057129680a9c27cd5277757e2",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "auditoria/ROADMAP_CORRECAO.json",
+        "size": 8847,
+        "sha256": "524baadc3b1ac18fda64c1a58e997ba94fe4757321f25ee3ce9b46edf7f2d50b",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "auditoria/sota-2026-08-19/ACCEPTANCE_TEST_MATRIX.json",
+        "size": 7639,
+        "sha256": "9be433fe2c6b09d0f710fc375afa87168c5cde1b595a794c0b0c61166f8052b8",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "auditoria/sota-2026-08-19/AUDITORIA_SOTA_SWARM.md",
+        "size": 32766,
+        "sha256": "2cff62f84ac7671ae87dcb568d4729d3ea5aea16219bb67468174f24603c84c0",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "auditoria/sota-2026-08-19/BLOCKERS_CRITICOS.md",
+        "size": 4189,
+        "sha256": "46a1ddaab13837352ce034431233fc11208e5797fa43e0522cad3c97d26e8f08",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "auditoria/sota-2026-08-19/ROADMAP_SOTA_SWARM.json",
+        "size": 14865,
+        "sha256": "f6ae941fce0f2f52dadfcba58d67a66b0f49bf868f9379585db0cdd1ab4caaec",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "auditoria/sota-2026-08-19/SOTA_SWARM_SCORECARD.json",
+        "size": 15658,
+        "sha256": "707103ff954059f535bac1e096711a2de2012546a3472cb8b1e4fd91782c2fde",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "auditoria/sota-2026-08-19/STATUS.md",
+        "size": 1059,
+        "sha256": "6d949ad34b50b1827f444583099c2497cab0cae2de58a16d28f32f4302b506cc",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "auditoria/sota-2026-08-19/TARGET_ARCHITECTURE.mmd",
+        "size": 856,
+        "sha256": "304f4e48331a3791511f94dc021c9109b9ac7577b3a8598b008203dfc036cc80",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "docs/CLEAN_ROOM_RECORD.md",
+        "size": 1525,
+        "sha256": "e78e0662f4443bde282dad937dab6ebeb14ecd10bc06d813f6ef105101a1f903",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "docs/KDRX_README.md",
+        "size": 4292,
+        "sha256": "c558a8f50b06a36a0696383585cab1fc9d226764726090be942ccdbb5e092d48",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "docs/LICENSE_MATRIX.md",
+        "size": 1627,
+        "sha256": "19ea2c4f3a4e2a3b540151eeb0b23bbe52d72656d63a40f0e7682e7a12d235ec",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "docs/THIRD_PARTY_NOTICES.md",
+        "size": 469,
+        "sha256": "1b38a5d63bc33ea9994a375a30de0f7a0cf57cd7ef4912fdf94e60da093b0a03",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "evidence-manifest/README.md",
+        "size": 1652,
+        "sha256": "67c39ead6fb1a0e2fdb586b840696851abb3d5e97440f2c9e4d12365e0dbd327",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "evidence-manifest/manifest.jsonl",
+        "size": 700047,
+        "sha256": "1899167d68002915d023b9565ddc442d217b9f996fa8275b1aa37be442faf1ed",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "evidence-manifest/summary.json",
+        "size": 662,
+        "sha256": "301778d18930d15a47fc3d50036135759ceb1567ee980fb6274054c9a82859c0",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/audio_generation/README.md",
+        "size": 1786,
+        "sha256": "6f182323e565fe4f0bab0eec70b03b5273b6206b88998b8a714b9b1a39ce2952",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/audio_generation/bundle.zip",
+        "size": 8365,
+        "sha256": "ee43771e7ce769f02684fb21a6ef70468157c0e1fbc89bce548054af26bc078b",
+        "classification": "binary",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/audio_generation/kimi.plugin.json",
+        "size": 1922,
+        "sha256": "02bcadee1ba2e39c6c014a18a37a6c83913ffd6b31e3a75b07a50b49c7e6f6e4",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/audio_generation/scripts/audio_generation_tool.py",
+        "size": 10969,
+        "sha256": "8d3edba07cb4266ce3c80a97bdde15d321c8919f1190272e08ebe1475158e23a",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/audio_generation/skills/audio_generation/SKILL.md",
+        "size": 5319,
+        "sha256": "e75a968fdb6e4cf0f6fdf5d605f083d03f047feb65a4a70f663ac572b954bb64",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/github/README.md",
+        "size": 1261,
+        "sha256": "5b3af3501faf998aa604672a6d24137e2599aa2f5cb94c9151f453b8fa3ca7cd",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/github/kimi.plugin.json",
+        "size": 3840,
+        "sha256": "88cc60d88e672eae21d2b70f94b9e149aa262d6bf6160386439ee86de0b78759",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/image_generation/README.md",
+        "size": 1794,
+        "sha256": "632ea5470dc6f19488d7252f254146d5954abca95eb805c818543b94f7ca3601",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/image_generation/bundle.zip",
+        "size": 9746,
+        "sha256": "812ca46502ae5ef5ad9f03f7c60c531ea50fc2f140e919087403e513395c8c1e",
+        "classification": "binary",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/image_generation/kimi.plugin.json",
+        "size": 2286,
+        "sha256": "d4d305eb7fa697e70c422223fc54dcc43f2e30a2f559c068bcb4db0230b6842e",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/image_generation/scripts/image_generation_tool.py",
+        "size": 13744,
+        "sha256": "b1c3fcf21d77366a28c925d5ab21cdacfa916ec5acce3d155609a88a552cd111",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/image_generation/skills/image_generation/SKILL.md",
+        "size": 7176,
+        "sha256": "4acb2778cd50145b6f29d97cad221f176b176a1e77a7c9b45df40a38799ad510",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/imf/README.md",
+        "size": 1195,
+        "sha256": "0b73ce92e8dd3a6419ac28e51ea2e9ce5326a499e213f7e4270a632ef9e95c75",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/imf/bundle.zip",
+        "size": 5509,
+        "sha256": "15326b616727d33ceacb708752f5f6c64e557f7322c8d2b1c1e248ef4a93a0ac",
+        "classification": "binary",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/imf/kimi.plugin.json",
+        "size": 2443,
+        "sha256": "e28dc4018914bb35f45265895c079fa5fc4012fd8ebb25904e7cdda1f0956fa5",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/imf/scripts/imf_tool.py",
+        "size": 4613,
+        "sha256": "c26be42da27e9f7ed16275dc917f61784ed3c0c8b2caf7ac05aa98f245381a0e",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/imf/skills/imf/SKILL.md",
+        "size": 3622,
+        "sha256": "ee2c0b3d564ccf54f8e139ef3fd1a00eff993a2fe684dd99993fa187c0deb1c8",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/kdr-x/.claude-plugin/plugin.json",
+        "size": 1482,
+        "sha256": "6a04a44edaa8280cd297bb1354e4287a3d4f2f04ad785228fd6db23da0de84a5",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/CHANGELOG.md",
+        "size": 1782,
+        "sha256": "831d993abbffd6736007e567370b032facb29ba082d59260397ea788821b234d",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/claim-decomposer.md",
+        "size": 1057,
+        "sha256": "4da58706d899904294ebb2c84c5970e39f185fc21053b78e5dd954ed4f5fd05b",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/claims.md",
+        "size": 826,
+        "sha256": "a57ef89ed0a84915ae77ebcc69e22990e056f2da3dd5984db58b2ffe7ae7da95",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/coder.md",
+        "size": 727,
+        "sha256": "33b5c241f1f30b20d54605a6b86b5641e49278258b19f120b4bbfdaddab3589d",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/counterevidence-researcher.md",
+        "size": 898,
+        "sha256": "410de639d238b109ff04bd62b69e1533c8f3f4a47e509275d4560ee4d19f5222",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/devils-advocate.md",
+        "size": 944,
+        "sha256": "f8151697f94131bc414c5389a859fae9b6fd3034f022d18d26aa2ab1a258be77",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/evidence.md",
+        "size": 781,
+        "sha256": "40cb9a4edfa88cfb96579e6759deb7e021175e1212a09e3c23b2e620e6d12b54",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/explore.md",
+        "size": 603,
+        "sha256": "9aa8501ff9dd40729cc8b542f84fed863e2384f1d11040d87384f0ae377d5270",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/final-integrity-auditor.md",
+        "size": 911,
+        "sha256": "582ecac3d79b0cf501c9c90092ed0e5fa3f391cbe9f9d929c6c455b3d39bff21",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/general.md",
+        "size": 844,
+        "sha256": "b560521826ce0b8cba5b3960bc77e1e189f525c0aeda0051cc2b7c38b9161d94",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/plan.md",
+        "size": 735,
+        "sha256": "018c231b0edbe3e50c65615ea599e3902208014ef88b5584e154bf86e4066df1",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/planner-council.md",
+        "size": 1604,
+        "sha256": "bd9067ea4da35b21710ac799fe92442aedcb4102e47e66edb2e5492f752e7062",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/reviewer.md",
+        "size": 686,
+        "sha256": "061774aadd9a3c1e555948f485a18e2be80e25c456e0bc67fa76ce46b6b20e0f",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/role-resolution.json",
+        "size": 2308,
+        "sha256": "7f47d4ff0942f1713761816c7251736e5c786f8bdbd3f50663562300595cb93b",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/search.md",
+        "size": 842,
+        "sha256": "2fd9603f8a50a4943f2bd6e6477ff41c7d2c0cd36194a581e06d3f12c18b3979",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/source-verifier.md",
+        "size": 1104,
+        "sha256": "2c73c3b8976a2954900a1f79cabd718e7fe960048acf9177bd2ab4bafc4261d3",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/verifier.md",
+        "size": 579,
+        "sha256": "a3d36e4bfeb161a4cd66fa12da29a1f0deca2dda5d36ee277f9fab32dfbf6d6b",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/agents/writing.md",
+        "size": 767,
+        "sha256": "b3d568f763a18454fc658c586e99f85b2080637a8a9f0e00d2c6306138baadb9",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/commands/doctor.md",
+        "size": 1489,
+        "sha256": "d336eb917999593beb8e0baedd0e1b95636dcef323819126088642812d508d89",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/commands/eval.md",
+        "size": 787,
+        "sha256": "a83a3887bfa0423550f8301c6f880398a1aa65195370c0df12a15bca5061971c",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/commands/monitor.md",
+        "size": 875,
+        "sha256": "2da83100f24f8801fa01a1e496dc5a229e42ce2a1cedaf0362dfdb01c7e838b1",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/commands/plan.md",
+        "size": 1617,
+        "sha256": "8ae3771bb77c4422a18ad49ecee870b6c1a7f49bbf7c364595201bed9939dc06",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/commands/report.md",
+        "size": 1002,
+        "sha256": "a7b10d5236de962cf88e9e60beb8c81635034601cd42246ebf98964bb391ecbf",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/commands/resume.md",
+        "size": 752,
+        "sha256": "16fdf198c289fcbfdc5156f41df053838d12599a7490438600b7ce02d9c930f1",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/commands/run.md",
+        "size": 1176,
+        "sha256": "37ecd4356ba77d3bdde053c89566894cb8cc9a9329acc301be222b47e1b98371",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/commands/seal.md",
+        "size": 2734,
+        "sha256": "6ff6ef87f234fb7ca17bf57af3f8f6d981096e87bfd844e4321f55f923f9d5d0",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/commands/status.md",
+        "size": 561,
+        "sha256": "acadf397f38de6bd35287ed168398bfbf6f2cadacff7d54b52f59b78e4e5de33",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/commands/verify.md",
+        "size": 1087,
+        "sha256": "081e8025ec455481bdb74b12d2a94d7aa5ba2a0847d70ce7e030377eb7a877c8",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/hooks/hooks.json",
+        "size": 1126,
+        "sha256": "dcb800db3f18608edcf8d38191dd1e7bf816d56fd8d2787c215e20159476bfa2",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/hooks/kdr-hook",
+        "size": 1177,
+        "sha256": "ea69e3a10a8e733e56a2fee5d7262c6a224878b008a14d8342281977860fc035",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/schemas/AgentBrief.schema.json",
+        "size": 4651,
+        "sha256": "2fc91f3654f8c01388711710b5bd1c896e0451adf0ecc6a326c5d78ada4d9e7a",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/schemas/AgentResult.schema.json",
+        "size": 3751,
+        "sha256": "c9d3cd6f09316c718453ef9e9969c3de24a52423bcd29c9854cbb80030c2382d",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/schemas/ArtifactRecord.schema.json",
+        "size": 1962,
+        "sha256": "27a4df3db181a0f0e8f9f3d281552ebe45653fc163279ce9908764431e3d57cb",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/schemas/Claim.schema.json",
+        "size": 3751,
+        "sha256": "43eccef422a41a27043f8bc31ae30dd531b37ab21564d057391e968089cec755",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/schemas/ClaimEvidenceEdge.schema.json",
+        "size": 2457,
+        "sha256": "bd05bb0161e9723f9658b0fae6f0495214adfae6fea7c9555025501dccb1f15c",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/schemas/ContradictionCluster.schema.json",
+        "size": 2284,
+        "sha256": "4453c3bfcbb5536ac2c030863dc78a77ff858b0aca19e0b3f7d6c9beeee137dc",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/schemas/DeliveryManifest.schema.json",
+        "size": 4124,
+        "sha256": "d2cd065c7bcbd3c1c9b44f51c054eb688fd3149a7dd481c327825348e1faec86",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/schemas/EvidenceSpan.schema.json",
+        "size": 5685,
+        "sha256": "b75940e05e9814b2909234f4fe4feb1a6f1008eb109afcdb8b80d0929a8c2a02",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/schemas/GateDecision.schema.json",
+        "size": 2849,
+        "sha256": "2464dd1d120269fa951653f84bcf65d89707e9eeffe809b4e4028865845a49ef",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/schemas/ResearchContract.schema.json",
+        "size": 3971,
+        "sha256": "6ebabbf62130546d5f382a2b57bb9ce0901afe2c309109f189b10385ed033094",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/schemas/ResearchPlan.schema.json",
+        "size": 10025,
+        "sha256": "aa73dc454641078043cdf01252317afc1ae838078d1215a62cbf9ec80748b996",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/schemas/ResearchRequest.schema.json",
+        "size": 1939,
+        "sha256": "ec00f1c234501fd9b3dd6765ee51eea36c6c28944850d02854fbdd940c29d2ae",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/schemas/RunManifest.schema.json",
+        "size": 2294,
+        "sha256": "76412cefe74093cee7d92ddb53595eb191a0e6a26069068bfb84e049c3f6840a",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/schemas/SourceRecord.schema.json",
+        "size": 5047,
+        "sha256": "bcf8dcd7e4710e0ccd431eac459a0df5615c788ed37149a01e9fa4182c94b203",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/schemas/TaskSpec.schema.json",
+        "size": 7306,
+        "sha256": "7454349bf525fca085cc62b405589d98753533038df6f1ef83cec86581632e88",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/skills/claim-graph/SKILL.md",
+        "size": 1066,
+        "sha256": "59d01eaa6c8cd1df5a854ce44aa306da5081cac0cc6437d2c1af6ab27aaca186",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/skills/deep-research/SKILL.md",
+        "size": 1390,
+        "sha256": "1b8f51cb97f5c3b3e93a20a9c6bad721c19e7776ef7d256abd5765b44fd379a9",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/skills/source-trust/SKILL.md",
+        "size": 887,
+        "sha256": "381d7fd514077dbd6a69622a7ad4aa554c07df3fe32cd17dda2b8d0cd4057868",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/workflows/kdr-deep-research.js",
+        "size": 13815,
+        "sha256": "50194e5f964284a2c430703821d614bc154d25413bf89408d7f007eb6e6dd93d",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/workflows/kdr-plan.js",
+        "size": 22441,
+        "sha256": "63a990a66a8029903d2c9a58825090781474dbf27c7bcb2f54bb5415b8b7eedb",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/workflows/kdr-run.js",
+        "size": 6071,
+        "sha256": "7a264e3433ed3b5d82f7115afb70075eb7e83cbce18bcf4cf4c884cf453f5148",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/kdr-x/workflows/kdr-verify.js",
+        "size": 3375,
+        "sha256": "e69084dfe662be9cd2d618bce5e7ca15b3c3bb5255217cd7347ae252e621ae21",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "plugins/scholar/README.md",
+        "size": 1229,
+        "sha256": "d98987bbe4b62df4f388133b22cddf18cab18d7febcd1ffbea6595e9c525e4f3",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/scholar/bundle.zip",
+        "size": 5502,
+        "sha256": "bedf970056282e98db58edcdb9f1486347d4a5378c5685b079c8567694a5de4b",
+        "classification": "binary",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/scholar/kimi.plugin.json",
+        "size": 3155,
+        "sha256": "28cf0466969a44aa16e98621bb8a48b1f266002be56ce53103f4c85e2c81f369",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/scholar/scripts/scholar_tool.py",
+        "size": 4642,
+        "sha256": "ab866eb1688435ffd0025d262c81d0869a3ab52bfd636deba9aebcb754e84646",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/scholar/skills/scholar/SKILL.md",
+        "size": 3586,
+        "sha256": "98bf29cab5e7f1eb70daa35325ec15fedd4391c27d2bb600e944e939c0bb41a3",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/sec_edgar/README.md",
+        "size": 1227,
+        "sha256": "53c8662dbee556cd030e3f2f1c65899e15e02039da3fbc39218b0b07f7f72597",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/sec_edgar/bundle.zip",
+        "size": 5138,
+        "sha256": "815d26617b3f69b0ef00c7278491296970270572707c912d20e4473ce7d594ed",
+        "classification": "binary",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/sec_edgar/kimi.plugin.json",
+        "size": 2209,
+        "sha256": "7dfef61eafa8f6c9f55a9471cbb98bf0f570822ad71bab5b4333166e0af8f532",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/sec_edgar/scripts/sec_edgar_tool.py",
+        "size": 4650,
+        "sha256": "63f41c21ea529baeb793e3395ffe66006671862bf402ad94098724264c09c75f",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/sec_edgar/skills/sec_edgar/SKILL.md",
+        "size": 3183,
+        "sha256": "fd4cf8fbe9df652088518f65338f245ca894a7d90c91b97bf34bbe2ff57ec016",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/world_bank_open_data/README.md",
+        "size": 1306,
+        "sha256": "e34e832158f67c9e7ed60dd1fbbd9f77a83fce05760e6622bd05447545f67269",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/world_bank_open_data/bundle.zip",
+        "size": 5446,
+        "sha256": "debad0b5f470855fa757de5f873bd0740cba5017573f643d6a8dc831be0aef8b",
+        "classification": "binary",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/world_bank_open_data/kimi.plugin.json",
+        "size": 2214,
+        "sha256": "6e15edfa0bc3b0b501f5102e50a8659f80e3d3abf312d05b1a1c457961d3502a",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/world_bank_open_data/scripts/world_bank_open_data_tool.py",
+        "size": 4694,
+        "sha256": "3397e2725fc27a6bbfec88f64020e9167ba5dffb4ff89cc36fd56a98fe0352c5",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/world_bank_open_data/skills/world_bank_open_data/SKILL.md",
+        "size": 3729,
+        "sha256": "ccb0c43b560cdff4495e1f5740a6012a99fd13f6329e199393ea4e578467301f",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/yahoo_finance/README.md",
+        "size": 1255,
+        "sha256": "282864cb53c5bedbb2cbaf77e0414d972704be84907c45bcedb32f9d926858a0",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/yahoo_finance/bundle.zip",
+        "size": 5249,
+        "sha256": "c39f453ae9b47bfd84df86b9243378f9987abec2ad86d0accd307b1cc79658a1",
+        "classification": "binary",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/yahoo_finance/kimi.plugin.json",
+        "size": 2177,
+        "sha256": "7a05510cbce98baf352af64fa499bcc57e6eb41c7c63fa686497f9f1c93c5b8a",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/yahoo_finance/scripts/yahoo_finance_tool.py",
+        "size": 4666,
+        "sha256": "59ccde0b0dc0e4c7f751c9d0a12b368b23db08d46eaac15b775566e3c2bdec8a",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "plugins/yahoo_finance/skills/yahoo_finance/SKILL.md",
+        "size": 3437,
+        "sha256": "1cc230e5f00f6ecf8863305cef388af348525a1b136020e98731ba8fa72a0a89",
+        "classification": "third-party",
+        "manual_review_required": true
+      },
+      {
+        "path": "pyproject.toml",
+        "size": 797,
+        "sha256": "9a2d9319c235c0fe496c2949cbc1bc6e77da299734f439cbe4226870a303e67a",
+        "classification": "documentation",
+        "manual_review_required": false
+      },
+      {
+        "path": "scripts/build_plugin_package.py",
+        "size": 5166,
+        "sha256": "530a6c29b1921d2bbccb5e400905643896c2364d98b509c8f5a31defb797bcfd",
+        "classification": "operations",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/__init__.py",
+        "size": 1407,
+        "sha256": "09f6f009f60d7bd2cc3367c307dd767dc9319f46ac94879b0352aa69bd6ed40e",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/adapters.py",
+        "size": 11847,
+        "sha256": "7e86b05512a77766c7058a56126903ac0f3afcd9677cd0c9b350e24f52a91a70",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/analysis.py",
+        "size": 3299,
+        "sha256": "47901dfd6a3e778938c995d917daa48178b5a8333b9baacaa00907436333354e",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/artifact.py",
+        "size": 5559,
+        "sha256": "dcfa9751d77bac554286cbda401d5e5cdfd80c6291404a3ab52a79dd4b15901e",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/claims.py",
+        "size": 23714,
+        "sha256": "d99d7c7c63f90563ec4322198fd2529854637ff336bcc0dc260325df3aa56a2c",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/cli.py",
+        "size": 45989,
+        "sha256": "66da8a43c46c5fbc0fb95c87361e35aeb8fea64ffda47d0be418a7f929f540c1",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/corpus.py",
+        "size": 7225,
+        "sha256": "dee8a82f02e994a3a3a0b4e0b37c59e3f96361d61ed2f0e6017fe2de9567b29d",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/dag.py",
+        "size": 9036,
+        "sha256": "bcb658da84e0ba0f1d4d649ce51d5ccd648a55ba961a956108a6782b26da3590",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/evals.py",
+        "size": 31805,
+        "sha256": "ecab9440e559d8ddf654b49026ef1179114fd641fcbc31790468a43c84970136",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/extractors.py",
+        "size": 6456,
+        "sha256": "4f03fbdecb19e8d2e3924197a8648557df81f4dc234f009c3326e74c27862ba5",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/hook_dispatch.py",
+        "size": 7131,
+        "sha256": "bf366d358ceaadb6de6efa639c8fb78576305ca914d365c691e6c2e694f63173",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/hooks.py",
+        "size": 10020,
+        "sha256": "1b3724f16a114a70ea5bf88202512f9d76257ecf472a7a41404eb63d70a90bd8",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/native_hooks.py",
+        "size": 25661,
+        "sha256": "f5b7ae4bda28e284934bfd7ef9bee362134e897c26a5bc543f50e0ab0ea375f0",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/planner.py",
+        "size": 2747,
+        "sha256": "962100db615be00862de99973865454b212758b07a7d98847510810198f7943e",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/reporting.py",
+        "size": 31187,
+        "sha256": "7e47e6778be3dc9cee05b42a9bdbab7f0594b57e95ae911a88314e975a11fd3a",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/retrieval.py",
+        "size": 22805,
+        "sha256": "0ce314204dd3212acc2d2f28844fa495e5d981af0ad1def42f9cf387d4ed0f4b",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/runner.py",
+        "size": 43357,
+        "sha256": "7126c5d79b081287e2daeee7c984083b1b3d6b471863da173a2d24aa377dde20",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/scheduler.py",
+        "size": 8942,
+        "sha256": "e95e60b0218d4fd118d39ee3a1fc5bbc0a70f2f9d1d23b364fc3ca17b3cd262e",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/schemas/__init__.py",
+        "size": 2430,
+        "sha256": "15dbf4c9544e5803de81b7c58d0b6fe9032926db8a3a85de50ab424f669c03af",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/schemas/artifact.py",
+        "size": 1790,
+        "sha256": "2205c4dd15ac5b630401d7525160aa9ab74a4d694dfe605e8681746699400d42",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/schemas/claims.py",
+        "size": 3262,
+        "sha256": "60f24c56cb70c931fa9d1ed9f422fe4660754f2e19d364d37ea0f938b17b7b8e",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/schemas/corpus.py",
+        "size": 3370,
+        "sha256": "e3ff85ac1072dd97674828fb33bc109a6b26c8473d055bd4669ea30295c20a33",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/schemas/enums.py",
+        "size": 9238,
+        "sha256": "453449f3d463ce42d7ff118effdb200bded9df39e42065613add1769ee6b7562",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/schemas/gate.py",
+        "size": 2897,
+        "sha256": "8991f155c7a5ad16f22abf80db009f6e189b18037b06e62099cf199d9e61d242",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/schemas/plan.py",
+        "size": 6075,
+        "sha256": "9d6e0365c2d9b8ab9d6c849b7061fc609a0ed8f458b9ac0167f77072ed46c650",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/schemas/request.py",
+        "size": 2143,
+        "sha256": "140293210a3e8ab786a38bb3703e0989a3495390f1335afd8778b0defcf68b1a",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/security.py",
+        "size": 7297,
+        "sha256": "6b95a03180fc9dc592005148f655e3baf999b6d15695e19a6ce753dfc26ef5b5",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/state.py",
+        "size": 8392,
+        "sha256": "8a3c718a57a2f9eeb3c481ea55ce5b9de9efce35d24425fa17fc3223f3a3485d",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "src/kdrx/verification.py",
+        "size": 34830,
+        "sha256": "8af9a70c54c095816302e6e57494d8e824964204a992ac11800c56d0fbae02bf",
+        "classification": "product",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/fixtures/native_hooks/pre_tool_use.json",
+        "size": 307,
+        "sha256": "8c80880ca5ab90e2c2738da0fd9a9f77ff21aed493929b8621ccf28cbb206cc1",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/fixtures/native_hooks/stop.json",
+        "size": 294,
+        "sha256": "58d6cc5b3edac042961b7baabe1457aad52c287efac6d9bb7550a5be3b135042",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/fixtures/native_hooks/subagent_stop.json",
+        "size": 498,
+        "sha256": "7f4f2022df5c5ef56798e67430ea784512210f10395c460e4df6a6ded948e6a2",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/fixtures/native_hooks/task_completed.json",
+        "size": 477,
+        "sha256": "0433fd3a7883ec01e49cfffb6354d0d0cd5e14f8b08e51aa6b426c86ba0c9cc2",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/fixtures/native_hooks/task_created.json",
+        "size": 475,
+        "sha256": "df03d746d18e8a328c3b9beb65badcde014adc50c10506371ea4c2096350184c",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_adapters.py",
+        "size": 5626,
+        "sha256": "f0cbef898e8e18ae2b91e827caf3736d1c2c893319fae86cf95ebd32e6393ff0",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_agents_policy.py",
+        "size": 8381,
+        "sha256": "748cc27bb77fd19b7995b177e29ed5cb29cd0417c321b9aba7c8d129655ad6b1",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_claims_verification.py",
+        "size": 4982,
+        "sha256": "f84c57167189a805107fd54cfecffc18492fe57ef35485bb4ef69fb474dcda8f",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_dag_scheduler.py",
+        "size": 8513,
+        "sha256": "cad26cfa1307d480da56e3251f7bdd697caaeb303d69fb4c5b45018f9915abd3",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_extractors.py",
+        "size": 3884,
+        "sha256": "95386bb55802dc2f1c30c55277eaf3f480a2300f08948b9d9a964505e4560549",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_native_hooks.py",
+        "size": 30934,
+        "sha256": "2802bd913138d737ce0a722c5e7041d7ed73d713af379e4300dd63bd1e2f4a01",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_phase10_monitor.py",
+        "size": 11877,
+        "sha256": "f9c2a7f98c31f2304f9cbe350e545912ab0a71418cf62eb17a7959f0fd717e74",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_phase4_resume.py",
+        "size": 10006,
+        "sha256": "0bfb4654cced18564a31fa6da94cf5348a2385a24ac753521f3eacefaea9c1b4",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_phase5_retrieval.py",
+        "size": 9275,
+        "sha256": "32aa257858137793edae31b308b046b261b25d601a78fb2fa345ba7d59d2ec98",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_phase6_sourcetrust.py",
+        "size": 12839,
+        "sha256": "20d1a63c97b581fb2fe597bd5473b9a4e202137bb6ed98bc611b355cd2e6d06a",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_phase7_claims.py",
+        "size": 11261,
+        "sha256": "870e580cb30c232a0a05c10472c337de289d0fd1da2686d5a960699bb51f1b82",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_phase8_reportswarm.py",
+        "size": 12735,
+        "sha256": "8f33120a293efa5df8f283060c966c40a0aa4d0360f942eab4e3449b6e4aebeb",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_phase9b_evals.py",
+        "size": 9534,
+        "sha256": "590730ff84c386007d86db173a649deb473be397485643dbf7a32ea3c220c675",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_plugin_cli.py",
+        "size": 29796,
+        "sha256": "1bb2472d6ea89733122123a5acb209090e25422420c8933eabf1c4f49af194f2",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_plugin_selfcontained.py",
+        "size": 8156,
+        "sha256": "e3c4e1219384536594a43b49d00bc0db79986f989b8e5ddb0cd9ec3637d6f5a7",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_repo_hygiene.py",
+        "size": 4862,
+        "sha256": "a785cea932f21dadca338499972cb59ec94230d0c0ea824f0d3d86fcdf8daf82",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_reporting_evals_analysis_artifact.py",
+        "size": 7684,
+        "sha256": "7779ad421ef34be2e461fcab389ee9159f019896cb6e2d7000b851975678c956",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_runner.py",
+        "size": 11239,
+        "sha256": "7e28b644d79236f38c5e58329a3f9912ec2766c3906a9cc2824e931a693b43ca",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_schemas.py",
+        "size": 2382,
+        "sha256": "29b8512b7c3b9fe458025887f297499ce41abc5c8123cb25c86ffe4b3cb2cca0",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_security_hooks.py",
+        "size": 3467,
+        "sha256": "214d6b3da11df551c1cea0a6aff266c6cff590d400c2465606bc01fe13f48416",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_state_corpus_retrieval.py",
+        "size": 5522,
+        "sha256": "525bf2e6231fef0bc1d994a4eb8aa8c70c00153ea9e721b452518581e574b6d7",
+        "classification": "test",
+        "manual_review_required": false
+      },
+      {
+        "path": "tests/test_workflows.py",
+        "size": 13521,
+        "sha256": "a1055d4e7cfca8690d33e03211aa3862ddcef31565993cff595c3b94355b52ac",
+        "classification": "test",
+        "manual_review_required": false
+      }
+    ],
+    "bundles": [
+      {
+        "path": "plugins/audio_generation/bundle.zip",
+        "members": [
+          {
+            "path": "README.md",
+            "size": 1786,
+            "sha256": "6f182323e565fe4f0bab0eec70b03b5273b6206b88998b8a714b9b1a39ce2952",
+            "expanded_match": true,
+            "license_candidate": false
+          },
+          {
+            "path": "kimi.plugin.json",
+            "size": 1922,
+            "sha256": "02bcadee1ba2e39c6c014a18a37a6c83913ffd6b31e3a75b07a50b49c7e6f6e4",
+            "expanded_match": true,
+            "license_candidate": false
+          },
+          {
+            "path": "scripts/audio_generation_tool.py",
+            "size": 10797,
+            "sha256": "690369a63178a766949c1cc43da3466ba4da8f19dd847fe01b911bdc9f5c9d39",
+            "expanded_match": false,
+            "license_candidate": false
+          },
+          {
+            "path": "skills/audio_generation/SKILL.md",
+            "size": 5319,
+            "sha256": "e75a968fdb6e4cf0f6fdf5d605f083d03f047feb65a4a70f663ac572b954bb64",
+            "expanded_match": true,
+            "license_candidate": false
+          }
+        ]
+      },
+      {
+        "path": "plugins/image_generation/bundle.zip",
+        "members": [
+          {
+            "path": "README.md",
+            "size": 1794,
+            "sha256": "632ea5470dc6f19488d7252f254146d5954abca95eb805c818543b94f7ca3601",
+            "expanded_match": true,
+            "license_candidate": false
+          },
+          {
+            "path": "kimi.plugin.json",
+            "size": 2286,
+            "sha256": "d4d305eb7fa697e70c422223fc54dcc43f2e30a2f559c068bcb4db0230b6842e",
+            "expanded_match": true,
+            "license_candidate": false
+          },
+          {
+            "path": "scripts/image_generation_tool.py",
+            "size": 13550,
+            "sha256": "3e4ef7f44e3cf7ae79736e17daea02bb06b8e003f043e81e9a076ac4b89d9de6",
+            "expanded_match": false,
+            "license_candidate": false
+          },
+          {
+            "path": "skills/image_generation/SKILL.md",
+            "size": 7176,
+            "sha256": "4acb2778cd50145b6f29d97cad221f176b176a1e77a7c9b45df40a38799ad510",
+            "expanded_match": true,
+            "license_candidate": false
+          }
+        ]
+      },
+      {
+        "path": "plugins/imf/bundle.zip",
+        "members": [
+          {
+            "path": "README.md",
+            "size": 1195,
+            "sha256": "0b73ce92e8dd3a6419ac28e51ea2e9ce5326a499e213f7e4270a632ef9e95c75",
+            "expanded_match": true,
+            "license_candidate": false
+          },
+          {
+            "path": "kimi.plugin.json",
+            "size": 2443,
+            "sha256": "e28dc4018914bb35f45265895c079fa5fc4012fd8ebb25904e7cdda1f0956fa5",
+            "expanded_match": true,
+            "license_candidate": false
+          },
+          {
+            "path": "scripts/imf_tool.py",
+            "size": 4545,
+            "sha256": "0c718d53e21d65d8ecd9d5815410610ad1ad55c8a5a99896905b93c31da6d1af",
+            "expanded_match": false,
+            "license_candidate": false
+          },
+          {
+            "path": "skills/imf/SKILL.md",
+            "size": 3622,
+            "sha256": "ee2c0b3d564ccf54f8e139ef3fd1a00eff993a2fe684dd99993fa187c0deb1c8",
+            "expanded_match": true,
+            "license_candidate": false
+          }
+        ]
+      },
+      {
+        "path": "plugins/scholar/bundle.zip",
+        "members": [
+          {
+            "path": "README.md",
+            "size": 1229,
+            "sha256": "d98987bbe4b62df4f388133b22cddf18cab18d7febcd1ffbea6595e9c525e4f3",
+            "expanded_match": true,
+            "license_candidate": false
+          },
+          {
+            "path": "kimi.plugin.json",
+            "size": 3155,
+            "sha256": "28cf0466969a44aa16e98621bb8a48b1f266002be56ce53103f4c85e2c81f369",
+            "expanded_match": true,
+            "license_candidate": false
+          },
+          {
+            "path": "scripts/scholar_tool.py",
+            "size": 4560,
+            "sha256": "378b0439e90bb301ce7b5f9cc2a6a68d2b00c16170b624797f2b226be2cf570a",
+            "expanded_match": false,
+            "license_candidate": false
+          },
+          {
+            "path": "skills/scholar/SKILL.md",
+            "size": 3586,
+            "sha256": "98bf29cab5e7f1eb70daa35325ec15fedd4391c27d2bb600e944e939c0bb41a3",
+            "expanded_match": true,
+            "license_candidate": false
+          }
+        ]
+      },
+      {
+        "path": "plugins/sec_edgar/bundle.zip",
+        "members": [
+          {
+            "path": "README.md",
+            "size": 1227,
+            "sha256": "53c8662dbee556cd030e3f2f1c65899e15e02039da3fbc39218b0b07f7f72597",
+            "expanded_match": true,
+            "license_candidate": false
+          },
+          {
+            "path": "kimi.plugin.json",
+            "size": 2209,
+            "sha256": "7dfef61eafa8f6c9f55a9471cbb98bf0f570822ad71bab5b4333166e0af8f532",
+            "expanded_match": true,
+            "license_candidate": false
+          },
+          {
+            "path": "scripts/sec_edgar_tool.py",
+            "size": 4568,
+            "sha256": "f122a2985a99d3bb3d459f9f13e8eac43c2f22e223feb8422f7852629aafe308",
+            "expanded_match": false,
+            "license_candidate": false
+          },
+          {
+            "path": "skills/sec_edgar/SKILL.md",
+            "size": 3183,
+            "sha256": "fd4cf8fbe9df652088518f65338f245ca894a7d90c91b97bf34bbe2ff57ec016",
+            "expanded_match": true,
+            "license_candidate": false
+          }
+        ]
+      },
+      {
+        "path": "plugins/world_bank_open_data/bundle.zip",
+        "members": [
+          {
+            "path": "README.md",
+            "size": 1306,
+            "sha256": "e34e832158f67c9e7ed60dd1fbbd9f77a83fce05760e6622bd05447545f67269",
+            "expanded_match": true,
+            "license_candidate": false
+          },
+          {
+            "path": "kimi.plugin.json",
+            "size": 2214,
+            "sha256": "6e15edfa0bc3b0b501f5102e50a8659f80e3d3abf312d05b1a1c457961d3502a",
+            "expanded_match": true,
+            "license_candidate": false
+          },
+          {
+            "path": "scripts/world_bank_open_data_tool.py",
+            "size": 4626,
+            "sha256": "5336de8ae1b575ea31b3d5ef586e92dc230553d040e996885447d47e36e5433c",
+            "expanded_match": false,
+            "license_candidate": false
+          },
+          {
+            "path": "skills/world_bank_open_data/SKILL.md",
+            "size": 3729,
+            "sha256": "ccb0c43b560cdff4495e1f5740a6012a99fd13f6329e199393ea4e578467301f",
+            "expanded_match": true,
+            "license_candidate": false
+          }
+        ]
+      },
+      {
+        "path": "plugins/yahoo_finance/bundle.zip",
+        "members": [
+          {
+            "path": "README.md",
+            "size": 1255,
+            "sha256": "282864cb53c5bedbb2cbaf77e0414d972704be84907c45bcedb32f9d926858a0",
+            "expanded_match": true,
+            "license_candidate": false
+          },
+          {
+            "path": "kimi.plugin.json",
+            "size": 2177,
+            "sha256": "7a05510cbce98baf352af64fa499bcc57e6eb41c7c63fa686497f9f1c93c5b8a",
+            "expanded_match": true,
+            "license_candidate": false
+          },
+          {
+            "path": "scripts/yahoo_finance_tool.py",
+            "size": 4584,
+            "sha256": "8fb2cd2e93a6280be4539fb41478ad8aac33e9816df184e07cba4506974c2413",
+            "expanded_match": false,
+            "license_candidate": false
+          },
+          {
+            "path": "skills/yahoo_finance/SKILL.md",
+            "size": 3437,
+            "sha256": "1cc230e5f00f6ecf8863305cef388af348525a1b136020e98731ba8fa72a0a89",
+            "expanded_match": true,
+            "license_candidate": false
+          }
+        ]
+      }
+    ],
+    "unclassified": []
+  },
+  "environment": {
+    "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+    "executable": "C:\\kimiswarm\\.venv\\Scripts\\python.exe",
+    "system": "Windows-11-10.0.26200-SP0",
+    "sqlite": "3.49.1",
+    "import_origin": "C:\\kimiswarm\\src\\kdrx\\__init__.py",
+    "tools": {
+      "node": "v22.17.0",
+      "claude": "2.1.233 (Claude Code)"
+    },
+    "dependencies": [
+      {
+        "name": "annotated-types",
+        "version": "0.8.0"
+      },
+      {
+        "name": "colorama",
+        "version": "0.4.6"
+      },
+      {
+        "name": "coverage",
+        "version": "7.16.0"
+      },
+      {
+        "name": "iniconfig",
+        "version": "2.3.0"
+      },
+      {
+        "name": "kdrx",
+        "version": "0.2.0",
+        "editable_project_location": "C:\\kimiswarm"
+      },
+      {
+        "name": "packaging",
+        "version": "26.3"
+      },
+      {
+        "name": "pip",
+        "version": "25.1.1"
+      },
+      {
+        "name": "pluggy",
+        "version": "1.6.0"
+      },
+      {
+        "name": "pydantic",
+        "version": "2.13.5"
+      },
+      {
+        "name": "pydantic_core",
+        "version": "2.46.5"
+      },
+      {
+        "name": "Pygments",
+        "version": "2.21.0"
+      },
+      {
+        "name": "pytest",
+        "version": "9.1.1"
+      },
+      {
+        "name": "pytest-cov",
+        "version": "7.1.0"
+      },
+      {
+        "name": "ruff",
+        "version": "0.15.8"
+      },
+      {
+        "name": "typing_extensions",
+        "version": "4.16.0"
+      },
+      {
+        "name": "typing-inspection",
+        "version": "0.4.4"
+      }
+    ]
+  },
+  "live_execution": "not_executed",
+  "provider_cost": null,
+  "test_evidence": "audit/baseline-junit.xml",
+  "coverage_evidence": "audit/baseline-coverage.json",
+  "limitations": [
+    "Archive members compared without executing third-party code.",
+    "Historical CI is not a live integration result."
+  ]
+}

@@ -27,6 +27,12 @@
   "additionalProperties": false,
   "description": "A directed relation between one claim and one evidence span (plan \u00a723).",
   "properties": {
+    "schema_version": {
+      "const": "0.3",
+      "default": "0.3",
+      "title": "Schema Version",
+      "type": "string"
+    },
     "edge_id": {
       "title": "Edge Id",
       "type": "string"

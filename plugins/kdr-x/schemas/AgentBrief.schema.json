@@ -24,6 +24,7 @@
         },
         "required_evidence_refs": {
           "default": 0,
+          "minimum": 0,
           "title": "Required Evidence Refs",
           "type": "integer"
         }
@@ -93,11 +94,148 @@
       ],
       "title": "AgentRole",
       "type": "string"
+    },
+    "Budget": {
+      "additionalProperties": false,
+      "properties": {
+        "tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tokens"
+        },
+        "queries": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Queries"
+        },
+        "wall_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wall Seconds"
+        }
+      },
+      "title": "Budget",
+      "type": "object"
+    },
+    "RetryPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "max_retries": {
+          "default": 2,
+          "maximum": 20,
+          "minimum": 0,
+          "title": "Max Retries",
+          "type": "integer"
+        },
+        "backoff_seconds": {
+          "default": 0.0,
+          "minimum": 0,
+          "title": "Backoff Seconds",
+          "type": "number"
+        },
+        "require_alternative_agent": {
+          "default": false,
+          "title": "Require Alternative Agent",
+          "type": "boolean"
+        }
+      },
+      "title": "RetryPolicy",
+      "type": "object"
     }
   },
   "additionalProperties": false,
   "description": "The brief handed to an agent for exactly one task.\n\nKimi contract parity (audit PR-03): o briefing autocontido \u00e9\n``mission`` + ``guidance`` + ``context`` \u2014 mission diz o QU\u00ca, guidance\ndiz COMO (abordagem, restri\u00e7\u00f5es de estilo/m\u00e9todo) e context carrega os\ndados j\u00e1 coletados que o agent precisa ler antes de agir.",
   "properties": {
+    "schema_version": {
+      "const": "0.3",
+      "default": "0.3",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Id"
+    },
+    "plan_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Plan Id"
+    },
+    "plan_revision": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Plan Revision",
+      "type": "integer"
+    },
+    "attempt_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Attempt Id"
+    },
+    "kind": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Kind"
+    },
+    "budget": {
+      "$ref": "#/$defs/Budget"
+    },
+    "retry_policy": {
+      "$ref": "#/$defs/RetryPolicy"
+    },
     "brief_id": {
       "title": "Brief Id",
       "type": "string"

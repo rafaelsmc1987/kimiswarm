@@ -1,0 +1,188 @@
+{
+  "baseline": {
+    "tests": 368,
+    "passed": 368,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit": "audit/baseline-junit.xml",
+    "sha256": "e278e7a31204e16eee0e78d9f9eb58dc75db0a843c19b139a634ae9e12d01beb"
+  },
+  "current": {
+    "tests": 498,
+    "passed": 498,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit": "audit/final-junit.xml",
+    "sha256": "1b949bc86a29f1e7487296f4fde5e0286139cc38fa58c163368155ed629ca990"
+  },
+  "coverage": {
+    "covered_lines": 5606,
+    "num_statements": 6917,
+    "percent_covered": 77.99483552262265,
+    "percent_covered_display": "78",
+    "missing_lines": 1311,
+    "excluded_lines": 11,
+    "percent_statements_covered": 81.04669654474483,
+    "percent_statements_covered_display": "81",
+    "num_branches": 1990,
+    "num_partial_branches": 297,
+    "covered_branches": 1341,
+    "missing_branches": 649,
+    "percent_branches_covered": 67.38693467336684,
+    "percent_branches_covered_display": "67"
+  },
+  "python": "3.13.15 (main, Aug 14 2026, 15:36:10) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "sqlite": "3.53.1",
+  "live_model_calls": 0,
+  "kimi_product_evaluations": 0,
+  "remote_publication": false,
+  "meaning": "Unit/integration tests are not a research-quality or SOTA score.",
+  "limits": [
+    "Windows only in this session",
+    "model CLI fixtures are simulated",
+    "host plugin E2E untested",
+    "no independent held-out evaluation"
+  ],
+  "distribution_evidence": "audit/distribution.json",
+  "acceptance_observations": {
+    "AT-007-1": {
+      "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+      "executed_tests": [
+        "tests.test_recoverable_publication::test_kill_after_task_commit_resumes_without_repeating_retrieval"
+      ],
+      "junit": "audit/final-junit.xml",
+      "supplemental_junit": "audit/continuation-fencing.xml",
+      "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
+    },
+    "AT-007-2": {
+      "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+      "executed_tests": [
+        "tests.test_recoverable_publication::test_acknowledged_tampering_is_never_silently_repaired"
+      ],
+      "junit": "audit/final-junit.xml",
+      "supplemental_junit": "audit/continuation-fencing.xml",
+      "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
+    },
+    "AT-020-1": {
+      "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+      "executed_tests": [
+        "tests.test_recoverable_publication::test_distinct_process_commits_do_not_lose_checkpoints"
+      ],
+      "junit": "audit/final-junit.xml",
+      "supplemental_junit": "audit/continuation-fencing.xml",
+      "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
+    },
+    "AT-020-2": {
+      "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+      "executed_tests": [
+        "tests.test_recoverable_publication::test_backup_restores_committed_exports_and_keeps_blobs"
+      ],
+      "junit": "audit/final-junit.xml",
+      "supplemental_junit": "audit/continuation-fencing.xml",
+      "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
+    },
+    "AT-021-1": {
+      "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+      "executed_tests": [
+        "tests.test_runtime_store::test_one_lease_wins"
+      ],
+      "junit": "audit/final-junit.xml",
+      "supplemental_junit": "audit/continuation-fencing.xml",
+      "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
+    },
+    "AT-021-2": {
+      "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+      "executed_tests": [
+        "tests.test_runtime_store::test_expired_worker_cannot_publish",
+        "tests.test_runtime_store::test_expired_worker_cannot_publish"
+      ],
+      "junit": "audit/final-junit.xml",
+      "supplemental_junit": "audit/continuation-fencing.xml",
+      "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
+    },
+    "AT-022-1": {
+      "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+      "executed_tests": [
+        "tests.test_recoverable_publication::test_kill_between_blob_write_and_commit_leaves_only_recoverable_orphans"
+      ],
+      "junit": "audit/final-junit.xml",
+      "supplemental_junit": "audit/continuation-fencing.xml",
+      "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
+    },
+    "AT-022-2": {
+      "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+      "executed_tests": [
+        "tests.test_executor_registry::test_equivalent_output_paths_block_before_scaffolding[a/../b.json-b.json]",
+        "tests.test_executor_registry::test_equivalent_output_paths_block_before_scaffolding[a/b.json-a\\\\b.json]",
+        "tests.test_executor_registry::test_equivalent_output_paths_block_before_scaffolding[B.json-b.json]",
+        "tests.test_executor_registry::test_equivalent_output_paths_block_before_scaffolding[b.json.-b.json]",
+        "tests.test_executor_registry::test_equivalent_output_paths_block_before_scaffolding[NUL.json-safe.json]",
+        "tests.test_executor_registry::test_equivalent_output_paths_block_before_scaffolding[x:stream-x]",
+        "tests.test_executor_registry::test_equivalent_output_paths_block_before_scaffolding[root-root/file.json]"
+      ],
+      "junit": "audit/final-junit.xml",
+      "supplemental_junit": "audit/continuation-fencing.xml",
+      "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
+    },
+    "AT-023-1": {
+      "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+      "executed_tests": [
+        "tests.test_executor_registry::test_arbitrary_task_ids_and_additional_registered_capabilities_execute"
+      ],
+      "junit": "audit/final-junit.xml",
+      "supplemental_junit": "audit/continuation-fencing.xml",
+      "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
+    },
+    "AT-023-2": {
+      "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+      "executed_tests": [
+        "tests.test_executor_registry::test_missing_capability_blocks_planning_before_writing"
+      ],
+      "junit": "audit/final-junit.xml",
+      "supplemental_junit": "audit/continuation-fencing.xml",
+      "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
+    },
+    "AT-032-1": {
+      "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+      "executed_tests": [
+        "tests.test_plan_revisions::test_new_validation_preserves_completed_branches_and_original_receipts"
+      ],
+      "junit": "audit/final-junit.xml",
+      "supplemental_junit": "audit/continuation-fencing.xml",
+      "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
+    },
+    "AT-032-2": {
+      "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+      "executed_tests": [
+        "tests.test_plan_revisions::test_two_patches_on_same_base_require_rebase"
+      ],
+      "junit": "audit/final-junit.xml",
+      "supplemental_junit": "audit/continuation-fencing.xml",
+      "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
+    }
+  },
+  "lint": {
+    "ruff_version": "0.15.8",
+    "check": "passed",
+    "format": "passed"
+  },
+  "governance_evidence": "audit/governance-observation.json",
+  "changed_files_evidence": "audit/changed-files.json",
+  "python_310_validation": {
+    "tests": 498,
+    "passed": 498,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit": "audit/py310-junit.xml",
+    "sha256": "9d293093d54066166fd76fd831e03164ffd913fb1002fd79a42ee2c92770573e",
+    "environment": {
+      "python": "3.10.21 (main, Aug 14 2026, 15:34:01) [MSC v.1944 64 bit (AMD64)]",
+      "sqlite": "3.53.1",
+      "executable": "C:\\kimiswarm\\.venv-ks-py310\\Scripts\\python.exe"
+    }
+  }
+}

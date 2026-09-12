@@ -1,25 +1,10 @@
-﻿---
-description: "KDR-X: verify hashes and resume an incomplete run"
-argument-hint: "--run-dir <dir>"
+---
+description: "KDR-X: resume from verified kernel checkpoints"
+argument-hint: "--run-dir <dir> --corpus <dir> [--backend-config <file>]"
 ---
 
 # /kdr:resume
 
-Resume an interrupted run without redoing completed work.
+Invoke `kdr resume` with the existing run directory and corpus. Supply the same local backend configuration for a live run. Do not synthesize successful results, repair hashes by hand, or restart completed tasks.
 
-## Steps
-
-1. Load `manifest.json` via `kdrx.state.RunState.load_manifest`.
-2. Verify artifact hashes (`RunState.verify_hashes`); any change is reported,
-   never silently overwritten.
-3. Rebuild the ready queue: completed tasks stay done, only incomplete nodes
-   re-enter the wave scheduler.
-4. Resume with `kdrx.scheduler.WaveScheduler` from the first pending wave.
-
-## Invariants
-
-- Resume is idempotent: running twice is a no-op if nothing changed.
-- Hash mismatch blocks resume until acknowledged.
-
-Use `kdr resume --run-dir <dir>` for the deterministic check.
-
+The kernel verifies persisted artifacts and reconstructs the index from immutable source snapshots. A missing receipt, incompatible configuration or integrity error must be reported. Preserve the run and database for recovery. Confirm delivery separately with `kdr verify-delivery`.

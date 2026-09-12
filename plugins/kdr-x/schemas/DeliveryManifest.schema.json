@@ -19,6 +19,12 @@
       "additionalProperties": false,
       "description": "One persisted artifact with provenance and a seal.",
       "properties": {
+        "schema_version": {
+          "const": "0.3",
+          "default": "0.3",
+          "title": "Schema Version",
+          "type": "string"
+        },
         "artifact_id": {
           "title": "Artifact Id",
           "type": "string"
@@ -100,6 +106,12 @@
   "additionalProperties": false,
   "description": "What a run actually delivers (plan \u00a731).",
   "properties": {
+    "schema_version": {
+      "const": "0.3",
+      "default": "0.3",
+      "title": "Schema Version",
+      "type": "string"
+    },
     "manifest_id": {
       "title": "Manifest Id",
       "type": "string"

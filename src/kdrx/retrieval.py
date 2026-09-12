@@ -183,20 +183,42 @@ class FileCorpus:
         self._token_map: dict[str, list[tuple[str, int, int]]] = {}
         # T-05-05: falhas de extração surfacadas — nunca silenciosas
         self.extraction_failures: list[dict[str, str]] = []
+        self._pending_restore = None
+        self._snapshot_blobs = None
+
+    def fork(self) -> FileCorpus:
+        """Preserve the injected adapter and settings without sharing mutable state."""
+        import copy
+
+        return copy.deepcopy(self)
 
     def scan(self, *, extensions: set[str] | None = None) -> list[Document]:
+        if self._snapshot_blobs is not None:
+            self._ensure_index()
+            return self._docs
         exts = extensions or TEXT_EXTENSIONS
         docs: list[Document] = []
         self.extraction_failures = []
         for path in sorted(self.root.rglob("*")):
             if not path.is_file() or path.suffix.lower() not in exts:
                 continue
-            rel = str(path.relative_to(self.root))
+            from kdrx.security import has_symlink_component
+            from kdrx.evidence.documents import document_ir
+
+            if has_symlink_component(path):
+                self.extraction_failures.append(
+                    {"file": path.name, "reason": "symlink or junction blocked"}
+                )
+                continue
+            rel = path.relative_to(self.root).as_posix()
             # T-05-05: extração por formato (extractors dedicados). Falha
             # explícita (ExtractionError) é REGISTRADA e o doc é pulado —
             # documento não-extraível não vira "fonte fantasma" no índice.
             try:
+                raw = path.read_bytes()
                 text, extractor_name = extract_text(path)
+                if path.read_bytes() != raw:
+                    raise ExtractionError("source changed during extraction")
             except ExtractionError as exc:
                 self.extraction_failures.append({"file": rel, "reason": str(exc)})
                 continue
@@ -204,12 +226,13 @@ class FileCorpus:
             # fonte é blocking — fonte sem URI/título/hash NÃO passa no gate.
             # O hash cobre o TEXTO EXTRAÍDO (conteúdo canônico indexado), não
             # necessariamente os bytes do arquivo (ex.: markdown normalizado).
+            ir = document_ir(path.resolve().as_uri(), raw, text, extractor_name)
             doc = Document(
                 doc_id=rel,
                 text=text,
                 source=SourceRecord(
-                    source_id=f"file:{rel}",
-                    canonical_uri=f"file://{path.resolve()}",
+                    source_id=ir.source_id,
+                    canonical_uri=path.resolve().as_uri(),
                     title=rel,
                     source_type=(
                         SourceType.CODE_REPOSITORY
@@ -219,7 +242,16 @@ class FileCorpus:
                     content_hash=f"sha256:{hashlib.sha256(text.encode('utf-8')).hexdigest()}",
                     date=datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc),
                     extraction_status=ExtractionStatus.EXTRACTED,
-                    metadata={"extractor": extractor_name},
+                    metadata={
+                        "extractor": extractor_name,
+                        "extractor_version": "0.3",
+                        "original_path": rel,
+                        "legacy_source_id": f"file:{rel}",
+                        "raw_bytes_hash": ir.raw_bytes_hash,
+                        "extracted_text_hash": ir.extracted_text_hash,
+                        "doc_revision": ir.revision,
+                        "document_ir": ir.model_dump(mode="json"),
+                    },
                 ),
             )
             docs.append(doc)
@@ -227,7 +259,47 @@ class FileCorpus:
         self._bm25.fit(docs)
         return docs
 
+    def bind_snapshots(self, sources, blobs) -> None:
+        """Bind verified sources without building a search index until needed."""
+        self._pending_restore = (list(sources), blobs)
+        self._snapshot_blobs = blobs
+        self._docs = []
+        self._bm25 = BM25()
+        self._token_map = {}
+
+    def _ensure_index(self) -> None:
+        if self._pending_restore is not None:
+            sources, blobs = self._pending_restore
+            self.restore(sources, blobs)
+            self._pending_restore = None
+
+    def raw_bytes(self, doc) -> bytes:
+        if self._snapshot_blobs is not None:
+            return self._snapshot_blobs.get(doc.source.metadata["raw_bytes_hash"])
+        return (self.root / doc.doc_id).read_bytes()
+
+    def restore(self, sources, blobs) -> None:
+        """Rebuild the index from verified immutable snapshots, never current files."""
+        from kdrx.evidence.documents import DocumentIR
+
+        docs = []
+        for source in sources:
+            ir = DocumentIR.model_validate(source.metadata.get("document_ir"))
+            text = blobs.get(ir.extracted_text_hash).decode("utf-8")
+            blobs.get(ir.raw_bytes_hash)
+            if not ir.verify() or text != ir.text or ir.source_id != source.source_id:
+                raise ValueError("invalid committed document snapshot")
+            docs.append(
+                Document(
+                    doc_id=source.metadata["original_path"], text=text, source=source
+                )
+            )
+        self._docs = docs
+        self._token_map = {}
+        self._bm25.fit(docs)
+
     def search(self, query: str, top_k: int = 10) -> list[tuple[Document, float]]:
+        self._ensure_index()
         return self._bm25.search(query, top_k)
 
     def fused_search(
@@ -245,6 +317,7 @@ class FileCorpus:
         ``(doc, score_fundido, breakdown)`` ordenado; o breakdown carrega o
         score cru de cada canal para auditoria.
         """
+        self._ensure_index()
         w = weights or FusionWeights()
         docs = list(self._docs)
         if not docs:

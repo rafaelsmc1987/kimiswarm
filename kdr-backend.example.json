@@ -1,0 +1,9 @@
+{
+  "provider": "codex",
+  "billing": "subscription",
+  "model": null,
+  "max_calls": 0,
+  "timeout_seconds": 120,
+  "max_cost_usd": null,
+  "max_output_bytes": 8388608
+}

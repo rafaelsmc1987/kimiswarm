@@ -50,7 +50,7 @@ def split_compound_statement(statement: str) -> list[str]:
 _ASSERTION_RE = re.compile(
     r"\b(is|are|was|were|has|have|had|shows?|demonstrates?|causes?|"
     r"increases?|decreases?|reduces?|improves?|outperforms?|fails?|"
-    r"costs?|requires?|supports?|claims?|reports?)\b",
+    r"costs?|requires?|supports?|claims?|reports?|é|são|foi|foram|tem|têm|causa|melhora|reduz|aumenta|demonstra|supera)\b",
     re.IGNORECASE,
 )
 
@@ -103,8 +103,14 @@ def decompose_into_claims(claim_id: str, statement: str) -> list[Claim]:
         return [
             Claim(claim_id=claim_id, statement=parts[0], scope=extract_scope(parts[0]))
         ]
+    shared_scope = extract_scope(statement)
     return [
-        Claim(claim_id=f"{claim_id}-{i + 1}", statement=p, scope=extract_scope(p))
+        Claim(
+            claim_id=f"{claim_id}-{i + 1}",
+            statement=p,
+            scope={**shared_scope, **extract_scope(p)},
+            metadata={"decomposition": "heuristic", "origin_statement": statement},
+        )
         for i, p in enumerate(parts)
     ]
 
@@ -132,6 +138,11 @@ def entailment_score(statement: str, span_text: str) -> float:
     faixa de suporte parcial (0.4..0.8) — detectável sem LLM.
     """
     coverage = lexical_coverage(statement, span_text)
+    negation = re.compile(
+        r"\b(?:not|no|never|neither|without|não|nunca|sem)\b", re.IGNORECASE
+    )
+    if bool(negation.search(statement)) != bool(negation.search(span_text)):
+        return 0.0
     if not tokenize(statement):
         return 0.0
     claim_nums = _NUM_TOK_RE.findall(statement)
@@ -196,7 +207,19 @@ def classify_edge_relation(
         numeric_disagreement(claim.statement, span_text)
         and lexical_coverage(claim.statement, span_text) >= 0.6
     ):
-        return EdgeRelation.CONTRADICTS
+        return (
+            EdgeRelation.CONTRADICTS
+            if scope_match and temporal_match
+            else EdgeRelation.QUALIFIES
+        )
+    subject, negative = _negation_normalized(claim.statement)
+    other_subject, other_negative = _negation_normalized(span_text)
+    if subject == other_subject and negative != other_negative:
+        return (
+            EdgeRelation.CONTRADICTS
+            if scope_match and temporal_match
+            else EdgeRelation.QUALIFIES
+        )
     if entailment >= 0.8:
         if not scope_match or not temporal_match:
             return EdgeRelation.QUALIFIES
@@ -249,7 +272,9 @@ def derive_edge(
     """
     ent = entailment_score(claim.statement, span.verbatim_span)
     scope_match = compute_scope_match(claim, span.verbatim_span)
-    temporal_match = compute_temporal_match(claim, source.date if source else None)
+    # Publication time is not event time. Match the claim's event scope in the evidence.
+    time_scope = claim.scope.get("time")
+    temporal_match = not time_scope or str(time_scope) in span.verbatim_span
     relation = classify_edge_relation(
         claim,
         span.verbatim_span,
@@ -286,7 +311,7 @@ def derive_edge(
 # --------------------------------------------------------------------------- #
 # Automatic contradiction discovery (T-07-04) & falsification swarm (T-07-05)
 # --------------------------------------------------------------------------- #
-_NEG_RE = re.compile(r"\b(?:not|no|never|n't)\b")
+_NEG_RE = re.compile(r"\b(?:not|no|never|n't|não|nunca|sem)\b")
 
 
 _NEG_STRIP_RE = re.compile(r"\b(?:not|no|never|n't|do|does|did)\b")

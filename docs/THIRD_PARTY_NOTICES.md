@@ -5,7 +5,7 @@
 - **Pydantic** (MIT) — schema modeling and JSON-Schema export.
   Copyright (c) Samuel Colvin and contributors.
 
-No third-party source code is vendored in this repository. The referenced
+This notice covers the kdrx Python package and kdr-x plugin only. Other directories under plugins contain separately sourced components with unresolved redistribution provenance; see audit/plugin-inventory.json. They are excluded from the kdr-x release artifacts. The referenced
 research repositories (see `LICENSE_MATRIX.md`) were inspected for requirements
 only; their code and prompts are not reproduced here.
 

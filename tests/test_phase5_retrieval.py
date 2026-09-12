@@ -159,9 +159,8 @@ def test_query_graph_drives_pipeline_and_persists(tmp_path):
     assert len(hit_nodes) >= 2
 
 
-def test_saturation_stops_before_exhausting_nodes(tmp_path):
-    """Se o seed já cobre todas as fontes e termos, cláusulas não trazem
-    ganho marginal — o loop PARA antes de esgotar os nós do grafo."""
+def test_lexical_overlap_cannot_declare_research_sufficient(tmp_path):
+    """Lexical saturation leaves research requirements explicitly unresolved."""
     import json as _json
 
     from kdrx.runner import run_file_research
@@ -183,9 +182,10 @@ def test_saturation_stops_before_exhausting_nodes(tmp_path):
         (run_dir / "retrieval" / "query_graph.json").read_text(encoding="utf-8")
     )
     assert len(qg["nodes"]) >= 4  # seed + 4 cláusulas
-    assert qg["decision"]["reason"] == "saturated"
-    # parou cedo: menos queries do que nós disponíveis
-    assert qg["queries_issued"] < len(qg["nodes"])
+    assert qg["decision"]["reason"] != "saturated"
+    assert qg["lexical_query_coverage"] == 1.0
+    assert qg["research_coverage"] is None
+    assert "unresolved_blockers" in qg["decision"]["unmet"]
 
 
 # --------------------------------------------------------------------------- #
@@ -214,8 +214,14 @@ def test_pipeline_collapses_duplicate_sources(tmp_path):
     dedup = _json.loads((run_dir / "corpus" / "dedup.json").read_text(encoding="utf-8"))
     assert dedup["scanned_documents"] == 3
     assert dedup["canonical_count"] == 2
-    assert dedup["duplicates"] == {"file:copy.md": "file:a.md"}
-    assert set(dedup["families"]) == {"file:a.md", "file:other.md"}
+    from kdrx.evidence.documents import source_id
+
+    ids = {
+        name: source_id((corpus / name).resolve().as_uri())
+        for name in ("copy.md", "a.md", "other.md")
+    }
+    assert dedup["duplicates"] == {ids["copy.md"]: ids["a.md"]}
+    assert set(dedup["families"]) == {ids["a.md"], ids["other.md"]}
 
     spans = [
         _json.loads(x)
@@ -225,7 +231,7 @@ def test_pipeline_collapses_duplicate_sources(tmp_path):
         if x.strip()
     ]
     assert spans, "esperava spans"
-    assert all(sp["source_id"] != "file:copy.md" for sp in spans)
+    assert all(sp["source_id"] != ids["copy.md"] for sp in spans)
 
     claims = [
         _json.loads(x)

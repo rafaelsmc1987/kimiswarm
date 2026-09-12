@@ -1,0 +1,3045 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="28" skipped="0" tests="28" time="1.956" timestamp="2026-09-11T09:30:07.932811-03:00" hostname="DESKTOP-AA6P1ID"><testcase classname="tests.test_plan_regressions" name="test_run_ids_do_not_collide" time="0.001"><failure message="AssertionError: assert 1 == 1000&#10; +  where 1 = len({'run-1789129808-same'})">tests\test_plan_regressions.py:40: in test_run_ids_do_not_collide
+    assert len({run_id_from_plan("same") for _ in range(1000)}) == 1000
+E   AssertionError: assert 1 == 1000
+E    +  where 1 = len({'run-1789129808-same'})</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_run_id_rejects_unsafe_components[../x]" time="0.004"><failure message="Failed: DID NOT RAISE ValueError">tests\test_plan_regressions.py:45: in test_run_id_rejects_unsafe_components
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_run_id_rejects_unsafe_components[../../x]" time="0.001"><failure message="Failed: DID NOT RAISE ValueError">tests\test_plan_regressions.py:45: in test_run_id_rejects_unsafe_components
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_run_id_rejects_unsafe_components[/x]" time="0.002"><failure message="Failed: DID NOT RAISE ValueError">tests\test_plan_regressions.py:45: in test_run_id_rejects_unsafe_components
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_run_id_rejects_unsafe_components[C:\\x]" time="0.001"><failure message="Failed: DID NOT RAISE ValueError">tests\test_plan_regressions.py:45: in test_run_id_rejects_unsafe_components
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_run_id_rejects_unsafe_components[a/b]" time="0.001"><failure message="Failed: DID NOT RAISE ValueError">tests\test_plan_regressions.py:45: in test_run_id_rejects_unsafe_components
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_run_id_rejects_unsafe_components[a\\b]" time="0.001"><failure message="Failed: DID NOT RAISE ValueError">tests\test_plan_regressions.py:45: in test_run_id_rejects_unsafe_components
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_run_id_rejects_unsafe_components[..]" time="0.001"><failure message="Failed: DID NOT RAISE ValueError">tests\test_plan_regressions.py:45: in test_run_id_rejects_unsafe_components
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_run_id_rejects_unsafe_components[CON]" time="0.001"><failure message="Failed: DID NOT RAISE ValueError">tests\test_plan_regressions.py:45: in test_run_id_rejects_unsafe_components
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_run_id_rejects_unsafe_components[x.]" time="0.001"><failure message="Failed: DID NOT RAISE ValueError">tests\test_plan_regressions.py:45: in test_run_id_rejects_unsafe_components
+    with pytest.raises(ValueError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_scaffold_is_exclusive" time="0.020"><failure message="Failed: DID NOT RAISE FileExistsError">tests\test_plan_regressions.py:53: in test_scaffold_is_exclusive
+    with pytest.raises(FileExistsError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE FileExistsError</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_scheduler_rejects_other_task" time="0.001"><failure message="Failed: DID NOT RAISE ExecutorError">tests\test_plan_regressions.py:61: in test_scheduler_rejects_other_task
+    with pytest.raises(ExecutorError, match="identity"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ExecutorError</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_citations_round_trip_legacy_ids[file:sub dir/a\xe7\xe3o.txt]" time="0.001"><failure message="AssertionError: assert [] == ['file:sub dir/ação.txt']&#10;  &#10;  Right contains one more item: 'file:sub dir/ação.txt'&#10;  Use -v to get more diff">tests\test_plan_regressions.py:67: in test_citations_round_trip_legacy_ids
+    assert extract_citations(f"Evidence [cite:{sid}]") == [sid]
+E   AssertionError: assert [] == ['file:sub dir/ação.txt']
+E     
+E     Right contains one more item: 'file:sub dir/ação.txt'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_citations_round_trip_legacy_ids[https://example.org/a?q=x&amp;ref=v1]" time="0.000"><failure message="AssertionError: assert [] == ['https://exa...a?q=x&amp;ref=v1']&#10;  &#10;  Right contains one more item: 'https://example.org/a?q=x&amp;ref=v1'&#10;  Use -v to get more diff">tests\test_plan_regressions.py:67: in test_citations_round_trip_legacy_ids
+    assert extract_citations(f"Evidence [cite:{sid}]") == [sid]
+E   AssertionError: assert [] == ['https://exa...a?q=x&amp;ref=v1']
+E     
+E     Right contains one more item: 'https://example.org/a?q=x&amp;ref=v1'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_citations_round_trip_legacy_ids[doi:10.1234/abc]" time="0.000"><failure message="AssertionError: assert [] == ['doi:10.1234/abc']&#10;  &#10;  Right contains one more item: 'doi:10.1234/abc'&#10;  Use -v to get more diff">tests\test_plan_regressions.py:67: in test_citations_round_trip_legacy_ids
+    assert extract_citations(f"Evidence [cite:{sid}]") == [sid]
+E   AssertionError: assert [] == ['doi:10.1234/abc']
+E     
+E     Right contains one more item: 'doi:10.1234/abc'
+E     Use -v to get more diff</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_empty_report_fails" time="0.001"><failure message="AssertionError: assert False&#10; +  where False = blocking()&#10; +    where blocking = GateDecision(gate_id='gate:citation_integrity', kind=&lt;GateKind.CITATION: 'citation'&gt;, verdict=&lt;GateVerdict.PASS: 'pass...e body', passed=True, details=[], severity='blocking')], blocking_reasons=[], run_id=None, timestamp=None, metadata={}).blocking&#10; +      where GateDecision(gate_id='gate:citation_integrity', kind=&lt;GateKind.CITATION: 'citation'&gt;, verdict=&lt;GateVerdict.PASS: 'pass...e body', passed=True, details=[], severity='blocking')], blocking_reasons=[], run_id=None, timestamp=None, metadata={}) = citation_integrity_gate('', sources=[], claims=[], spans=[])">tests\test_plan_regressions.py:71: in test_empty_report_fails
+    assert citation_integrity_gate("", sources=[], claims=[], spans=[]).blocking()
+E   AssertionError: assert False
+E    +  where False = blocking()
+E    +    where blocking = GateDecision(gate_id='gate:citation_integrity', kind=&lt;GateKind.CITATION: 'citation'&gt;, verdict=&lt;GateVerdict.PASS: 'pass...e body', passed=True, details=[], severity='blocking')], blocking_reasons=[], run_id=None, timestamp=None, metadata={}).blocking
+E    +      where GateDecision(gate_id='gate:citation_integrity', kind=&lt;GateKind.CITATION: 'citation'&gt;, verdict=&lt;GateVerdict.PASS: 'pass...e body', passed=True, details=[], severity='blocking')], blocking_reasons=[], run_id=None, timestamp=None, metadata={}) = citation_integrity_gate('', sources=[], claims=[], spans=[])</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_malformed_citation_fails" time="0.000"><failure message="AssertionError: assert False&#10; +  where False = blocking()&#10; +    where blocking = GateDecision(gate_id='gate:citation_integrity', kind=&lt;GateKind.CITATION: 'citation'&gt;, verdict=&lt;GateVerdict.PASS: 'pass...e body', passed=True, details=[], severity='blocking')], blocking_reasons=[], run_id=None, timestamp=None, metadata={}).blocking&#10; +      where GateDecision(gate_id='gate:citation_integrity', kind=&lt;GateKind.CITATION: 'citation'&gt;, verdict=&lt;GateVerdict.PASS: 'pass...e body', passed=True, details=[], severity='blocking')], blocking_reasons=[], run_id=None, timestamp=None, metadata={}) = citation_integrity_gate('Claim [cite: ]', sources=[], claims=[], spans=[])">tests\test_plan_regressions.py:75: in test_malformed_citation_fails
+    assert citation_integrity_gate("Claim [cite: ]", sources=[], claims=[], spans=[]).blocking()
+E   AssertionError: assert False
+E    +  where False = blocking()
+E    +    where blocking = GateDecision(gate_id='gate:citation_integrity', kind=&lt;GateKind.CITATION: 'citation'&gt;, verdict=&lt;GateVerdict.PASS: 'pass...e body', passed=True, details=[], severity='blocking')], blocking_reasons=[], run_id=None, timestamp=None, metadata={}).blocking
+E    +      where GateDecision(gate_id='gate:citation_integrity', kind=&lt;GateKind.CITATION: 'citation'&gt;, verdict=&lt;GateVerdict.PASS: 'pass...e body', passed=True, details=[], severity='blocking')], blocking_reasons=[], run_id=None, timestamp=None, metadata={}) = citation_integrity_gate('Claim [cite: ]', sources=[], claims=[], spans=[])</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_negation_does_not_support_claim" time="0.000"><failure message="AssertionError: assert 1.0 == 0&#10; +  where 1.0 = entailment_score('The treatment is effective', 'The treatment is not effective')">tests\test_plan_regressions.py:79: in test_negation_does_not_support_claim
+    assert entailment_score("The treatment is effective", "The treatment is not effective") == 0
+E   AssertionError: assert 1.0 == 0
+E    +  where 1.0 = entailment_score('The treatment is effective', 'The treatment is not effective')</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_openalex_nullable_source" time="0.000"><failure message="AttributeError: 'NoneType' object has no attribute 'get'">tests\test_plan_regressions.py:86: in test_openalex_nullable_source
+    assert adapter.search("study")[0].publisher is None
+           ^^^^^^^^^^^^^^^^^^^^^^^
+src\kdrx\adapters.py:153: in search
+    .get("display_name"),
+     ^^^
+E   AttributeError: 'NoneType' object has no attribute 'get'</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_crossref_preserves_full_date" time="0.001"><failure message="AssertionError: assert False&#10; +  where False = &lt;built-in method startswith of str object at 0x000001885E2BDF70&gt;('2026-07-23')&#10; +    where &lt;built-in method startswith of str object at 0x000001885E2BDF70&gt; = '2026-01-01T00:00:00'.startswith&#10; +      where '2026-01-01T00:00:00' = &lt;built-in method isoformat of datetime.datetime object at 0x000001885E20FE10&gt;()&#10; +        where &lt;built-in method isoformat of datetime.datetime object at 0x000001885E20FE10&gt; = datetime.datetime(2026, 1, 1, 0, 0).isoformat&#10; +          where datetime.datetime(2026, 1, 1, 0, 0) = SourceRecord(source_id='doi:10.1234/example', canonical_uri='https://doi.org/10.1234/example', title='Study', authors=...e, extraction_status=&lt;ExtractionStatus.NOT_EXTRACTED: 'not_extracted'&gt;, metadata={'adapter': 'crossref', 'type': None}).date&#10; +            where SourceRecord(source_id='doi:10.1234/example', canonical_uri='https://doi.org/10.1234/example', title='Study', authors=...e, extraction_status=&lt;ExtractionStatus.NOT_EXTRACTED: 'not_extracted'&gt;, metadata={'adapter': 'crossref', 'type': None}) = lookup_doi('10.1234/example')&#10; +              where lookup_doi = CrossrefAdapter(transport=&lt;function test_crossref_preserves_full_date.&lt;locals&gt;.&lt;lambda&gt; at 0x000001885E1FB9C0&gt;, allowlist=None, denylist=None).lookup_doi">tests\test_plan_regressions.py:93: in test_crossref_preserves_full_date
+    assert adapter.lookup_doi("10.1234/example").date.isoformat().startswith("2026-07-23")
+E   AssertionError: assert False
+E    +  where False = &lt;built-in method startswith of str object at 0x000001885E2BDF70&gt;('2026-07-23')
+E    +    where &lt;built-in method startswith of str object at 0x000001885E2BDF70&gt; = '2026-01-01T00:00:00'.startswith
+E    +      where '2026-01-01T00:00:00' = &lt;built-in method isoformat of datetime.datetime object at 0x000001885E20FE10&gt;()
+E    +        where &lt;built-in method isoformat of datetime.datetime object at 0x000001885E20FE10&gt; = datetime.datetime(2026, 1, 1, 0, 0).isoformat
+E    +          where datetime.datetime(2026, 1, 1, 0, 0) = SourceRecord(source_id='doi:10.1234/example', canonical_uri='https://doi.org/10.1234/example', title='Study', authors=...e, extraction_status=&lt;ExtractionStatus.NOT_EXTRACTED: 'not_extracted'&gt;, metadata={'adapter': 'crossref', 'type': None}).date
+E    +            where SourceRecord(source_id='doi:10.1234/example', canonical_uri='https://doi.org/10.1234/example', title='Study', authors=...e, extraction_status=&lt;ExtractionStatus.NOT_EXTRACTED: 'not_extracted'&gt;, metadata={'adapter': 'crossref', 'type': None}) = lookup_doi('10.1234/example')
+E    +              where lookup_doi = CrossrefAdapter(transport=&lt;function test_crossref_preserves_full_date.&lt;locals&gt;.&lt;lambda&gt; at 0x000001885E1FB9C0&gt;, allowlist=None, denylist=None).lookup_doi</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_semantic_url_parameters_are_not_dropped" time="0.001"><failure message="AssertionError: assert 'https://example.org/code' != 'https://example.org/code'&#10; +  where 'https://example.org/code' = canonicalize_url('https://example.org/code?ref=v1')&#10; +  and   'https://example.org/code' = canonicalize_url('https://example.org/code?ref=v2')">tests\test_plan_regressions.py:97: in test_semantic_url_parameters_are_not_dropped
+    assert canonicalize_url("https://example.org/code?ref=v1") != canonicalize_url("https://example.org/code?ref=v2")
+E   AssertionError: assert 'https://example.org/code' != 'https://example.org/code'
+E    +  where 'https://example.org/code' = canonicalize_url('https://example.org/code?ref=v1')
+E    +  and   'https://example.org/code' = canonicalize_url('https://example.org/code?ref=v2')</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_deep_dag_does_not_recurse" time="0.004"><failure message="RecursionError: maximum recursion depth exceeded">tests\test_plan_regressions.py:104: in test_deep_dag_does_not_recurse
+    assert compile_dag(tasks).is_valid
+           ^^^^^^^^^^^^^^^^^^
+src\kdrx\dag.py:186: in compile_dag
+    cycle = _detect_cycle(tasks)
+            ^^^^^^^^^^^^^^^^^^^^
+src\kdrx\dag.py:110: in _detect_cycle
+    found = dfs(t.task_id)
+            ^^^^^^^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+src\kdrx\dag.py:101: in dfs
+    found = dfs(dep)
+            ^^^^^^^^
+E   RecursionError: maximum recursion depth exceeded</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_claims_use_exact_distinct_spans" time="0.026"><failure message="assert False&#10; +  where False = any(&lt;generator object test_claims_use_exact_distinct_spans.&lt;locals&gt;.&lt;genexpr&gt; at 0x000001885E24DA80&gt;)">tests\test_plan_regressions.py:114: in test_claims_use_exact_distinct_spans
+    assert any(claim.statement in spans[ref].verbatim_span for ref in claim.support_edges)
+E   assert False
+E    +  where False = any(&lt;generator object test_claims_use_exact_distinct_spans.&lt;locals&gt;.&lt;genexpr&gt; at 0x000001885E24DA80&gt;)</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_partial_resume_in_fresh_process" time="0.263"><failure message="AssertionError: assert not ['T-VERIFY', 'T-SYNTHESIZE', 'T-INTEGRITY']&#10; +  where ['T-VERIFY', 'T-SYNTHESIZE', 'T-INTEGRITY'] = ScheduleResult(completed=['T-RETRIEVE'], failed=['T-VERIFY', 'T-SYNTHESIZE', 'T-INTEGRITY'], events=[{'seq': 1, 'kind'...]}, {'seq': 8, 'kind': 'task_blocked', 'task_id': 'T-INTEGRITY', 'deps': ['T-SYNTHESIZE']}], no_progress_detected=True).failed">tests\test_plan_regressions.py:140: in test_partial_resume_in_fresh_process
+    assert not result.failed
+E   AssertionError: assert not ['T-VERIFY', 'T-SYNTHESIZE', 'T-INTEGRITY']
+E    +  where ['T-VERIFY', 'T-SYNTHESIZE', 'T-INTEGRITY'] = ScheduleResult(completed=['T-RETRIEVE'], failed=['T-VERIFY', 'T-SYNTHESIZE', 'T-INTEGRITY'], events=[{'seq': 1, 'kind'...]}, {'seq': 8, 'kind': 'task_blocked', 'task_id': 'T-INTEGRITY', 'deps': ['T-SYNTHESIZE']}], no_progress_detected=True).failed</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_resume_rejects_tampered_artifact" time="0.101"><failure message="Failed: DID NOT RAISE ValueError">tests\test_plan_regressions.py:150: in test_resume_rejects_tampered_artifact
+    with pytest.raises(ValueError, match="hash|integrity"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_execute_rejects_plan_drift" time="0.071"><failure message="Failed: DID NOT RAISE ValueError">tests\test_plan_regressions.py:157: in test_execute_rejects_plan_drift
+    with pytest.raises(ValueError, match="plan"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_missing_outputs_do_not_commit" time="0.037"><failure message="AssertionError: assert not ['T-RETRIEVE', 'T-VERIFY', 'T-SYNTHESIZE', 'T-INTEGRITY']&#10; +  where ['T-RETRIEVE', 'T-VERIFY', 'T-SYNTHESIZE', 'T-INTEGRITY'] = ScheduleResult(completed=['T-RETRIEVE', 'T-VERIFY', 'T-SYNTHESIZE', 'T-INTEGRITY'], failed=[], events=[{'seq': 1, 'kin..., 'attempt': 1, 'outputs': ['verification/integrity.json', 'verification/security.json']}], no_progress_detected=False).completed">tests\test_plan_regressions.py:169: in test_missing_outputs_do_not_commit
+    assert not result.completed
+E   AssertionError: assert not ['T-RETRIEVE', 'T-VERIFY', 'T-SYNTHESIZE', 'T-INTEGRITY']
+E    +  where ['T-RETRIEVE', 'T-VERIFY', 'T-SYNTHESIZE', 'T-INTEGRITY'] = ScheduleResult(completed=['T-RETRIEVE', 'T-VERIFY', 'T-SYNTHESIZE', 'T-INTEGRITY'], failed=[], events=[{'seq': 1, 'kin..., 'attempt': 1, 'outputs': ['verification/integrity.json', 'verification/security.json']}], no_progress_detected=False).completed</failure></testcase><testcase classname="tests.test_plan_regressions" name="test_report_hash_is_frozen_at_verification" time="0.091"><failure message="SystemExit: 2">C:\Python313\Lib\argparse.py:1937: in _parse_known_args2
+    namespace, args = self._parse_known_args(args, namespace, intermixed)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\argparse.py:2234: in _parse_known_args
+    raise ArgumentError(None, _('the following arguments are required: %s') %
+E   argparse.ArgumentError: the following arguments are required: --run-dir
+
+During handling of the above exception, another exception occurred:
+tests\test_plan_regressions.py:187: in test_report_hash_is_frozen_at_verification
+    code = main(["seal", str(state.run_dir), "--json"])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\kdrx\cli.py:1247: in main
+    args = parser.parse_args(argv)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\argparse.py:1898: in parse_args
+    args, argv = self.parse_known_args(args, namespace)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\argparse.py:1908: in parse_known_args
+    return self._parse_known_args2(args, namespace, intermixed=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\argparse.py:1937: in _parse_known_args2
+    namespace, args = self._parse_known_args(args, namespace, intermixed)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\argparse.py:2169: in _parse_known_args
+    positionals_end_index = consume_positionals(start_index)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\argparse.py:2144: in consume_positionals
+    take_action(action, args)
+C:\Python313\Lib\argparse.py:2013: in take_action
+    action(self, namespace, argument_values, option_string)
+C:\Python313\Lib\argparse.py:1258: in __call__
+    subnamespace, arg_strings = subparser.parse_known_args(arg_strings, None)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\argparse.py:1908: in parse_known_args
+    return self._parse_known_args2(args, namespace, intermixed=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\argparse.py:1939: in _parse_known_args2
+    self.error(str(err))
+C:\Python313\Lib\argparse.py:2658: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+C:\Python313\Lib\argparse.py:2645: in exit
+    _sys.exit(status)
+E   SystemExit: 2</failure></testcase></testsuite></testsuites>
