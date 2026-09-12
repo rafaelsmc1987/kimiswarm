@@ -2,9 +2,9 @@
 
 Os três documentos originais foram preservados. Este registro descreve a implementação parcial e suas lacunas; não encerra o backlog.
 
-Baseline: 368 testes aprovados. Implementação: 498 aprovados, 0 falhos, 0 erros, 0 ignorados.
+Baseline: 368 testes aprovados. Implementação: 514 aprovados, 0 falhos, 0 erros, 0 ignorados.
 
-Cenários do backlog aprovados no escopo local e vinculados ao JUnit: 12. Isso não certifica as tarefas completas nem os gates de release.
+Cenários do backlog aprovados no escopo local e vinculados ao JUnit: 14. Isso não certifica as tarefas completas nem os gates de release.
 
 Provedores configuráveis: Codex e Claude Code. Inferências reais nesta execução: zero. Benchmark Kimi: não executado.
 
@@ -31,8 +31,8 @@ Veja [resultados](../audit/validation.json), [matriz completa com 400 subtarefas
 | KS-017 | IMPLEMENTACAO_PARCIAL | Transporte com DNS/IP público, peer pinning, redirects revalidados e limites de bytes/tempo. **Falta:** Prova live de DNS rebinding, deadline rígido do resolvedor e política MIME ampliada pendentes. |
 | KS-018 | IMPLEMENTACAO_PARCIAL | Objetivo via payload base64/argv e stdin; arquivo global compartilhado removido. **Falta:** Round-trip no host real e matriz de shells não executados. |
 | KS-019 | IMPLEMENTACAO_PARCIAL | Fronteiras application/runtime/evidence/integrations extraídas com APIs de compatibilidade. **Falta:** Extração completa de storage/gates/executores ainda em andamento. |
-| KS-020 | IMPLEMENTACAO_PARCIAL | SQLite, CAS, exports recuperáveis e importação transacional de JSON legado com backup verificado e consulta read-only. **Falta:** Importação é arquivo histórico sem retomada de sucesso não comprovado; upgrade de schemas/registry e discos remotos mapeados pendentes. |
-| KS-021 | IMPLEMENTACAO_PARCIAL | Leases, fencing, heartbeats, reconciliação de expiração, consumo desconhecido conservador e cancelamento por conexão externa. **Falta:** Consumidores de notificações com deduplicação persistida e dead-letter ainda pendentes. |
+| KS-020 | IMPLEMENTACAO_PARCIAL | SQLite schema 3, CAS, exports recuperáveis, importação legada e backup pré-upgrade com rollback de DDL testado após kill. **Falta:** Importação é arquivo histórico sem retomada de sucesso não comprovado; registry, discos remotos mapeados e perda física de energia pendentes. |
+| KS-021 | IMPLEMENTACAO_PARCIAL | Leases, fencing, heartbeats, reconciliação, cancelamento, outbox/inbox, retries limitados e dead letters persistidas. **Falta:** Efeitos externos não têm garantia transacional; integração dos consumidores com todos os hosts ainda pendente. |
 | KS-022 | IMPLEMENTACAO_PARCIAL | Staging por tentativa, blobs antes do commit, publicação recuperável, bloqueio de aliases e coleta com retenção/quarentena. **Falta:** Isolamento do sistema operacional para código hostil e durabilidade após perda física de energia não certificados. |
 | KS-023 | IMPLEMENTACAO_PARCIAL | Registry executado no planejamento; plano com seis IDs arbitrários, análise de claims e exportação JSON verificado. **Falta:** Backend code continua bloqueado sem sandbox; exportações além de JSON e especialização semântica completa pendentes. |
 | KS-024 | IMPLEMENTACAO_PARCIAL | Briefs levam identidade, orçamento e políticas; inferência recebe contexto explícito e ferramentas restringidas. **Falta:** ExecutionSpec tipada completa e enforcement por sandbox do sistema operacional pendentes. |
@@ -44,7 +44,7 @@ Veja [resultados](../audit/validation.json), [matriz completa com 400 subtarefas
 | KS-030 | IMPLEMENTACAO_PARCIAL | Mutação transacional de sessões; corrupção do registry bloqueia; preservação de sessões concorrentes. **Falta:** Importação/recuperação integral do registry, expiração e aceitação de host pendentes. |
 | KS-031 | IMPLEMENTACAO_PARCIAL | Restrições de inferência por flags de host e transporte HTTP validado. **Falta:** Sandbox obrigatória do SO, broker de ferramentas, ACL/mounts e provas de escape NÃO implementados. |
 | KS-032 | IMPLEMENTACAO_PARCIAL | PlanPatch transacional, histórico imutável, CAS, capacidades/DAG/ownership e invalidação seletiva; leases e recibos vinculados à revisão. **Falta:** Patches exigem fronteira sem tasks em voo; replanejamento automático e reconciliação de todos os tipos de orçamento ainda pendentes. |
-| KS-033 | PENDENTE | Sem implementação nova certificada nesta execução. **Falta:** Mensagens interagentes tipadas/idempotentes com ciclo de vida não implementadas. |
+| KS-033 | IMPLEMENTACAO_PARCIAL | Mensagens tipadas com escopo/ref, deduplicação, limites, outbox/inbox e recursos ordenados; ajuda aplica aresta via PlanPatch atômico. **Falta:** Comunicação desligada por padrão; ablação de ganho, consumo semântico live e cancelamento após prazo ainda pendentes. |
 | KS-034 | IMPLEMENTACAO_PARCIAL | DAG com cinco especialistas e E2E simulado sobre corpus real. **Falta:** Execução com cinco chamadas reais, isolamento e orçamento autorizado pendentes. |
 | KS-035 | IMPLEMENTACAO_PARCIAL | FetchResponse tipada com bytes, status, headers, cadeia, duração e erros tipados de transporte. **Falta:** Todos os adapters ainda não convergiram para paginação/retry/cache e envelope único. |
 | KS-036 | IMPLEMENTACAO_PARCIAL | OpenAlex tolera primary_location.source nulo. **Falta:** Paginação, expansão bounded e testes live de contratos pendentes. |

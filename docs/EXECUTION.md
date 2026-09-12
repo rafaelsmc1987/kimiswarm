@@ -41,7 +41,9 @@ Os adaptadores usam argv e stdin, saída estruturada, diretório temporário, pe
 
 O SQLite em `runs/.kdr-state.sqlite3` mantém revisões, leases e eventos; JSON é exportação legível. `.blobs` guarda conteúdo por SHA-256. Preserve banco, blobs e diretórios dos runs juntos. Use a API `SQLiteStore.backup(destination)` para backup consistente enquanto a base estiver aberta; copiar apenas o arquivo SQLite em WAL pode perder estado.
 
-O schema SQLite 2 acrescenta exportações recuperáveis. Cada tentativa usa `.staging/<run>/<attempt>`, com cópias dos inputs e ownership das saídas. O kernel valida os arquivos, sincroniza os blobs e confirma resultado, referências, recibo, checkpoint e exportações pendentes na mesma transação. Um erro de exportação depois do commit interrompe a execução sem repetir a tarefa. Ao reabrir, as exportações pendentes são recuperadas. Isso foi testado com encerramento abrupto de processos e falhas de escrita; não constitui um ensaio de perda física de energia.
+O schema SQLite 3 mantém exportações recuperáveis e acrescenta políticas de comunicação, assinaturas, notificações, confirmações e leases de recursos. A atualização de schemas 1/2 cria um backup SQLite consistente em `.schema-backups/` antes do DDL; a integridade do backup é conferida. Falha de backup impede a atualização, e interrupção durante o DDL preserva a versão anterior. Para consulta de rollback, abra o backup com SQLite `mode=ro`; preserve os blobs junto dele. Não execute um runtime antigo em escrita sobre o banco novo.
+
+Cada tentativa usa `.staging/<run>/<attempt>`, com cópias dos inputs e ownership das saídas. O kernel valida os arquivos, sincroniza os blobs e confirma resultado, referências, recibo, checkpoint e exportações pendentes na mesma transação. Um erro de exportação depois do commit interrompe a execução sem repetir a tarefa. Ao reabrir, as exportações pendentes são recuperadas. Isso foi testado com encerramento abrupto de processos e falhas de escrita; não constitui um ensaio de perda física de energia.
 
 `resume` verifica hashes, recibos e identidades no banco; o loader tipado confere fontes, spans, claims, standings e edges contra os snapshots. Uma execução já concluída é retomada sem reescrever resultados ou eventos. O índice de busca só é reconstruído quando necessário. Alterar o corpus original não modifica os snapshots existentes. Arquivos adulterados depois de uma exportação confirmada continuam bloqueados: a retomada não os corrige silenciosamente.
 
@@ -68,7 +70,7 @@ kdr migrate-legacy --source .research\old-runs\ID --runs-root .research\imported
 kdr legacy-status --source .research\imported\.legacy-backups\ARQUIVO.zip
 ```
 
-O importador exige `manifest.json`, `plan.json` e `research_contract.json`, aceita versões 0.2/0.2.0/0.3, rejeita links e aliases de caminhos e limita o snapshot a 512 MiB. A recuperação de schemas SQLite de versões históricas, o registry legado completo e discos remotos mapeados ainda precisam de aceitação ampliada.
+O importador exige `manifest.json`, `plan.json` e `research_contract.json`, aceita versões 0.2/0.2.0/0.3, rejeita links e aliases de caminhos e limita o snapshot a 512 MiB. O registry legado completo, discos remotos mapeados e recuperação após perda física de energia ainda precisam de aceitação ampliada.
 
 Para recuperar exports perdidos usando o banco e os blobs preservados, existe um comando explícito. Ele substitui os arquivos controlados pelo banco e registra a solicitação. Um backup apenas do SQLite não inclui os blobs; ambos devem ser preservados. A limpeza primeiro apresenta um inventário; `--apply` move dados abandonados para `.quarantine`, sem apagamento definitivo. Referências transitivas dos snapshots e tentativas em execução são preservadas.
 
@@ -85,6 +87,24 @@ O selo avalia plano, resultados das tarefas, snapshots, posições exatas dos tr
 O registro de executores valida `task.kind` no planejamento. Há capacidades de retrieval, verificação de fontes, síntese/escrita, análise do standing persistido, exportação de evidências em JSON e gates determinísticos, além dos três tipos de tarefa de modelo. Os IDs são livres e o plano de quatro tarefas é apenas o exemplo padrão. `code` fica indisponível enquanto não houver sandbox validada. Exportação JSON não implica suporte a todos os formatos do backlog.
 
 ## Evidências e limites
+
+A comunicação é desabilitada por padrão. Para habilitá-la em um run, crie `coordination-policy.json` com `{"enabled":true}` e uma assinatura, por exemplo `{"task_id":"T-VERIFY","kinds":["SourceDiscovered","ArtifactCommitted"]}`. A política limita quantidade total, taxa por minuto, bytes, assinaturas, fila pendente e tentativas de entrega; depois de configurada, é imutável para esse run.
+
+```powershell
+kdr coordination configure --run-dir .research\runs\ID --file coordination-policy.json
+kdr coordination subscribe --run-dir .research\runs\ID --consumer reviewer --file subscription.json
+kdr coordination publish --run-dir .research\runs\ID --file message.json
+kdr coordination receive --run-dir .research\runs\ID --consumer reviewer
+kdr coordination status --run-dir .research\runs\ID
+```
+
+As mensagens `SourceDiscovered`, `ClaimChanged`, `GapOpened`, `HelpRequested` e `ArtifactCommitted` possuem identidade, revisão, escopo e referências. Descobertas repetidas da mesma URI/hash/escopo convergem para uma notificação. São avisos; não substituem verificação de evidência. `ArtifactCommitted` exige referências já comprometidas e é emitido automaticamente pelo kernel quando a comunicação está habilitada. Pressão da fila produz dead letters/diagnósticos e não repete uma tarefa válida.
+
+A outbox nasce na mesma transação do evento. Leases com tokens impedem confirmação por um consumidor expirado. `Notifications.consume` permite que um handler confiável aplique efeitos no mesmo SQLite e confirme sua inbox em uma única transação; efeitos externos não têm essa garantia. `receive` conserva uma cópia em `coordination/received/` antes de confirmar, permitindo recuperação caso a saída do terminal se perca. Falhas têm retry limitado e dead letter persistida.
+
+Pedidos de ajuda exigem motivo, orçamento finito em todas as dimensões e prazo de aceitação de até um dia. A aceitação aplica um PlanPatch e publica a mensagem em uma única transação, criando a dependência no DAG. Ciclos deixam diagnóstico e nenhuma alteração parcial. Vale a restrição de revisão: tarefas em voo precisam parar/reconciliar antes da alteração. O pedido não aumenta a autorização do provedor; cancelamento automático após o prazo e uso semântico por especialistas live ainda estão pendentes.
+
+`ResourceLocks` oferece aquisição atômica com ordem, expiração e fencing vinculados ao lease da tentativa; não espera segurando parte de um conjunto indisponível. É coordenação dentro de um StateStore local, não uma sandbox nem um lock distribuído. O ganho de qualidade/latência contra comunicação desligada ainda precisa de ablação independente; não há ganho comprovado nesta implementação.
 
 Os testes locais cobrem concorrência, processo interrompido, CAS, fencing, rollback SQLite, limites HTTP, SSRF, bytes do selo e emulação dos adaptadores. `audit/baseline-junit.xml` registra a baseline; `audit/final-junit.xml` registra a implementação. Logs intermediários com falhas foram conservados. O teste inicial da corrida de selo tinha um argumento CLI incorreto; ele foi corrigido antes de validar o defeito e o patch.
 

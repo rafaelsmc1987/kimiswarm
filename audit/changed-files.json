@@ -22,6 +22,21 @@
       "bytes": 958
     },
     {
+      "path": ".gitattributes",
+      "sha256": "a7e015a230b325f2ba727348cf8802438db7ac91e1efd840fa23207449cd3f23",
+      "bytes": 204
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "0630fbc53d3bbd0fbad0ad2d65818a31a4ef20a80d7c3bea980f62bff08e318c",
+      "bytes": 2662
+    },
+    {
+      "path": ".github/workflows/security.yml",
+      "sha256": "67eed933a51d11f70dab000c1ed68249c5fc54fa55eb2f9e156e3f3ca639bbf3",
+      "bytes": 1576
+    },
+    {
       "path": ".gitignore",
       "sha256": "caa2cf62f1945a88dae94cd998ef2142753e12aec3e38cb0f64168571478a218",
       "bytes": 1222
@@ -43,8 +58,8 @@
     },
     {
       "path": "docs/EXECUTION.md",
-      "sha256": "13b7f6ae302057bbedeeb9d3964d6cb185f0d50d6b56567e6ed5051602168416",
-      "bytes": 11438
+      "sha256": "f433d8043184463cb5447a227925fa5adc5b505ca04312a25f1b22723b301504",
+      "bytes": 14679
     },
     {
       "path": "docs/KDRX_README.md",
@@ -122,6 +137,11 @@
       "bytes": 4635
     },
     {
+      "path": "plugins/kdr-x/schemas/ArtifactCommitted.schema.json",
+      "sha256": "4f4b8d8ea64058df60588a3c0ba6d5a4beca1f568b14dd27978099387cb1faa4",
+      "bytes": 3350
+    },
+    {
       "path": "plugins/kdr-x/schemas/ArtifactRecord.schema.json",
       "sha256": "e9b3f7aef03975f7c1a612f35e79141781b3526605ada9814d5be241c540a8b2",
       "bytes": 2101
@@ -130,6 +150,11 @@
       "path": "plugins/kdr-x/schemas/Claim.schema.json",
       "sha256": "f2c63b48ba49e0125f6e638245b09aaa8b1ef5cc6fd8476ba47ddc3d121f0066",
       "bytes": 3890
+    },
+    {
+      "path": "plugins/kdr-x/schemas/ClaimChanged.schema.json",
+      "sha256": "52ae8747252fb262d1ea087d2ec046b17ea5bdff3b345698b9bfd168412a2db6",
+      "bytes": 3515
     },
     {
       "path": "plugins/kdr-x/schemas/ClaimEvidenceEdge.schema.json",
@@ -142,6 +167,11 @@
       "bytes": 2423
     },
     {
+      "path": "plugins/kdr-x/schemas/CoordinationPolicy.schema.json",
+      "sha256": "ccfd9aebe45c58a969103bc0e59e21bb805e3de84e07c85afa00957eed77ea29",
+      "bytes": 1498
+    },
+    {
       "path": "plugins/kdr-x/schemas/DeliveryManifest.schema.json",
       "sha256": "04e53728eadeb3c4588775e7b17acbae839f8e3b222f19e73b7aecadb7209b72",
       "bytes": 4426
@@ -150,6 +180,16 @@
       "path": "plugins/kdr-x/schemas/EvidenceSpan.schema.json",
       "sha256": "bfec21b414a2b16b62c5ea62336b94f1f1dcfe6e466c64ea7e796332dde54953",
       "bytes": 5824
+    },
+    {
+      "path": "plugins/kdr-x/schemas/GapOpened.schema.json",
+      "sha256": "326e33da4b0993e04344999b9047c18ff39c437d529c2e3d7482d81bd0002107",
+      "bytes": 3501
+    },
+    {
+      "path": "plugins/kdr-x/schemas/HelpRequested.schema.json",
+      "sha256": "8349ba714f8619cd9dffc4cdd913ed436e4f750ebe8323643234d6fe8ab0bc27",
+      "bytes": 4683
     },
     {
       "path": "plugins/kdr-x/schemas/PlanPatch.schema.json",
@@ -175,6 +215,11 @@
       "path": "plugins/kdr-x/schemas/RunManifest.schema.json",
       "sha256": "30fe611b28d0cc3732ba309c1e515b4819bbe439856323c39d95d9a230a6b256",
       "bytes": 2699
+    },
+    {
+      "path": "plugins/kdr-x/schemas/SourceDiscovered.schema.json",
+      "sha256": "95253afcac1d7cddae2fb811ccba156945cf4efac775fae599522a1c214fc9ba",
+      "bytes": 3549
     },
     {
       "path": "plugins/kdr-x/schemas/SourceRecord.schema.json",
@@ -238,13 +283,13 @@
     },
     {
       "path": "scripts/report_execution.py",
-      "sha256": "0533a5b1b36b530b699be34852fddb242ac2cb7bba618403af442c27225081bb",
-      "bytes": 26976
+      "sha256": "1848234ee0a74a50d45f991df48c07dfb2204ded82ce1a6813f5e18b70f4e6a8",
+      "bytes": 27572
     },
     {
       "path": "scripts/verify_distribution.py",
-      "sha256": "69ae063bd854e028950578d3955b360c7b4c2732b10fb1f1a93eda4ff61e015f",
-      "bytes": 7350
+      "sha256": "a825e8bf184e2339e3c4735ef7e65ce060916234f06afaab4bd355b9c3638b00",
+      "bytes": 9049
     },
     {
       "path": "src/kdrx/__init__.py",
@@ -303,8 +348,8 @@
     },
     {
       "path": "src/kdrx/cli.py",
-      "sha256": "160c825000faeee93608154a08b13cc7b3c6457eed249a91d2d839492fe2cac1",
-      "bytes": 48563
+      "sha256": "1404477b3631340f5cd815954e15ae71713125eb94b4bc1a27bb9d6b31b07d4e",
+      "bytes": 51912
     },
     {
       "path": "src/kdrx/corpus.py",
@@ -382,6 +427,11 @@
       "bytes": 71
     },
     {
+      "path": "src/kdrx/runtime/blackboard.py",
+      "sha256": "909d4dc461f1f54f8631fe9e663eaa011a5541dc4cb79acb4ad6d2605e5358d4",
+      "bytes": 10240
+    },
+    {
       "path": "src/kdrx/runtime/blobs.py",
       "sha256": "fb8c1f99d09cda50899fed46c3f2d2459281a18b9876412cc2cbf3638410fe0f",
       "bytes": 1648
@@ -407,9 +457,19 @@
       "bytes": 10108
     },
     {
+      "path": "src/kdrx/runtime/notifications.py",
+      "sha256": "bc932cb7f9662050a5c6ac6ee00c2b059a6b49afd47b1e539d70aa6a1783765c",
+      "bytes": 10659
+    },
+    {
       "path": "src/kdrx/runtime/plan_revisions.py",
-      "sha256": "fa6a57772f7d905851ab9774c9dc08eb5d085d7cf6a96a9b5882296c31de4f9a",
-      "bytes": 12781
+      "sha256": "7a23be4de55b3ac4c2543b6c9e939652236ddbe4e7dfe4f0c17605826b8b617f",
+      "bytes": 12914
+    },
+    {
+      "path": "src/kdrx/runtime/resources.py",
+      "sha256": "8c0ad7ee365d4285b0a699231698a6304b2cc84574f58fa635c5cda8428a252d",
+      "bytes": 3656
     },
     {
       "path": "src/kdrx/runtime/staging.py",
@@ -418,8 +478,8 @@
     },
     {
       "path": "src/kdrx/runtime/store.py",
-      "sha256": "e377ac51cb2902f336abd3a2f68a39a1d7699e83feacf381da79862083206d1a",
-      "bytes": 34162
+      "sha256": "e1358e8477dea0f1f60a6d9c7bd0e25214bbcbe35ed5c030382baf77e4b1d98e",
+      "bytes": 37103
     },
     {
       "path": "src/kdrx/scheduler.py",
@@ -428,8 +488,8 @@
     },
     {
       "path": "src/kdrx/schemas/__init__.py",
-      "sha256": "44679e157384e012c1047a3599758d935396e07acd10d13c3244fa9e8cc3ee56",
-      "bytes": 2490
+      "sha256": "162ce491046b9bfb8de2ef0fa7e9ef034c138112327273b23f7f4ee2071df266",
+      "bytes": 2876
     },
     {
       "path": "src/kdrx/schemas/artifact.py",
@@ -440,6 +500,11 @@
       "path": "src/kdrx/schemas/claims.py",
       "sha256": "a67fd90602a7b4b74108ace5bb8a7cb201fd6727f80b85f74ada2fc9b1013220",
       "bytes": 3418
+    },
+    {
+      "path": "src/kdrx/schemas/coordination.py",
+      "sha256": "50366c6302c71c11dfe3f0d0f67c8521636f7f7ce6c8983501ec75f611085dba",
+      "bytes": 4618
     },
     {
       "path": "src/kdrx/schemas/corpus.py",
@@ -458,8 +523,8 @@
     },
     {
       "path": "src/kdrx/schemas/versioning.py",
-      "sha256": "33bec1165eda4624bb66f9c91e83adab69a824e839cdf0d64cf953dbb578e8c7",
-      "bytes": 3463
+      "sha256": "0b6c418d7b14ea49cb0c00a374b50299468c4df643516b6d89875797b81a86e2",
+      "bytes": 3487
     },
     {
       "path": "src/kdrx/security.py",
@@ -480,6 +545,11 @@
       "path": "tests/test_adapters.py",
       "sha256": "bcc61a8ef1566209eb36f544feb659fb7d8516f3aaec37bb253fac1f14272a75",
       "bytes": 5754
+    },
+    {
+      "path": "tests/test_coordination.py",
+      "sha256": "5d442763f7b9b17b8f7bfd0a7982ca78cdeb3d28bfd3c6bd35ef00ec5d70f294",
+      "bytes": 13100
     },
     {
       "path": "tests/test_dag_scheduler.py",
@@ -597,9 +667,14 @@
       "bytes": 2318
     },
     {
+      "path": "tests/test_schema_upgrade.py",
+      "sha256": "6d381bf7df93360d488113fc3b16ffed991a49dfb0711ac1bd9652d32bd98673",
+      "bytes": 3011
+    },
+    {
       "path": "tests/test_schemas.py",
-      "sha256": "17fff01e3aaad7fff78226d58d2003c30050b29aca10a0ad894a931bd70d405b",
-      "bytes": 2400
+      "sha256": "d4a60424a4c3fae22d612fb480e8acf46774c56a05f20fb0c791d2ddd484d22f",
+      "bytes": 2557
     },
     {
       "path": "tests/test_workflows.py",
@@ -612,5 +687,5 @@
     "BACKLOG_KIMISWARM.json": "26d669f4ae76dca3d1284eb008400d2c45de74752848c128ffb8925f6d920e48",
     "PLANO_CIRURGICO_KIMISWARM.md": "1e193cc4ba3fbca5a307f125c10d7c2b03681032274c1ccf5a8bdad4bbe92df5"
   },
-  "evidence_scope": "local validation of the listed file hashes, relative to base_commit; see git history for publication"
+  "evidence_scope": "local validation of listed file hashes relative to base_commit; publication and CI are recorded separately"
 }

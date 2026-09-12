@@ -9,28 +9,28 @@
     "sha256": "e278e7a31204e16eee0e78d9f9eb58dc75db0a843c19b139a634ae9e12d01beb"
   },
   "current": {
-    "tests": 498,
-    "passed": 498,
+    "tests": 514,
+    "passed": 514,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
     "junit": "audit/final-junit.xml",
-    "sha256": "1b949bc86a29f1e7487296f4fde5e0286139cc38fa58c163368155ed629ca990"
+    "sha256": "9dedd216e3ad0e836b110c25aac569f5905459fdb6a7794d6961d807206be3b9"
   },
   "coverage": {
-    "covered_lines": 5606,
-    "num_statements": 6917,
-    "percent_covered": 77.99483552262265,
+    "covered_lines": 5992,
+    "num_statements": 7358,
+    "percent_covered": 78.27506318449873,
     "percent_covered_display": "78",
-    "missing_lines": 1311,
+    "missing_lines": 1366,
     "excluded_lines": 11,
-    "percent_statements_covered": 81.04669654474483,
+    "percent_statements_covered": 81.43517260125034,
     "percent_statements_covered_display": "81",
-    "num_branches": 1990,
-    "num_partial_branches": 297,
-    "covered_branches": 1341,
-    "missing_branches": 649,
-    "percent_branches_covered": 67.38693467336684,
+    "num_branches": 2138,
+    "num_partial_branches": 337,
+    "covered_branches": 1441,
+    "missing_branches": 697,
+    "percent_branches_covered": 67.39943872778298,
     "percent_branches_covered_display": "67"
   },
   "python": "3.13.15 (main, Aug 14 2026, 15:36:10) [MSC v.1944 64 bit (AMD64)]",
@@ -38,10 +38,11 @@
   "sqlite": "3.53.1",
   "live_model_calls": 0,
   "kimi_product_evaluations": 0,
-  "remote_publication": false,
+  "git_publication_evidence": "audit/git-publication.json",
+  "release_published": false,
   "meaning": "Unit/integration tests are not a research-quality or SOTA score.",
   "limits": [
-    "Windows only in this session",
+    "local suites on Windows; Linux CI is recorded separately on the pull request",
     "model CLI fixtures are simulated",
     "host plugin E2E untested",
     "no independent held-out evaluation"
@@ -162,6 +163,24 @@
       "junit": "audit/final-junit.xml",
       "supplemental_junit": "audit/continuation-fencing.xml",
       "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
+    },
+    "AT-033-1": {
+      "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+      "executed_tests": [
+        "tests.test_coordination::test_same_source_from_two_workers_creates_one_discovery_and_notification"
+      ],
+      "junit": "audit/final-junit.xml",
+      "supplemental_junit": "audit/continuation-fencing.xml",
+      "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
+    },
+    "AT-033-2": {
+      "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+      "executed_tests": [
+        "tests.test_coordination::test_circular_help_rejected_with_diagnostic_and_no_hidden_dependency"
+      ],
+      "junit": "audit/final-junit.xml",
+      "supplemental_junit": "audit/continuation-fencing.xml",
+      "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
     }
   },
   "lint": {
@@ -172,13 +191,13 @@
   "governance_evidence": "audit/governance-observation.json",
   "changed_files_evidence": "audit/changed-files.json",
   "python_310_validation": {
-    "tests": 498,
-    "passed": 498,
+    "tests": 514,
+    "passed": 514,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
     "junit": "audit/py310-junit.xml",
-    "sha256": "9d293093d54066166fd76fd831e03164ffd913fb1002fd79a42ee2c92770573e",
+    "sha256": "6bf2bd14f8188d790aa914c97a0da904b5186684327b38d9f7325152b84a73db",
     "environment": {
       "python": "3.10.21 (main, Aug 14 2026, 15:34:01) [MSC v.1944 64 bit (AMD64)]",
       "sqlite": "3.53.1",

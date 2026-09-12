@@ -36,7 +36,11 @@ class SQLiteStore:
     """Local disk only; old SQLite uses rollback journaling, never unsafe WAL."""
 
     def __init__(self, path: Path, *, journal: str = "auto") -> None:
+        from kdrx.security import has_symlink_component
+
         self.path = Path(path).absolute()
+        if has_symlink_component(self.path):
+            raise ValueError("database cannot traverse a link or junction")
         if str(self.path).startswith("\\\\"):
             raise ValueError("SQLite runtime requires a local disk")
         if journal not in {"auto", "wal", "delete"}:
@@ -47,10 +51,27 @@ class SQLiteStore:
             )
         self.journal = "wal" if journal != "delete" and wal_supported() else "delete"
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.migration_backup = None
         with self.connect() as db:
             current = db.execute("PRAGMA user_version").fetchone()[0]
-            if current not in {0, 1, 2}:
+            if current not in {0, 1, 2, 3}:
                 raise ValueError(f"unsupported database schema version {current}")
+            if current in {1, 2}:
+                folder = self.path.parent / ".schema-backups"
+                if has_symlink_component(folder):
+                    raise ValueError(
+                        "migration backup cannot traverse a link or junction"
+                    )
+                folder.mkdir(exist_ok=True)
+                self.migration_backup = (
+                    folder / f"{self.path.name}.v{current}.{uuid.uuid4().hex}.sqlite3"
+                )
+                self.backup(self.migration_backup)
+                with closing(sqlite3.connect(self.migration_backup)) as backup:
+                    if backup.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                        raise ValueError(
+                            "schema migration backup failed integrity verification"
+                        )
             # journal_mode does not reliably honor busy_timeout while another
             # process is converting a newly created database to WAL.
             deadline = time.monotonic() + 30
@@ -82,7 +103,14 @@ class SQLiteStore:
                 CREATE TABLE IF NOT EXISTS reservations(reservation_id TEXT PRIMARY KEY, run_id TEXT NOT NULL, dimension TEXT NOT NULL, amount REAL NOT NULL, actual REAL, status TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS deliveries(run_id TEXT NOT NULL, revision INTEGER NOT NULL, payload TEXT NOT NULL, eligible INTEGER NOT NULL, PRIMARY KEY(run_id,revision));
                 CREATE TABLE IF NOT EXISTS file_projections(run_id TEXT NOT NULL, path TEXT NOT NULL, hash TEXT NOT NULL, payload BLOB, generation INTEGER NOT NULL, exported_generation INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(run_id,path));
-                PRAGMA user_version=2;
+                CREATE TABLE IF NOT EXISTS coordination_policies(run_id TEXT PRIMARY KEY,payload TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS coordination_messages(message_id TEXT PRIMARY KEY,run_id TEXT NOT NULL,revision INTEGER NOT NULL,semantic_key TEXT NOT NULL,request_hash TEXT NOT NULL,event_id TEXT NOT NULL,created REAL NOT NULL,UNIQUE(run_id,revision,semantic_key));
+                CREATE TABLE IF NOT EXISTS subscriptions(run_id TEXT NOT NULL,consumer_id TEXT NOT NULL,payload TEXT NOT NULL,PRIMARY KEY(run_id,consumer_id));
+                CREATE TABLE IF NOT EXISTS notifications(run_id TEXT NOT NULL,consumer_id TEXT NOT NULL,event_id TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',attempts INTEGER NOT NULL DEFAULT 0,token TEXT,worker_id TEXT,lease_until REAL,available_at REAL NOT NULL DEFAULT 0,last_error TEXT,PRIMARY KEY(run_id,consumer_id,event_id));
+                CREATE TABLE IF NOT EXISTS notification_inbox(run_id TEXT NOT NULL,consumer_id TEXT NOT NULL,event_id TEXT NOT NULL,processed REAL NOT NULL,PRIMARY KEY(run_id,consumer_id,event_id));
+                CREATE INDEX IF NOT EXISTS notification_ready ON notifications(run_id,consumer_id,status,available_at);
+                CREATE TABLE IF NOT EXISTS resource_locks(resource TEXT PRIMARY KEY,run_id TEXT NOT NULL,task_id TEXT NOT NULL,attempt_id TEXT NOT NULL,token TEXT NOT NULL,fence INTEGER NOT NULL,lease_until REAL NOT NULL);
+                PRAGMA user_version=3;
                 COMMIT;
             """)
 
@@ -199,6 +227,9 @@ class SQLiteStore:
             "events.jsonl",
             payload="".join(row[0] + "\n" for row in rows).encode("utf-8"),
         )
+        from kdrx.runtime.notifications import enqueue_event
+
+        enqueue_event(db, run_id, record)
         return record
 
     def append_event(self, run_id: str, event: dict) -> dict:
@@ -678,6 +709,14 @@ class SQLiteStore:
                 "UPDATE attempts SET status=?,finished=? WHERE attempt_id=?",
                 (status, time.time(), lease["attempt_id"]),
             )
+            db.execute(
+                "UPDATE resource_locks SET lease_until=0 WHERE attempt_id=?",
+                (lease["attempt_id"],),
+            )
+            if success and checkpoint is not None:
+                from kdrx.runtime.blackboard import publish_committed
+
+                publish_committed(self, db, lease, artifacts)
             self.event(
                 db,
                 lease["run_id"],

@@ -110,13 +110,13 @@ PROGRESS = {
         "src/kdrx/application/service.py",
     ),
     20: (
-        "SQLite, CAS, exports recuperáveis e importação transacional de JSON legado com backup verificado e consulta read-only.",
-        "Importação é arquivo histórico sem retomada de sucesso não comprovado; upgrade de schemas/registry e discos remotos mapeados pendentes.",
+        "SQLite schema 3, CAS, exports recuperáveis, importação legada e backup pré-upgrade com rollback de DDL testado após kill.",
+        "Importação é arquivo histórico sem retomada de sucesso não comprovado; registry, discos remotos mapeados e perda física de energia pendentes.",
         "tests/test_legacy_migration.py",
     ),
     21: (
-        "Leases, fencing, heartbeats, reconciliação de expiração, consumo desconhecido conservador e cancelamento por conexão externa.",
-        "Consumidores de notificações com deduplicação persistida e dead-letter ainda pendentes.",
+        "Leases, fencing, heartbeats, reconciliação, cancelamento, outbox/inbox, retries limitados e dead letters persistidas.",
+        "Efeitos externos não têm garantia transacional; integração dos consumidores com todos os hosts ainda pendente.",
         "tests/test_runtime_leases.py",
     ),
     22: (
@@ -178,6 +178,11 @@ PROGRESS = {
         "DAG com cinco especialistas e E2E simulado sobre corpus real.",
         "Execução com cinco chamadas reais, isolamento e orçamento autorizado pendentes.",
         "tests/test_model_cli.py",
+    ),
+    33: (
+        "Mensagens tipadas com escopo/ref, deduplicação, limites, outbox/inbox e recursos ordenados; ajuda aplica aresta via PlanPatch atômico.",
+        "Comunicação desligada por padrão; ablação de ganho, consumo semântico live e cancelamento após prazo ainda pendentes.",
+        "tests/test_coordination.py",
     ),
     35: (
         "FetchResponse tipada com bytes, status, headers, cadeia, duração e erros tipados de transporte.",
@@ -307,7 +312,6 @@ PROGRESS = {
 }
 
 NOT_STARTED = {
-    33: "Mensagens interagentes tipadas/idempotentes com ciclo de vida não implementadas.",
     38: "GitHub adapter com pin de commit e navegação de código ainda pendente.",
     39: "Ferramentas distintas de busca/fetch/browser e provenance uniforme ainda pendentes.",
     42: "Embeddings neurais e reranking medido não implementados; n-gram continua diagnóstico lexical.",
@@ -351,6 +355,12 @@ LOCAL_ACCEPTANCE = {
         "test_new_validation_preserves_completed_branches_and_original_receipts"
     ],
     "AT-032-2": ["test_two_patches_on_same_base_require_rebase"],
+    "AT-033-1": [
+        "test_same_source_from_two_workers_creates_one_discovery_and_notification"
+    ],
+    "AT-033-2": [
+        "test_circular_help_rejected_with_diagnostic_and_no_hidden_dependency"
+    ],
 }
 
 
@@ -471,10 +481,11 @@ def main():
         "sqlite": sqlite3.sqlite_version,
         "live_model_calls": 0,
         "kimi_product_evaluations": 0,
-        "remote_publication": False,
+        "git_publication_evidence": "audit/git-publication.json",
+        "release_published": False,
         "meaning": "Unit/integration tests are not a research-quality or SOTA score.",
         "limits": [
-            "Windows only in this session",
+            "local suites on Windows; Linux CI is recorded separately on the pull request",
             "model CLI fixtures are simulated",
             "host plugin E2E untested",
             "no independent held-out evaluation",

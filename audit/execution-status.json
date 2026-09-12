@@ -1,12 +1,12 @@
 {
   "original_backlog_sha256": "26d669f4ae76dca3d1284eb008400d2c45de74752848c128ffb8925f6d920e48",
   "baseline_commit": "2e2851d820cbed7060064a6584e7eb7f26b25885",
-  "checkout_head": "2e2851d820cbed7060064a6584e7eb7f26b25885",
+  "checkout_head": "7caf97f022c0c4479df09dae1143e151e03275f7",
   "working_tree_modified": true,
   "plan_fully_completed": false,
   "task_counts": {
-    "IMPLEMENTACAO_PARCIAL": 58,
-    "PENDENTE": 18,
+    "IMPLEMENTACAO_PARCIAL": 59,
+    "PENDENTE": 17,
     "BLOQUEADO_EXTERNO": 2,
     "CONDICIONAL_NAO_INICIADO": 2
   },
@@ -1512,8 +1512,8 @@
         "KS-019"
       ],
       "status": "IMPLEMENTACAO_PARCIAL",
-      "implemented": "SQLite, CAS, exports recuperáveis e importação transacional de JSON legado com backup verificado e consulta read-only.",
-      "remaining": "Importação é arquivo histórico sem retomada de sucesso não comprovado; upgrade de schemas/registry e discos remotos mapeados pendentes.",
+      "implemented": "SQLite schema 3, CAS, exports recuperáveis, importação legada e backup pré-upgrade com rollback de DDL testado após kill.",
+      "remaining": "Importação é arquivo histórico sem retomada de sucesso não comprovado; registry, discos remotos mapeados e perda física de energia pendentes.",
       "evidence": [
         "tests/test_legacy_migration.py"
       ],
@@ -1601,8 +1601,8 @@
         "KS-020"
       ],
       "status": "IMPLEMENTACAO_PARCIAL",
-      "implemented": "Leases, fencing, heartbeats, reconciliação de expiração, consumo desconhecido conservador e cancelamento por conexão externa.",
-      "remaining": "Consumidores de notificações com deduplicação persistida e dead-letter ainda pendentes.",
+      "implemented": "Leases, fencing, heartbeats, reconciliação, cancelamento, outbox/inbox, retries limitados e dead letters persistidas.",
+      "remaining": "Efeitos externos não têm garantia transacional; integração dos consumidores com todos os hosts ainda pendente.",
       "evidence": [
         "tests/test_runtime_leases.py"
       ],
@@ -2611,41 +2611,53 @@
         "KS-021",
         "KS-027"
       ],
-      "status": "PENDENTE",
-      "implemented": "Sem implementação nova certificada nesta execução.",
-      "remaining": "Mensagens interagentes tipadas/idempotentes com ciclo de vida não implementadas.",
-      "evidence": [],
+      "status": "IMPLEMENTACAO_PARCIAL",
+      "implemented": "Mensagens tipadas com escopo/ref, deduplicação, limites, outbox/inbox e recursos ordenados; ajuda aplica aresta via PlanPatch atômico.",
+      "remaining": "Comunicação desligada por padrão; ablação de ganho, consumo semântico live e cancelamento após prazo ainda pendentes.",
+      "evidence": [
+        "tests/test_coordination.py"
+      ],
       "fully_accepted": false,
       "subtasks": [
         {
           "id": "KS-033.1",
           "action": "Criar eventos SourceDiscovered, ClaimChanged, GapOpened, HelpRequested e ArtifactCommitted com refs e escopo.",
           "status": "NAO_CERTIFICADA_INTEGRALMENTE",
-          "task_evidence": []
+          "task_evidence": [
+            "tests/test_coordination.py"
+          ]
         },
         {
           "id": "KS-033.2",
           "action": "Oferecer assinaturas por task/subquestão, deduplicar notificações e limitar taxa/tamanho de mensagens.",
           "status": "NAO_CERTIFICADA_INTEGRALMENTE",
-          "task_evidence": []
+          "task_evidence": [
+            "tests/test_coordination.py"
+          ]
         },
         {
           "id": "KS-033.3",
           "action": "Permitir solicitação direta entre especialistas somente com motivo, budget e prazo; converter dependência resultante em aresta auditável.",
           "status": "NAO_CERTIFICADA_INTEGRALMENTE",
-          "task_evidence": []
+          "task_evidence": [
+            "tests/test_coordination.py"
+          ]
         },
         {
           "id": "KS-033.4",
           "action": "Gerenciar recursos exclusivos com ordem de aquisição e expiração; não usar bloqueios informais em prompts.",
           "status": "NAO_CERTIFICADA_INTEGRALMENTE",
-          "task_evidence": []
+          "task_evidence": [
+            "tests/test_coordination.py"
+          ]
         },
         {
           "id": "KS-033.5",
           "action": "Medir ganho por coordenação contra comunicação desligada; desativar chatter sem contribuição observada.",
           "status": "NAO_CERTIFICADA_INTEGRALMENTE",
-          "task_evidence": []
+          "task_evidence": [
+            "tests/test_coordination.py"
+          ]
         }
       ],
       "acceptance_tests": [
@@ -2653,15 +2665,31 @@
           "id": "AT-033-1",
           "proposed_test": "test_ks_033_1",
           "scenario": "Dois workers descobrem a mesma fonte: registry converge sem trabalho duplicado posterior desnecessário.",
-          "execution_status": "CENARIO_COMPLETO_NAO_ATESTADO",
-          "related_evidence": []
+          "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+          "related_evidence": [
+            "tests/test_coordination.py"
+          ],
+          "executed_tests": [
+            "tests.test_coordination::test_same_source_from_two_workers_creates_one_discovery_and_notification"
+          ],
+          "junit": "audit/final-junit.xml",
+          "supplemental_junit": "audit/continuation-fencing.xml",
+          "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
         },
         {
           "id": "AT-033-2",
           "proposed_test": "test_ks_033_2",
           "scenario": "Solicitações circulares não geram deadlock e deixam diagnóstico de dependência.",
-          "execution_status": "CENARIO_COMPLETO_NAO_ATESTADO",
-          "related_evidence": []
+          "execution_status": "CENARIO_APROVADO_LOCALMENTE",
+          "related_evidence": [
+            "tests/test_coordination.py"
+          ],
+          "executed_tests": [
+            "tests.test_coordination::test_circular_help_rejected_with_diagnostic_and_no_hidden_dependency"
+          ],
+          "junit": "audit/final-junit.xml",
+          "supplemental_junit": "audit/continuation-fencing.xml",
+          "scope": "Windows, testes locais; não certifica todos os requisitos da tarefa nem revisão de PR"
         }
       ]
     },

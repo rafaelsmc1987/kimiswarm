@@ -1,0 +1,166 @@
+{
+  "$defs": {
+    "MessageRef": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "0.3",
+          "default": "0.3",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "source",
+            "claim",
+            "gap",
+            "artifact",
+            "task"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "ref_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Ref Id",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        }
+      },
+      "required": [
+        "kind",
+        "ref_id"
+      ],
+      "title": "MessageRef",
+      "type": "object"
+    },
+    "MessageScope": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "0.3",
+          "default": "0.3",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Task Id"
+        },
+        "subquestion_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subquestion Id"
+        }
+      },
+      "title": "MessageScope",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "0.3",
+      "default": "0.3",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "message_id": {
+      "title": "Message Id",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "plan_revision": {
+      "minimum": 0,
+      "title": "Plan Revision",
+      "type": "integer"
+    },
+    "task_id": {
+      "title": "Task Id",
+      "type": "string"
+    },
+    "scope": {
+      "$ref": "#/$defs/MessageScope"
+    },
+    "refs": {
+      "items": {
+        "$ref": "#/$defs/MessageRef"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Refs",
+      "type": "array"
+    },
+    "kind": {
+      "const": "SourceDiscovered",
+      "default": "SourceDiscovered",
+      "title": "Kind",
+      "type": "string"
+    },
+    "canonical_uri": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Canonical Uri",
+      "type": "string"
+    },
+    "content_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "plan_revision",
+    "task_id",
+    "scope",
+    "refs",
+    "canonical_uri",
+    "content_hash"
+  ],
+  "title": "SourceDiscovered",
+  "type": "object"
+}

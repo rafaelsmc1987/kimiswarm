@@ -64,6 +64,18 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     migrate.add_argument("--source", required=True)
     migrate.add_argument("--runs-root", required=True)
+    coordination = sub.add_parser(
+        "coordination",
+        help="configure, publish or consume bounded runtime notifications",
+    )
+    coordination.add_argument(
+        "action", choices=["configure", "publish", "subscribe", "receive", "status"]
+    )
+    coordination.add_argument("--run-dir", required=True)
+    coordination.add_argument(
+        "--file", help="typed policy, message or subscription JSON"
+    )
+    coordination.add_argument("--consumer", help="registered consumer identity")
     gc = sub.add_parser(
         "gc", help="inventory abandoned runtime data; optionally quarantine it"
     )
@@ -1111,6 +1123,70 @@ def cmd_recover_exports(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_coordination(args: argparse.Namespace) -> int:
+    from kdrx.runtime.blackboard import Blackboard
+    from kdrx.runtime.notifications import Notifications
+    from kdrx.schemas.coordination import CoordinationPolicy, MESSAGE_ADAPTER
+    from kdrx.state import RunState
+
+    directory = Path(args.run_dir).absolute()
+    state = RunState(directory.parent, directory.name)
+    state.load_manifest()
+    board, queue = Blackboard(state), Notifications(state.store)
+    payload = json.loads(Path(args.file).read_bytes()) if args.file else None
+    if args.action in {"configure", "publish", "subscribe"} and payload is None:
+        raise ValueError("--file is required for this action")
+    if args.action == "configure":
+        board.configure(CoordinationPolicy.model_validate(payload))
+        result = {"configured": True}
+    elif args.action == "publish":
+        result = board.publish(MESSAGE_ADAPTER.validate_python(payload))
+    elif args.action == "subscribe":
+        if not args.consumer:
+            raise ValueError("--consumer is required")
+        if (
+            not isinstance(payload, dict)
+            or not {"task_id", "kinds"} <= payload.keys()
+            or payload.keys() - {"task_id", "kinds", "subquestion_id"}
+        ):
+            raise ValueError(
+                "subscription file needs task_id and kinds, with optional subquestion_id"
+            )
+        queue.subscribe(state.run_id, args.consumer, **payload)
+        state.flush_exports()
+        result = {"subscribed": True}
+    elif args.action == "receive":
+        if not args.consumer:
+            raise ValueError("--consumer is required")
+        delivery = queue.claim(state.run_id, args.consumer, "cli")
+        result = {
+            "event": delivery["event"] if delivery else None,
+            "acknowledged": False,
+        }
+        if delivery:
+            # Persist a durable copy before acknowledging; stdout loss is recoverable.
+            def retain(db, event):
+                state.store.project(
+                    db,
+                    state.run_id,
+                    f"coordination/received/{args.consumer}/{event['event_id']}.json",
+                    payload=json.dumps(event, ensure_ascii=False, indent=2).encode(
+                        "utf-8"
+                    ),
+                )
+
+            queue.consume(delivery, retain)
+            state.flush_exports()
+            result["acknowledged"] = True
+            result["retained_path"] = (
+                f"coordination/received/{args.consumer}/{delivery['event_id']}.json"
+            )
+    else:
+        result = {"notifications": queue.status(state.run_id)}
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_legacy_status(args: argparse.Namespace) -> int:
     from kdrx.runtime.migrations import inspect_legacy
 
@@ -1260,6 +1336,7 @@ _CMDS = {
     "patch-plan": cmd_patch_plan,
     "legacy-status": cmd_legacy_status,
     "migrate-legacy": cmd_migrate_legacy,
+    "coordination": cmd_coordination,
     "gc": cmd_gc,
     "eval": cmd_eval,
     "hook": cmd_hook,
