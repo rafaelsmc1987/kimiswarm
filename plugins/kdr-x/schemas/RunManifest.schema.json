@@ -19,9 +19,27 @@
   "additionalProperties": false,
   "description": "Resumable run state (plan \u00a731, \u00a740 ``/kdr:resume``).",
   "properties": {
+    "schema_version": {
+      "const": "0.3",
+      "default": "0.3",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state_revision": {
+      "default": 0,
+      "minimum": 0,
+      "title": "State Revision",
+      "type": "integer"
+    },
     "run_id": {
       "title": "Run Id",
       "type": "string"
+    },
+    "plan_revision": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Plan Revision",
+      "type": "integer"
     },
     "plan_id": {
       "title": "Plan Id",

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="7" time="0.245" timestamp="2026-09-12T06:06:41.949906-03:00" hostname="DESKTOP-AA6P1ID"><testcase classname="tests.test_legacy_migration" name="test_legacy_migration_preserves_original_and_never_synthesizes_success" time="0.005"><failure message="KeyError: 'schema_version'">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-75/test_legacy_migration_preserve0')
+
+    def test_legacy_migration_preserves_original_and_never_synthesizes_success(tmp_path):
+&gt;       source = legacy_run(tmp_path)
+                 ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_legacy_migration.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-75/test_legacy_migration_preserve0')
+
+    def legacy_run(tmp_path):
+        directory = tmp_path / "old" / "legacy-run"
+        directory.mkdir(parents=True)
+        contract = build_contract("latency under load")
+        plan = build_plan(contract)
+        for name, value in (("plan.json", plan.model_dump(mode="json")), ("research_contract.json", contract.model_dump(mode="json"))):
+&gt;           value.pop("schema_version")
+E           KeyError: 'schema_version'
+
+tests\test_legacy_migration.py:20: KeyError</failure></testcase><testcase classname="tests.test_legacy_migration" name="test_invalid_legacy_snapshot_rejected_before_import[hash]" time="0.002"><failure message="KeyError: 'schema_version'">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-75/test_invalid_legacy_snapshot_r0')
+defect = 'hash'
+
+    @pytest.mark.parametrize("defect", ["hash", "version", "path", "identity"])
+    def test_invalid_legacy_snapshot_rejected_before_import(tmp_path, defect):
+&gt;       source = legacy_run(tmp_path)
+                 ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_legacy_migration.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-75/test_invalid_legacy_snapshot_r0')
+
+    def legacy_run(tmp_path):
+        directory = tmp_path / "old" / "legacy-run"
+        directory.mkdir(parents=True)
+        contract = build_contract("latency under load")
+        plan = build_plan(contract)
+        for name, value in (("plan.json", plan.model_dump(mode="json")), ("research_contract.json", contract.model_dump(mode="json"))):
+&gt;           value.pop("schema_version")
+E           KeyError: 'schema_version'
+
+tests\test_legacy_migration.py:20: KeyError</failure></testcase><testcase classname="tests.test_legacy_migration" name="test_invalid_legacy_snapshot_rejected_before_import[version]" time="0.002"><failure message="KeyError: 'schema_version'">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-75/test_invalid_legacy_snapshot_r1')
+defect = 'version'
+
+    @pytest.mark.parametrize("defect", ["hash", "version", "path", "identity"])
+    def test_invalid_legacy_snapshot_rejected_before_import(tmp_path, defect):
+&gt;       source = legacy_run(tmp_path)
+                 ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_legacy_migration.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-75/test_invalid_legacy_snapshot_r1')
+
+    def legacy_run(tmp_path):
+        directory = tmp_path / "old" / "legacy-run"
+        directory.mkdir(parents=True)
+        contract = build_contract("latency under load")
+        plan = build_plan(contract)
+        for name, value in (("plan.json", plan.model_dump(mode="json")), ("research_contract.json", contract.model_dump(mode="json"))):
+&gt;           value.pop("schema_version")
+E           KeyError: 'schema_version'
+
+tests\test_legacy_migration.py:20: KeyError</failure></testcase><testcase classname="tests.test_legacy_migration" name="test_invalid_legacy_snapshot_rejected_before_import[path]" time="0.002"><failure message="KeyError: 'schema_version'">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-75/test_invalid_legacy_snapshot_r2')
+defect = 'path'
+
+    @pytest.mark.parametrize("defect", ["hash", "version", "path", "identity"])
+    def test_invalid_legacy_snapshot_rejected_before_import(tmp_path, defect):
+&gt;       source = legacy_run(tmp_path)
+                 ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_legacy_migration.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-75/test_invalid_legacy_snapshot_r2')
+
+    def legacy_run(tmp_path):
+        directory = tmp_path / "old" / "legacy-run"
+        directory.mkdir(parents=True)
+        contract = build_contract("latency under load")
+        plan = build_plan(contract)
+        for name, value in (("plan.json", plan.model_dump(mode="json")), ("research_contract.json", contract.model_dump(mode="json"))):
+&gt;           value.pop("schema_version")
+E           KeyError: 'schema_version'
+
+tests\test_legacy_migration.py:20: KeyError</failure></testcase><testcase classname="tests.test_legacy_migration" name="test_invalid_legacy_snapshot_rejected_before_import[identity]" time="0.002"><failure message="KeyError: 'schema_version'">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-75/test_invalid_legacy_snapshot_r3')
+defect = 'identity'
+
+    @pytest.mark.parametrize("defect", ["hash", "version", "path", "identity"])
+    def test_invalid_legacy_snapshot_rejected_before_import(tmp_path, defect):
+&gt;       source = legacy_run(tmp_path)
+                 ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_legacy_migration.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-75/test_invalid_legacy_snapshot_r3')
+
+    def legacy_run(tmp_path):
+        directory = tmp_path / "old" / "legacy-run"
+        directory.mkdir(parents=True)
+        contract = build_contract("latency under load")
+        plan = build_plan(contract)
+        for name, value in (("plan.json", plan.model_dump(mode="json")), ("research_contract.json", contract.model_dump(mode="json"))):
+&gt;           value.pop("schema_version")
+E           KeyError: 'schema_version'
+
+tests\test_legacy_migration.py:20: KeyError</failure></testcase><testcase classname="tests.test_legacy_migration" name="test_migration_export_failure_recovers_committed_import" time="0.002"><failure message="KeyError: 'schema_version'">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-75/test_migration_export_failure_0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x00000252C71143E0&gt;
+
+    def test_migration_export_failure_recovers_committed_import(tmp_path, monkeypatch):
+&gt;       source = legacy_run(tmp_path)
+                 ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_legacy_migration.py:72: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-75/test_migration_export_failure_0')
+
+    def legacy_run(tmp_path):
+        directory = tmp_path / "old" / "legacy-run"
+        directory.mkdir(parents=True)
+        contract = build_contract("latency under load")
+        plan = build_plan(contract)
+        for name, value in (("plan.json", plan.model_dump(mode="json")), ("research_contract.json", contract.model_dump(mode="json"))):
+&gt;           value.pop("schema_version")
+E           KeyError: 'schema_version'
+
+tests\test_legacy_migration.py:20: KeyError</failure></testcase><testcase classname="tests.test_legacy_migration" name="test_legacy_read_only_cli_does_not_initialize_database" time="0.011"><failure message="KeyError: 'schema_version'">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-75/test_legacy_read_only_cli_does0')
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x00000252C7118590&gt;
+
+    def test_legacy_read_only_cli_does_not_initialize_database(tmp_path, capsys):
+        from kdrx.cli import main
+&gt;       source = legacy_run(tmp_path)
+                 ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_legacy_migration.py:88: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-75/test_legacy_read_only_cli_does0')
+
+    def legacy_run(tmp_path):
+        directory = tmp_path / "old" / "legacy-run"
+        directory.mkdir(parents=True)
+        contract = build_contract("latency under load")
+        plan = build_plan(contract)
+        for name, value in (("plan.json", plan.model_dump(mode="json")), ("research_contract.json", contract.model_dump(mode="json"))):
+&gt;           value.pop("schema_version")
+E           KeyError: 'schema_version'
+
+tests\test_legacy_migration.py:20: KeyError</failure></testcase></testsuite></testsuites>

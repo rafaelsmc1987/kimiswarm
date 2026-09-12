@@ -4,6 +4,17 @@ Mudanças notáveis do plugin `kdr-x` (e do pacote `kdrx`, versionado em
 conjunto — ver `scripts/build_plugin_package.py`). Formato baseado em
 [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [0.3.0] - Unreleased local candidate
+
+- Transactional run state, task leases, immutable evidence snapshots and stricter delivery validation.
+- Dependency-ready concurrent scheduler and versioned kernel requests for host facades.
+- Selectable Codex and Claude Code inference adapters with five model specialists over a local corpus; live validation pending.
+- Explicit capability/plan status and preserved intermediate regression evidence. No comparative SOTA claim.
+- Per-attempt staging and SQLite schema 2 projections commit task artifacts, receipts and checkpoints together; interrupted exports recover without repeating committed work.
+- Typed evidence checkpoints, read-only completed resume, lease heartbeats, expiry reconciliation and cooperative cancellation.
+- Recoverable delivery publication, separate seal gates and explicit `deliverable` results; `recover-exports` and retention-based, reversible `gc` quarantine.
+- Executor registry checked during planning; arbitrary task IDs, deterministic claim assessment and JSON evidence export. Code execution remains unavailable without a validated sandbox.
+
 ## [0.2.0] - 2026-08-20
 
 ### Added

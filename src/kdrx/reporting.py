@@ -12,7 +12,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from kdrx.claims import entailment_score
+from kdrx.claims import entailment_score, is_falsifiable
 from kdrx.corpus import tokenize
 from kdrx.schemas.claims import Claim
 from kdrx.schemas.corpus import EvidenceSpan, SourceRecord
@@ -20,7 +20,7 @@ from kdrx.schemas.enums import ClaimImportance, GateKind, Standing
 from kdrx.schemas.gate import GateCheck, GateDecision
 
 #: Citation marker format: ``[cite:S1]`` or ``[cite: S1]``.
-_CITE_RE = re.compile(r"\[cite:\s*([A-Za-z0-9_.:-]+)\]")
+_CITE_RE = re.compile(r"\[cite:[ \t]*([^\[\]\r\n]+?)\]")
 
 # A "quantitative" token is a number followed by a unit word/symbol, a decimal,
 # or a multi-digit magnitude — so bare list enumerators ("1.", "2.") and years
@@ -163,7 +163,9 @@ def extract_citations(text: str) -> list[str]:
     seen: set[str] = set()
     out: list[str] = []
     for m in _CITE_RE.finditer(text):
-        sid = m.group(1)
+        sid = m.group(1).strip()
+        if not sid:
+            continue
         if sid not in seen:
             seen.add(sid)
             out.append(sid)
@@ -188,7 +190,10 @@ def unsupported_sentence_detector(text: str, backed_statements: set[str]) -> lis
     """
     flagged: list[str] = []
     backed = {b.strip().lower() for b in backed_statements if b.strip()}
-    for sentence in split_sentences(text):
+    # Remove citation syntax and the reference prefix before sentence splitting:
+    # list numbers, file paths and opaque IDs are not quantitative assertions.
+    body = _REF_LINE_RE.sub("", _CITE_RE.sub("", text))
+    for sentence in split_sentences(body):
         if not _NUMBER_RE.search(sentence):
             continue
         lower = sentence.lower()
@@ -209,6 +214,51 @@ def citation_integrity_gate(
     checks: list[GateCheck] = []
     source_ids = {s.source_id for s in sources}
     cited = extract_citations(report_text)
+    malformed = _CITE_RE.sub(
+        lambda m: "" if m.group(1).strip() else m.group(0), report_text
+    )
+    checks.extend(
+        [
+            GateCheck(
+                check_id="REPORT_NOT_EMPTY",
+                description="report contains text",
+                passed=bool(report_text.strip()),
+            ),
+            GateCheck(
+                check_id="CITATION_SYNTAX",
+                description="all citation markers parse",
+                passed="[cite" not in malformed.lower(),
+            ),
+        ]
+    )
+    unknown_material = []
+    backed = {c.statement.strip().casefold() for c in claims}
+    structural_prefixes = (
+        "Supported claims:",
+        "Supported:",
+        "Mixed:",
+        "Weak:",
+        "Unresolved",
+        "Objective:",
+        "The following claims remain UNRESOLVED",
+    )
+    for line in report_text.splitlines():
+        if line.lstrip().startswith(("#", *structural_prefixes)):
+            continue
+        plain = _REF_LINE_RE.sub("", _CITE_RE.sub("", line)).strip()
+        for sentence in split_sentences(plain):
+            if is_falsifiable(sentence) and not any(
+                statement in sentence.casefold() for statement in backed
+            ):
+                unknown_material.append(sentence)
+    checks.append(
+        GateCheck(
+            check_id="MATERIAL_UNREGISTERED",
+            description="assertions detected in final text are registered",
+            passed=not unknown_material,
+            details=unknown_material,
+        )
+    )
 
     # Every citation resolves to a known source.
     unknown = [c for c in cited if c not in source_ids]

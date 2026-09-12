@@ -24,6 +24,7 @@
         },
         "required_evidence_refs": {
           "default": 0,
+          "minimum": 0,
           "title": "Required Evidence Refs",
           "type": "integer"
         }
@@ -98,19 +99,43 @@
       "additionalProperties": false,
       "properties": {
         "tokens": {
-          "default": 0,
-          "title": "Tokens",
-          "type": "integer"
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tokens"
         },
         "queries": {
-          "default": 0,
-          "title": "Queries",
-          "type": "integer"
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Queries"
         },
         "wall_seconds": {
-          "default": 0,
-          "title": "Wall Seconds",
-          "type": "integer"
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wall Seconds"
         }
       },
       "title": "Budget",
@@ -130,11 +155,14 @@
       "properties": {
         "max_retries": {
           "default": 2,
+          "maximum": 20,
+          "minimum": 0,
           "title": "Max Retries",
           "type": "integer"
         },
         "backoff_seconds": {
           "default": 0.0,
+          "minimum": 0,
           "title": "Backoff Seconds",
           "type": "number"
         },
@@ -182,6 +210,24 @@
   "additionalProperties": false,
   "description": "A single node in the DAG (plan \u00a715).\n\nThe DAG compiler enforces: one mission, one owner per output, no dependent\nin the same wave, reviewer != author, minimal tool scope.",
   "properties": {
+    "schema_version": {
+      "const": "0.3",
+      "default": "0.3",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "kind": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Kind"
+    },
     "task_id": {
       "title": "Task Id",
       "type": "string"

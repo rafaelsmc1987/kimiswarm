@@ -5,12 +5,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
 
 from .enums import RiskLevel, Route
+from .versioning import VersionedModel
 
 
-class ResearchRequest(BaseModel):
+class ResearchRequest(VersionedModel):
     """Raw user request captured at intake, before any interpretation."""
 
     model_config = ConfigDict(extra="forbid")
@@ -25,7 +26,7 @@ class ResearchRequest(BaseModel):
     user_constraints: dict[str, Any] = Field(default_factory=dict)
 
 
-class ResearchContract(BaseModel):
+class ResearchContract(VersionedModel):
     """The materialized agreement that constrains all downstream agents (§12).
 
     The contract exists so that no agent can reinterpret the objective in an

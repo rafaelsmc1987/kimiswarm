@@ -1,0 +1,17 @@
+{
+  "protocol_version": "1",
+  "state": "frozen-design-not-executed",
+  "created": "2026-09-11",
+  "baseline_commit": "2e2851d820cbed7060064a6584e7eb7f26b25885",
+  "tracks": ["engineering_invariants", "research_quality", "product_comparison"],
+  "arms": ["baseline-commit", "single-agent-matched-model-tools", "kdrx", "kimi-agent-swarm"],
+  "required_arm_identity": ["version_or_build", "model", "execution_date", "tool_set", "source_access", "budget", "deadline", "raw_receipt_hashes"],
+  "design": {"paired_tasks": 60, "repetitions_per_arm": 2, "randomized_order": true, "languages": ["pt", "en"], "domains": ["documents", "academic", "code", "structured-data", "unanswerable"], "timeout_is_failure": true, "exclude_failed_runs": false},
+  "limits": {"total_spend_usd": null, "calls_per_arm_per_task": 12, "wall_seconds_per_task": 600, "retries_per_call": 0, "network_policy": "public primary sources, pinned shared corpus snapshot where applicable", "missing_usage": "unknown; never imputed as zero"},
+  "dataset_separation": {"development": "public or synthetic, labeled as such", "selection": "separate from development and final", "final": "private, recent, independently annotated; not yet supplied", "required": ["dataset_sha256", "annotation_rubric_sha256", "access_custodian", "frozen_task_ids"], "memory_and_tuning_access_to_final": false},
+  "outcomes": {"primary": "independently assessed requirement coverage on [0,1]", "minimum_useful_gain": 0.05, "guardrails": {"material_factual_error_rate_noninferiority_margin": 0.01, "unauthorized_effects": 0, "false_delivery_approval": 0}, "secondary": ["source_quality", "citation_precision", "citation_recall", "claim_entailment", "latency", "actual_provider_usage", "cost_known_fraction", "artifact_open_success"]},
+  "analysis": {"paired_bootstrap_draws": 10000, "unit": "task, retaining repetitions as a cluster", "seed": 20260911, "confidence": 0.95, "primary_comparison": "kdrx minus single-agent-matched-model-tools", "multiplicity": "Holm correction for confirmatory pairwise comparisons", "review": "two blinded independent annotators; disagreements adjudicated before arm unblinding"},
+  "claim_policy": {"sota_claim_allowed": false, "win_requires": ["all required arms executed under recorded comparable conditions", "lower adjusted confidence bound exceeds minimum useful gain", "all safety/factuality guardrails met", "independent blinded review completed"], "missing_access": "report blocked/unmeasured; do not substitute a synthetic Kimi result"},
+  "amendments": "Any baseline, task, metric, threshold or exclusion change requires a new protocol file/version/hash and explanation before confirmatory evaluation.",
+  "blocking_inputs": ["authorized total live budget", "identified Kimi Agent Swarm access", "independent private dataset and reviewers"]
+}

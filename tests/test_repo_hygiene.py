@@ -23,6 +23,8 @@ PRODUCT_PREFIXES = (
     "evidence-manifest/",
     "auditoria/",  # auditoria independente + roadmap (fonte do plano de correção)
     "scripts/",  # build/release tooling do produto
+    "audit/",  # logs e evidências da execução do plano
+    "benchmarks/",  # protocolo versionado de avaliação
 )
 PRODUCT_FILES = {
     "pyproject.toml",
@@ -33,9 +35,21 @@ PRODUCT_FILES = {
     "SECURITY.md",
     ".gitleaks.toml",
     ".secrets.baseline",
+    "requirements-build.txt",
+    "requirements-dev.lock",
+    "kdr-backend.example.json",
+    ".plano/AUDITORIA_EVIDENCIAS.md",
+    ".plano/BACKLOG_KIMISWARM.json",
+    ".plano/PLANO_CIRURGICO_KIMISWARM.md",
+    ".plano/EXECUCAO_KIMISWARM.md",
 }
 
 FORBIDDEN_PATTERNS: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"^kdr-backend\.local\.json$"), "configuração local do provedor"),
+    (
+        re.compile(r"(^|/)(credentials\.json|auth\.json|\.env(\..*)?)$"),
+        "credenciais locais",
+    ),
     (re.compile(r"^\.ssh(/|$)"), "chaves SSH"),
     (re.compile(r"^\.?agent-gw\.json$"), "credenciais do gateway"),
     (re.compile(r"\.har$", re.IGNORECASE), "captura HAR"),
@@ -126,6 +140,8 @@ def test_detector_catches_planted_paths() -> None:
         "s6/container_environment/SSH_PASSWORD",
         "extracted/dump.bin",
         "skills/foo/SKILL.md",
+        "kdr-backend.local.json",
+        ".plano/credentials.json",
     ]
     for path in planted:
         assert forbidden_reason(path) is not None, f"detector não pegou: {path}"

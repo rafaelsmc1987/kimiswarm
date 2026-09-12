@@ -1,178 +1,50 @@
-// kdr-run — execute a persisted ResearchPlan wave by wave (T-02-02/T-02-06).
-//
-// Waves são uma BARRIERE: cada wave usa pipeline() sobre as tasks para
-// concorrência real por item; entre waves há um gate determinístico
-// (saídas declaradas existem, sem tasks null). Falhas não viram sucesso:
-// resultados null são contados e bloqueiam as waves seguintes em vez de
-// deixar dependências correr sem insumos (mesma semântica do WaveScheduler).
-//
-// Input (global `args`): { run_dir: string, corpus?: string }
-// Output: { run_dir, waves, gates, failed, blocking }
-
+// Kernel facade. Agent output is presentation only; native Stop rechecks the store.
 export const meta = {
   name: 'kdr-run',
-  description:
-    'Execute a persisted kdr plan with real concurrency per wave and deterministic gates between waves',
-  phases: ['load', 'waves', 'gate', 'stop'],
+  description: 'Submit a versioned request to the canonical KDR kernel; live capabilities require configured providers',
+  phases: ['request', 'receipt'],
 }
 
-if (
-  args === undefined ||
-  typeof args !== 'object' ||
-  !args ||
-  !String(args.run_dir || '').trim()
-) {
-  return {
-    blocking: true,
-    error: 'usage: /kdr-x:kdr-run with args = { run_dir, corpus? }',
-  }
+if (args === undefined || args === null || !['object', 'string'].includes(typeof args)) {
+  return { blocking: true, error: 'Provide objective/corpus or run_id/runs_root.' }
 }
-
-const runDir = String(args.run_dir).trim()
-const corpus = args.corpus ? String(args.corpus) : null
-
-// -------------------------------------------------------------------- load --
-
-phase('load')
-
-const LOAD_SCHEMA = {
-  type: 'object',
-  required: ['run_id', 'tasks'],
-  properties: {
-    run_id: { type: 'string' },
-    tasks: {
-      type: 'array',
-      items: {
-        type: 'object',
-        required: ['task_id', 'mission', 'dependencies', 'outputs', 'wave'],
-        properties: {
-          task_id: { type: 'string' },
-          mission: { type: 'string' },
-          dependencies: { type: 'array', items: { type: 'string' } },
-          outputs: { type: 'array', items: { type: 'string' } },
-          wave: { type: 'integer' },
-          critical: { type: 'boolean' },
-        },
-      },
-    },
-  },
+const input = typeof args === 'string' ? { objective: args } : args
+const runDir = input.run_dir ? String(input.run_dir) : undefined
+const separator = runDir ? Math.max(runDir.lastIndexOf('/'), runDir.lastIndexOf('\\')) : -1
+const root = input.runs_root || input.out || (separator >= 0 ? runDir.slice(0, separator) : '.research/runs')
+const request = {
+  schema_version: '0.3', operation: 'run', runs_root: root,
+  objective: input.objective, corpus: input.corpus,
+  run_dir: runDir, run_id: input.run_id,
+  backend: input.backend || "offline", model_config_options: input.model_config_options,
 }
-
-const loaded = await agent(
-  [
-    'Read ' + runDir + '/plan.json (use Read). If plan.json is missing, run',
-    '`kdr status --run-dir ' + runDir + '` with Bash to confirm and return an EMPTY tasks array.',
-    'If manifest.json exists, prefer its run_id. Extract every task with its REAL wave from the',
-    'plan; waves were derived from dependencies at compile time — preserve them exactly.',
-  ].join('\n'),
-  { label: 'kdr-run:load', phase: 'load', schema: LOAD_SCHEMA },
+// UTF-8 and base64 are computed in plain JavaScript. Only this ASCII token
+// reaches the command string; user text never becomes shell syntax.
+const bytes = []
+for (const char of encodeURIComponent(JSON.stringify(request)).match(/%[0-9A-F]{2}|./g)) {
+  bytes.push(char[0] === '%' ? parseInt(char.slice(1), 16) : char.charCodeAt(0))
+}
+const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+let encoded = ''
+for (let i = 0; i < bytes.length; i += 3) {
+  const value = (bytes[i] << 16) | ((bytes[i + 1] || 0) << 8) | (bytes[i + 2] || 0)
+  encoded += alphabet[(value >>> 18) & 63] + alphabet[(value >>> 12) & 63]
+  encoded += i + 1 < bytes.length ? alphabet[(value >>> 6) & 63] : '='
+  encoded += i + 2 < bytes.length ? alphabet[value & 63] : '='
+}
+phase('request')
+const observation = await agent(
+  'Run this exact kernel command with Bash and report its stdout/stderr. Do not create or edit run artifacts. ' +
+  'The kernel owns planning, task execution, validation and state. Command: kdr request --payload-base64 ' + encoded,
+  { label: 'kdr-run:kernel-request', phase: 'request' },
 )
-
-if (loaded === null || loaded.tasks.length === 0) {
-  return { blocking: true, error: loaded === null ? 'load agent lost (null result)' : 'no tasks in plan.json', run_dir: runDir }
+phase('receipt')
+if (observation === null) {
+  return { blocking: true, error: 'Host agent unavailable; inspect kernel state before retrying.' }
 }
-
-const waveNums = Array.from(new Set(loaded.tasks.map((t) => t.wave))).sort((a, b) => a - b)
-
-// ------------------------------------------------------------------- waves --
-
-const TASK_SCHEMA = {
-  type: 'object',
-  required: ['task_id', 'status', 'outputs_written'],
-  properties: {
-    task_id: { type: 'string' },
-    status: { type: 'string', enum: ['succeeded', 'failed'] },
-    outputs_written: { type: 'array', items: { type: 'string' } },
-    error: { type: 'string' },
-  },
-}
-
-const GATE_SCHEMA = {
-  type: 'object',
-  required: ['passed', 'missing', 'wave'],
-  properties: {
-    passed: { type: 'boolean' },
-    missing: { type: 'array', items: { type: 'string' } },
-    wave: { type: 'integer' },
-  },
-}
-
-const waves = []
-const gates = []
-const failed = []
-let blocking = false
-
-for (const w of waveNums) {
-  if (blocking) break
-  phase('waves')
-
-  const waveTasks = loaded.tasks.filter((t) => t.wave === w)
-
-  // pipeline(): concorrência real por task, DENTRO da wave (tasks da mesma
-  // wave não dependem entre si — invariante do compile_dag/SAME_WAVE_DEP).
-  const results = await pipeline(waveTasks, async (t) => {
-    const r = await agent(
-      [
-        'Execute task ' + t.task_id + ' of kdr run ' + loaded.run_id + '.',
-        'Mission: ' + t.mission,
-        (corpus ? 'Corpus path: ' + corpus + '.' : ''),
-        'Declared outputs (write EVERY one under ' + runDir + ', non-empty): ' +
-          JSON.stringify(t.outputs),
-        'After writing, run `kdr status --run-dir ' + runDir + '` with Bash to confirm scaffolding.',
-        'status=succeeded only if every declared output exists and is non-empty.',
-      ].join('\n'),
-      { label: 'kdr-run:' + t.task_id, phase: 'waves', schema: TASK_SCHEMA },
-    )
-    // T-02-06: null do runtime = perda determinística da task, nunca sucesso
-    if (r === null) {
-      return { task_id: t.task_id, status: 'failed', outputs_written: [], error: 'null agent result' }
-    }
-    return r
-  })
-
-  const waveResults = results.filter(Boolean)
-  const waveFailed = waveResults.filter((r) => r.status !== 'succeeded')
-  failed.push(...waveFailed.map((r) => r.task_id))
-  waves.push({ wave: w, tasks: waveResults })
-
-  // ---------------------------- gate entre waves (T-02-06) ----------------------------
-  phase('gate')
-  const expectedOutputs = waveTasks.flatMap((t) => t.outputs)
-  const gate = await agent(
-    [
-      'Wave ' + w + ' gate for kdr run ' + loaded.run_id + '.',
-      'For EACH of these declared outputs, confirm the file exists under ' + runDir +
-        ' and is non-empty (use Read):',
-      JSON.stringify(expectedOutputs),
-      'Also run `kdr status --run-dir ' + runDir + '` with Bash and confirm no failed tasks.',
-      'passed=true only if ALL outputs exist, are non-empty, and no task failed in the wave.',
-    ].join('\n'),
-    { label: 'kdr-run:gate:w' + w, phase: 'gate', schema: GATE_SCHEMA },
-  )
-
-  const gateResult =
-    gate === null
-      ? { passed: false, missing: expectedOutputs, wave: w, error: 'null gate agent result' }
-      : gate
-  if (waveFailed.length > 0) gateResult.passed = false
-  gates.push(gateResult)
-
-  if (!gateResult.passed) {
-    blocking = true // waves seguintes NÃO rodam sem os insumos desta wave
-  }
-}
-
-phase('stop')
-
-// Gate de stop do harness (kdr-hook) resume/recheca isto; aqui só reportamos.
 return {
-  blocking,
-  run_dir: runDir,
-  run_id: loaded.run_id,
-  waves,
-  gates,
-  failed,
-  next: blocking
-    ? 'fix failed wave outputs, then `kdr resume`'
-    : 'run `/kdr-x:kdr-verify { run_dir: "' + runDir + '" }` before delivery',
+  authoritative: false,
+  verification_required: true,
+  observation,
+  next: 'Use kdr status and kdr verify-delivery for the run. Native Stop checks kernel artifacts; agent prose does not approve delivery.',
 }

@@ -1,87 +1,50 @@
-// kdr-verify — verification as a gate demo (T-02-03).
-//
-// Fan-out adversarial: source-verifier + devils-advocate reconferem o run, e
-// um final-integrity-auditor consolida. Uma claim que não pôde ser checada é
-// "unverifiable" — nunca conta como refutada nem como suportada (mesma regra
-// do /deep-research embutido). O verdict final é FAIL se qualquer gate real
-// não passar.
-//
-// Input (global `args`): { run_dir: string }
-// Output: { run_dir, verdict, checks, unverified, blocking }
-
+// Kernel facade. Agent output is presentation only; native Stop rechecks the store.
 export const meta = {
   name: 'kdr-verify',
-  description:
-    'Adversarial verification gate over a kdr run: source trust, citation integrity, security — null-safe',
-  phases: ['verify', 'consolidate'],
+  description: 'Submit a versioned request to the canonical KDR kernel; live capabilities require configured providers',
+  phases: ['request', 'receipt'],
 }
 
-if (args === undefined || typeof args !== 'object' || !args || !String(args.run_dir || '').trim()) {
-  return { blocking: true, error: 'usage: /kdr-x:kdr-verify with args = { run_dir }', verdict: 'fail' }
+if (args === undefined || args === null || !['object', 'string'].includes(typeof args)) {
+  return { blocking: true, error: 'Provide objective/corpus or run_id/runs_root.' }
 }
-
-const runDir = String(args.run_dir).trim()
-
-const CHECK_SCHEMA = {
-  type: 'object',
-  required: ['gate', 'verdict', 'details'],
-  properties: {
-    gate: { type: 'string' },
-    verdict: { type: 'string', enum: ['pass', 'fail', 'warn', 'unverifiable'] },
-    details: { type: 'string' },
-  },
+const input = typeof args === 'string' ? { objective: args } : args
+const runDir = input.run_dir ? String(input.run_dir) : undefined
+const separator = runDir ? Math.max(runDir.lastIndexOf('/'), runDir.lastIndexOf('\\')) : -1
+const root = input.runs_root || input.out || (separator >= 0 ? runDir.slice(0, separator) : '.research/runs')
+const request = {
+  schema_version: '0.3', operation: 'verify', runs_root: root,
+  objective: input.objective, corpus: input.corpus,
+  run_dir: runDir, run_id: input.run_id,
+  backend: input.backend || "offline", model_config_options: input.model_config_options,
 }
-
-phase('verify')
-
-const checks = (
-  await parallel([
-    agent(
-      [
-        'You are the source-verifier (agents/source-verifier.md). Run `kdr verify --run-dir ' +
-          runDir +
-          '` with Bash,',
-        'read verification/integrity.json and verification/security.json, and report the SOURCE-TRUST',
-        'dimension: did every cited source resolve and grade? If `kdr verify` cannot run, report',
-        'verdict=unverifiable — do NOT guess.',
-      ].join('\n'),
-      { label: 'verify:source-trust', phase: 'verify', schema: CHECK_SCHEMA },
-    ),
-    agent(
-      [
-        'You are the devils-advocate (agents/devils-advocate.md). Read ' +
-          runDir +
-          '/claims/claims.jsonl and',
-        runDir + '/claims/standings.jsonl. Report the FALSIFICATION dimension: any CRITICAL/MAJOR claim',
-        'left UNRESOLVED or SUPPORTED-without-evidence-span fails the gate. If artifacts are missing',
-        'or unreadable, report verdict=unverifiable.',
-      ].join('\n'),
-      { label: 'verify:falsification', phase: 'verify', schema: CHECK_SCHEMA },
-    ),
-    agent(
-      [
-        'You are the final-integrity-auditor (agents/final-integrity-auditor.md). Read ' +
-          runDir +
-          '/verification/security.json and confirm the SECURITY dimension: no secrets, no egress,',
-        'no path escapes, artifacts sealed. If security.json is missing, run',
-        '`kdr verify --run-dir ' + runDir + '` with Bash first. Missing after that => verdict=fail.',
-      ].join('\n'),
-      { label: 'verify:security', phase: 'verify', schema: CHECK_SCHEMA },
-    ),
-  ])
-).filter(Boolean)
-
-phase('consolidate')
-
-// Deterministic consolidation (audit B-04: unverifiable never counts as pass)
-const allPassed = checks.length === 3 && checks.every((c) => c.verdict === 'pass')
-const anyUnverifiable = checks.length < 3 || checks.some((c) => c.verdict === 'unverifiable')
-const verdict = allPassed ? 'pass' : anyUnverifiable ? 'unverifiable' : 'fail'
-
+// UTF-8 and base64 are computed in plain JavaScript. Only this ASCII token
+// reaches the command string; user text never becomes shell syntax.
+const bytes = []
+for (const char of encodeURIComponent(JSON.stringify(request)).match(/%[0-9A-F]{2}|./g)) {
+  bytes.push(char[0] === '%' ? parseInt(char.slice(1), 16) : char.charCodeAt(0))
+}
+const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+let encoded = ''
+for (let i = 0; i < bytes.length; i += 3) {
+  const value = (bytes[i] << 16) | ((bytes[i + 1] || 0) << 8) | (bytes[i + 2] || 0)
+  encoded += alphabet[(value >>> 18) & 63] + alphabet[(value >>> 12) & 63]
+  encoded += i + 1 < bytes.length ? alphabet[(value >>> 6) & 63] : '='
+  encoded += i + 2 < bytes.length ? alphabet[value & 63] : '='
+}
+phase('request')
+const observation = await agent(
+  'Run this exact kernel command with Bash and report its stdout/stderr. Do not create or edit run artifacts. ' +
+  'The kernel owns planning, task execution, validation and state. Command: kdr request --payload-base64 ' + encoded,
+  { label: 'kdr-verify:kernel-request', phase: 'request' },
+)
+phase('receipt')
+if (observation === null) {
+  return { blocking: true, error: 'Host agent unavailable; inspect kernel state before retrying.' }
+}
 return {
-  run_dir: runDir,
-  verdict,
-  checks,
-  unverified: checks.filter((c) => c.verdict === 'unverifiable').map((c) => c.gate),
-  blocking: verdict !== 'pass',
+  authoritative: false,
+  verification_required: true,
+  observation,
+  next: 'Use kdr status and kdr verify-delivery for the run. Native Stop checks kernel artifacts; agent prose does not approve delivery.',
 }

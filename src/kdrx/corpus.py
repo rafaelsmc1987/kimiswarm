@@ -28,9 +28,6 @@ _TRACKING_PARAMS = {
     "gclsrc",
     "mc_cid",
     "mc_eid",
-    "ref",
-    "referrer",
-    "source",
 }
 
 _DOI_RE = re.compile(r"10\.\d{4,9}/[^\s\"']+", re.IGNORECASE)

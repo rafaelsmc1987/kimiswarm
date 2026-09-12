@@ -94,44 +94,15 @@ def _version_tuple(version: str) -> tuple[int, int, int]:
 
 
 def _fetch_latest_wheel_url() -> str:
-    """Resolve the latest agent-gw wheel URL from the published CDN manifest."""
-    import json
-    import subprocess
-
-    proc = subprocess.run(
-        ["curl", "-fsSL", AGENT_GW_MANIFEST_URL],
-        capture_output=True,
-        encoding="utf-8",
-        timeout=30,
+    raise SystemExit(
+        "Mutable SDK installation disabled. Supply an authorized, version-pinned wheel with a verified hash in an isolated environment."
     )
-    if proc.returncode != 0:
-        raise SystemExit(
-            f"failed to fetch the agent-gw manifest from {AGENT_GW_MANIFEST_URL}"
-        )
-    try:
-        url = json.loads(proc.stdout)["latest"]["url"]
-    except (ValueError, KeyError, TypeError) as exc:
-        raise SystemExit(
-            f"could not read latest.url from {AGENT_GW_MANIFEST_URL}: {exc}"
-        )
-    if not isinstance(url, str) or not url:
-        raise SystemExit(
-            f"the agent-gw manifest at {AGENT_GW_MANIFEST_URL} has no latest.url"
-        )
-    return url
 
 
 def _install_agent_gw() -> None:
-    """Install or upgrade agent-gw from its latest published wheel."""
-    import subprocess
-
-    url = _fetch_latest_wheel_url()
-    proc = subprocess.run(
-        [sys.executable, "-m", "pip", "install", "-U", "--user", url],
-        timeout=PIP_INSTALL_TIMEOUT,
+    raise SystemExit(
+        "Runtime package installation disabled. Provision dependencies during an authorized reproducible build."
     )
-    if proc.returncode != 0:
-        raise SystemExit(f"pip failed to install agent-gw from {url}")
 
 
 def _media_url_and_mime(resp: Any) -> tuple[Optional[str], Optional[str]]:

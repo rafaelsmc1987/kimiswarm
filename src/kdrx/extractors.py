@@ -45,11 +45,21 @@ _MD_MARKER_RE = re.compile(r"(?m)^#{1,6}\s+|\*\*|__|(?<!\w)\*|\b_")
 
 def _extract_markdown(path: Path) -> str:
     text = path.read_text(encoding="utf-8", errors="replace")
-    text = _MD_FENCE_RE.sub(" ", text)  # code fences fora (não são prosa citável)
+    # Keep fenced code byte-for-byte: software evidence is material too.
+    fences: list[str] = []
+
+    def keep_fence(match):
+        fences.append(match.group(0))
+        return f"KDRFENCEPLACEHOLDER{len(fences) - 1}END"
+
+    text = _MD_FENCE_RE.sub(keep_fence, text)
     text = _MD_IMG_RE.sub(" ", text)  # imagens não carregam texto
     text = _MD_LINK_RE.sub(r"\1", text)  # [texto](url) -> texto
     text = _MD_MARKER_RE.sub("", text)  # headings/ênfases
-    return re.sub(r"\n{3,}", "\n\n", text).strip()
+    text = re.sub(r"\n{3,}", "\n\n", text).strip()
+    for i, fence in enumerate(fences):
+        text = text.replace(f"KDRFENCEPLACEHOLDER{i}END", fence)
+    return text
 
 
 # --------------------------------------------------------------------------- #
@@ -120,7 +130,9 @@ def _extract_pdf(path: Path) -> str:
         pages = [page.extract_text() or "" for page in reader.pages]
     except Exception as exc:
         raise ExtractionError(f"PDF parse falhou em {path.name}: {exc}") from exc
-    return "\n\n".join(p.strip() for p in pages if p.strip())
+    if not any(page.strip() for page in pages):
+        raise ExtractionError("PDF has no textual layer; OCR capability is required")
+    return "\f".join(pages)
 
 
 # --------------------------------------------------------------------------- #

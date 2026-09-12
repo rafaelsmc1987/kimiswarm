@@ -110,7 +110,9 @@ def test_crossref_lookup_parses_real_payload():
     assert r.title == "Deep Residual Learning"
     assert r.authors == ["Kaiming He"]
     assert r.publisher == "IEEE"
-    assert r.date is not None and r.date.year == 2016
+    assert r.date is None  # year-only metadata must not invent January 1
+    assert r.metadata["publication_date_parts"] == [2016]
+    assert r.metadata["date_precision"] == "year"
 
 
 def test_arxiv_search_parses_atom_feed():

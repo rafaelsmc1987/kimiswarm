@@ -526,7 +526,7 @@ class DOIResolver:
         if transport is None:
             from kdrx.adapters import UrllibTransport
 
-            transport = UrllibTransport()
+            transport = UrllibTransport(allowlist=allowlist, denylist=denylist)
         self.transport = transport
         self.cache = cache or MetadataCache()
         self.allowlist = allowlist

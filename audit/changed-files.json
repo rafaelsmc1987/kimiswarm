@@ -1,0 +1,616 @@
+{
+  "base_commit": "2e2851d820cbed7060064a6584e7eb7f26b25885",
+  "files": [
+    {
+      "path": ".claude/commands/kdr/doctor.md",
+      "sha256": "38b65243ed43c0e235c49bb63779dbe783a4b7a3d0ceba56f430ec06278ae0ee",
+      "bytes": 594
+    },
+    {
+      "path": ".claude/commands/kdr/plan.md",
+      "sha256": "040864cd326e79602d385b0f0974a114b8800673f60b91894dfb57fc1aef4210",
+      "bytes": 907
+    },
+    {
+      "path": ".claude/commands/kdr/resume.md",
+      "sha256": "8ccbc8e8bd98a0e2bd52395b8330c515cd646219cf2e48c6e8e17b789c01ffe0",
+      "bytes": 667
+    },
+    {
+      "path": ".claude/commands/kdr/run.md",
+      "sha256": "ef4db0f429a616aaf606de5153262556bf3b717e5e6fcd9822224acb5ac9cd05",
+      "bytes": 958
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "caa2cf62f1945a88dae94cd998ef2142753e12aec3e38cb0f64168571478a218",
+      "bytes": 1222
+    },
+    {
+      "path": "README.md",
+      "sha256": "189e84c21f6c5dc0bfe445ca993627b15b4dc7d4a5ac0a817e6412b805d0e22f",
+      "bytes": 2619
+    },
+    {
+      "path": "benchmarks/protocol-v1.json",
+      "sha256": "11528d13877ed66c03ff6fd99d16615c7d5500795c5371168f15ffadf0a0f588",
+      "bytes": 2825
+    },
+    {
+      "path": "benchmarks/protocol-v1.sha256",
+      "sha256": "e7d346fbb58930605087d589be7cf5fb39be8757089cee421bdec0c49a8de7da",
+      "bytes": 84
+    },
+    {
+      "path": "docs/EXECUTION.md",
+      "sha256": "13b7f6ae302057bbedeeb9d3964d6cb185f0d50d6b56567e6ed5051602168416",
+      "bytes": 11438
+    },
+    {
+      "path": "docs/KDRX_README.md",
+      "sha256": "c8e5560c9698cf6f2d723628a2fb3a0fca079fc6c952fecbb9268413a832dfe6",
+      "bytes": 706
+    },
+    {
+      "path": "docs/THIRD_PARTY_NOTICES.md",
+      "sha256": "894040d096e5202c00f7ffac63b0c6a8eb7e73c79e30a225238801141c4591cd",
+      "bytes": 697
+    },
+    {
+      "path": "docs/archive/KDRX_README-before-plan.md",
+      "sha256": "c558a8f50b06a36a0696383585cab1fc9d226764726090be942ccdbb5e092d48",
+      "bytes": 4292
+    },
+    {
+      "path": "docs/archive/ROOT_README-before-plan.md",
+      "sha256": "c969c055c20dac95df2708eedfe906135ebb053903fdec931821f5715a25e818",
+      "bytes": 5750
+    },
+    {
+      "path": "kdr-backend.example.json",
+      "sha256": "04fddf75cdc885aee40f79b0967a76b32599e7347cb471496349f3b1dda2b688",
+      "bytes": 171
+    },
+    {
+      "path": "plugins/audio_generation/scripts/audio_generation_tool.py",
+      "sha256": "19ed39aa68ab82ed041b1036c4784c178151b3789476b9e8be7581234c0c6259",
+      "bytes": 10362
+    },
+    {
+      "path": "plugins/image_generation/scripts/image_generation_tool.py",
+      "sha256": "2a78e68b4f8f95827b9d3193a100201433fde9f228f948d977d05b1da7ef3429",
+      "bytes": 13204
+    },
+    {
+      "path": "plugins/kdr-x/.claude-plugin/plugin.json",
+      "sha256": "269fc8ed2bd9558cc90603e7c396967c1b039690b8b13b3f55c61fb88940a214",
+      "bytes": 1432
+    },
+    {
+      "path": "plugins/kdr-x/CHANGELOG.md",
+      "sha256": "ee6de9532415fb0fd7f3c1608896463491e7c8f16df5afce20e5ae4c25b6d7b5",
+      "bytes": 2899
+    },
+    {
+      "path": "plugins/kdr-x/commands/doctor.md",
+      "sha256": "38b65243ed43c0e235c49bb63779dbe783a4b7a3d0ceba56f430ec06278ae0ee",
+      "bytes": 594
+    },
+    {
+      "path": "plugins/kdr-x/commands/plan.md",
+      "sha256": "040864cd326e79602d385b0f0974a114b8800673f60b91894dfb57fc1aef4210",
+      "bytes": 907
+    },
+    {
+      "path": "plugins/kdr-x/commands/resume.md",
+      "sha256": "8ccbc8e8bd98a0e2bd52395b8330c515cd646219cf2e48c6e8e17b789c01ffe0",
+      "bytes": 667
+    },
+    {
+      "path": "plugins/kdr-x/commands/run.md",
+      "sha256": "ef4db0f429a616aaf606de5153262556bf3b717e5e6fcd9822224acb5ac9cd05",
+      "bytes": 958
+    },
+    {
+      "path": "plugins/kdr-x/schemas/AgentBrief.schema.json",
+      "sha256": "d5561f3f83e3b857b1b6773c7823de6650972dbef4f948687aa5befcaba4926a",
+      "bytes": 7531
+    },
+    {
+      "path": "plugins/kdr-x/schemas/AgentResult.schema.json",
+      "sha256": "9c8b01332fbffcee8511753147176108666ed0546eba5ddce6e4998b39de726b",
+      "bytes": 4635
+    },
+    {
+      "path": "plugins/kdr-x/schemas/ArtifactRecord.schema.json",
+      "sha256": "e9b3f7aef03975f7c1a612f35e79141781b3526605ada9814d5be241c540a8b2",
+      "bytes": 2101
+    },
+    {
+      "path": "plugins/kdr-x/schemas/Claim.schema.json",
+      "sha256": "f2c63b48ba49e0125f6e638245b09aaa8b1ef5cc6fd8476ba47ddc3d121f0066",
+      "bytes": 3890
+    },
+    {
+      "path": "plugins/kdr-x/schemas/ClaimEvidenceEdge.schema.json",
+      "sha256": "3c0ef7142e7cb622f567bbaa223b1ed5dc9245f546dbb4ff1e13c8f88b0be0a7",
+      "bytes": 2596
+    },
+    {
+      "path": "plugins/kdr-x/schemas/ContradictionCluster.schema.json",
+      "sha256": "3dc264c6bf121b6d209b57bba5a5659ff2df47f50267afa4c8667ebecb66fcaa",
+      "bytes": 2423
+    },
+    {
+      "path": "plugins/kdr-x/schemas/DeliveryManifest.schema.json",
+      "sha256": "04e53728eadeb3c4588775e7b17acbae839f8e3b222f19e73b7aecadb7209b72",
+      "bytes": 4426
+    },
+    {
+      "path": "plugins/kdr-x/schemas/EvidenceSpan.schema.json",
+      "sha256": "bfec21b414a2b16b62c5ea62336b94f1f1dcfe6e466c64ea7e796332dde54953",
+      "bytes": 5824
+    },
+    {
+      "path": "plugins/kdr-x/schemas/PlanPatch.schema.json",
+      "sha256": "da4880137c91c3375bc1a6dab70d90ec5ffbe0393be873b391fedfd239394ce1",
+      "bytes": 10368
+    },
+    {
+      "path": "plugins/kdr-x/schemas/ResearchContract.schema.json",
+      "sha256": "69ad9d776302eb6c9244ea79c23860952ec35471434a8e193e9fef25c082279a",
+      "bytes": 4110
+    },
+    {
+      "path": "plugins/kdr-x/schemas/ResearchPlan.schema.json",
+      "sha256": "54fe70d35c459c5956fba90306338a5b1a85eef8bba7183f9dbf1496c593ba32",
+      "bytes": 11505
+    },
+    {
+      "path": "plugins/kdr-x/schemas/ResearchRequest.schema.json",
+      "sha256": "49b58f8fecaf14e902caa7fbe4b2ed01ebed9f6d0b6e681664c41f6a00836af0",
+      "bytes": 2078
+    },
+    {
+      "path": "plugins/kdr-x/schemas/RunManifest.schema.json",
+      "sha256": "30fe611b28d0cc3732ba309c1e515b4819bbe439856323c39d95d9a230a6b256",
+      "bytes": 2699
+    },
+    {
+      "path": "plugins/kdr-x/schemas/SourceRecord.schema.json",
+      "sha256": "7ed3e4e556c5894bbf3aa1e45d30d904efb9af92538a45bdd9344630cd307b57",
+      "bytes": 5186
+    },
+    {
+      "path": "plugins/kdr-x/schemas/TaskSpec.schema.json",
+      "sha256": "1355f90b8b8e98d982874ec5fd3ad542b4912ef055f2c91cbeaf0363adbf2f97",
+      "bytes": 8229
+    },
+    {
+      "path": "plugins/kdr-x/workflows/kdr-deep-research.js",
+      "sha256": "247bc63c83416da487e7f3850a44403f0c16b16478bc52a4ab536ad73dca6718",
+      "bytes": 2616
+    },
+    {
+      "path": "plugins/kdr-x/workflows/kdr-plan.js",
+      "sha256": "1f08507b55e5a9c1f5c4bb951a89f13958731e96748a6ec17dd03a4f36089009",
+      "bytes": 2594
+    },
+    {
+      "path": "plugins/kdr-x/workflows/kdr-run.js",
+      "sha256": "851e51f89ef178fc472f9992cb15f5654c15733d30f1c0de4a8136a17e6c7dee",
+      "bytes": 2591
+    },
+    {
+      "path": "plugins/kdr-x/workflows/kdr-verify.js",
+      "sha256": "30e84cd1dd9bc8755f8b11afedc8c0186885019b6ec6ac3b6a2e7dd2db802caf",
+      "bytes": 2600
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "4c3620c06d119c2852c5e9f10c42e6b2f159ed1618e6eacb2bdc76dc183c0176",
+      "bytes": 930
+    },
+    {
+      "path": "requirements-build.txt",
+      "sha256": "15cdcc5147bd88fad27bffffda7f06203ad8d854384c8fa6c681373ac00d7b9f",
+      "bytes": 114
+    },
+    {
+      "path": "requirements-dev.lock",
+      "sha256": "d9c3594b765fdd2718744233a0d077e1f0001167137d9b276eb99ff2c3d2a773",
+      "bytes": 27543
+    },
+    {
+      "path": "scripts/audit_inventory.py",
+      "sha256": "7a867a48bfb350fab47c89562ba9c36c8d0764434a00fd54bb544b4241fce787",
+      "bytes": 5109
+    },
+    {
+      "path": "scripts/audit_plugins.py",
+      "sha256": "7d5d53de4248ec8c10b1eb96b5375b06f961f557d2f80728afd00ba689a5613f",
+      "bytes": 4704
+    },
+    {
+      "path": "scripts/build_plugin_package.py",
+      "sha256": "e880352a076d5b728baf5b10c941462c1dc6cdd3a9d40faa2eb75d6a0d625742",
+      "bytes": 5583
+    },
+    {
+      "path": "scripts/report_execution.py",
+      "sha256": "0533a5b1b36b530b699be34852fddb242ac2cb7bba618403af442c27225081bb",
+      "bytes": 26976
+    },
+    {
+      "path": "scripts/verify_distribution.py",
+      "sha256": "69ae063bd854e028950578d3955b360c7b4c2732b10fb1f1a93eda4ff61e015f",
+      "bytes": 7350
+    },
+    {
+      "path": "src/kdrx/__init__.py",
+      "sha256": "856973b4782dc34f6be8633c869d597455416be26997dc152a6a36337934d8d4",
+      "bytes": 1142
+    },
+    {
+      "path": "src/kdrx/adapters.py",
+      "sha256": "e5673078605713c33af44eca36baffd9bcba62f5001ff1d9c9f58fec508b6f8e",
+      "bytes": 11658
+    },
+    {
+      "path": "src/kdrx/analysis.py",
+      "sha256": "ce0cf5cf2be6867f018884b48785f2a375b435e9dd7316c9cdd916f177158740",
+      "bytes": 3698
+    },
+    {
+      "path": "src/kdrx/application/__init__.py",
+      "sha256": "e910f15ca22f78e06f10e7e9bd6419da0f06b2cd415a1ee3664787ef58a09eef",
+      "bytes": 76
+    },
+    {
+      "path": "src/kdrx/application/artifacts.py",
+      "sha256": "3b1a0eb376285d4c35750e252b2beba339300d5f98a5cdc4f2e5c99238bfd1a5",
+      "bytes": 2704
+    },
+    {
+      "path": "src/kdrx/application/capabilities.py",
+      "sha256": "69a5f61ff0c696f33aa63b11cfaeb2189396158fed4e6cb2e559eb2c4fbfc903",
+      "bytes": 5261
+    },
+    {
+      "path": "src/kdrx/application/checkpoints.py",
+      "sha256": "844fa640de3a01fe92ef5578d71f0452026db06c8148a401a2af877779bab3a0",
+      "bytes": 6282
+    },
+    {
+      "path": "src/kdrx/application/delivery.py",
+      "sha256": "83e900520a4f462997a306a7a33c551bfc10d21142c32b0352c246f687e16222",
+      "bytes": 9799
+    },
+    {
+      "path": "src/kdrx/application/live.py",
+      "sha256": "1ca6d028a3d294c9188a8110fa574f2554c64d6e2a166c54bc7b6bc200453efd",
+      "bytes": 7325
+    },
+    {
+      "path": "src/kdrx/application/service.py",
+      "sha256": "a0e5991c32ee6ec3321323bcdac4bf0230638cc04d0a188eab23cd3c2080b7c2",
+      "bytes": 5879
+    },
+    {
+      "path": "src/kdrx/claims.py",
+      "sha256": "0706e07b0e673e2ec25152f04412d5360b3f7fed8679df9471e37bdca6b3192e",
+      "bytes": 24780
+    },
+    {
+      "path": "src/kdrx/cli.py",
+      "sha256": "160c825000faeee93608154a08b13cc7b3c6457eed249a91d2d839492fe2cac1",
+      "bytes": 48563
+    },
+    {
+      "path": "src/kdrx/corpus.py",
+      "sha256": "c91edfb50c69cf5065ebda59deefe41764e4ccd402fc743cf0c2dba0ee2ddd03",
+      "bytes": 7184
+    },
+    {
+      "path": "src/kdrx/dag.py",
+      "sha256": "af1bb9e0201ec75505631cbba38c636b30c0e08ea10c0ec9cd115a6fe71f68ba",
+      "bytes": 10234
+    },
+    {
+      "path": "src/kdrx/evidence/__init__.py",
+      "sha256": "48562732e3f5b41c8a662d6de948a79c5bd739bbe43af5ebf3e159605532c312",
+      "bytes": 65
+    },
+    {
+      "path": "src/kdrx/evidence/documents.py",
+      "sha256": "73165e843c3dbbe96677fc723cbbaf4eb9afd30709d812fddcc354bc771865e6",
+      "bytes": 2152
+    },
+    {
+      "path": "src/kdrx/extractors.py",
+      "sha256": "2e68f24885f2c0dfae51b46b4b9a27dcc7ec8de31d8b3cb15e67871edfa1369b",
+      "bytes": 6861
+    },
+    {
+      "path": "src/kdrx/hooks.py",
+      "sha256": "2b8b93b62265f6864e7fb7f3889ca98f8441cdf097da9aca91ca1fa709ff9e4b",
+      "bytes": 10194
+    },
+    {
+      "path": "src/kdrx/integrations/__init__.py",
+      "sha256": "c8f000799f159b1b534d01d8f31d9cdd66ae915b2bed7b8f1d7024b0d6809d3f",
+      "bytes": 80
+    },
+    {
+      "path": "src/kdrx/integrations/http.py",
+      "sha256": "f1a55fd3e64576c5ea8ece7d406cb7b37867538728332d2042bcb6c15186dac8",
+      "bytes": 10551
+    },
+    {
+      "path": "src/kdrx/integrations/model_cli.py",
+      "sha256": "2a6bbfbc2568918a26427455715ed3d6a9d614be5bf0585097086922cb028cbc",
+      "bytes": 14077
+    },
+    {
+      "path": "src/kdrx/native_hooks.py",
+      "sha256": "e413909fcf9e6138e3c66f801e599e20441d61d3eb616c9f687fd0234a661c9b",
+      "bytes": 28792
+    },
+    {
+      "path": "src/kdrx/planner.py",
+      "sha256": "44500f49d950ddbbd17e7ee7c8329f1238ee61342e659a72a63e2ceef9fe522b",
+      "bytes": 3036
+    },
+    {
+      "path": "src/kdrx/reporting.py",
+      "sha256": "e744c84c6c96c43fc7663d865fd3a3c5176d317d46e080fd647a2bd659d51479",
+      "bytes": 32997
+    },
+    {
+      "path": "src/kdrx/retrieval.py",
+      "sha256": "ed4a5704508170308676f7974418f01bea0f372340268a1b5d40d2a13a77518e",
+      "bytes": 25853
+    },
+    {
+      "path": "src/kdrx/runner.py",
+      "sha256": "0bca105d746715b1b1dbde1a3c47ae8cebdbced0ba2d002c68a371f1be8d46f1",
+      "bytes": 66598
+    },
+    {
+      "path": "src/kdrx/runtime/__init__.py",
+      "sha256": "5ad8d020de460146cfc82855b330062084ce0ca7b24db88d306200b805137bda",
+      "bytes": 71
+    },
+    {
+      "path": "src/kdrx/runtime/blobs.py",
+      "sha256": "fb8c1f99d09cda50899fed46c3f2d2459281a18b9876412cc2cbf3638410fe0f",
+      "bytes": 1648
+    },
+    {
+      "path": "src/kdrx/runtime/executors.py",
+      "sha256": "9f1d62f7a618a25c0b8035ffdbcf4816521f58870dd21acf87cae0bf893a6ac5",
+      "bytes": 3170
+    },
+    {
+      "path": "src/kdrx/runtime/leases.py",
+      "sha256": "b51cb8898bd2f67e97643e4ed9ecbbb2b66e29fdca96baddf66a924800e29125",
+      "bytes": 1470
+    },
+    {
+      "path": "src/kdrx/runtime/maintenance.py",
+      "sha256": "fe21a90703b2f0a6926e1ba658628e3efd82f58568e43cb421efef80e35eda79",
+      "bytes": 5963
+    },
+    {
+      "path": "src/kdrx/runtime/migrations.py",
+      "sha256": "4e41f48a30b72b2ddc085ae52ef80cc64b6de07f208f4ea8c3fd61dcb5877e1e",
+      "bytes": 10108
+    },
+    {
+      "path": "src/kdrx/runtime/plan_revisions.py",
+      "sha256": "fa6a57772f7d905851ab9774c9dc08eb5d085d7cf6a96a9b5882296c31de4f9a",
+      "bytes": 12781
+    },
+    {
+      "path": "src/kdrx/runtime/staging.py",
+      "sha256": "7b074c3e3e97f1b71fe4cbc41d966011245711cadf0c78ebf70b39d96a135258",
+      "bytes": 3386
+    },
+    {
+      "path": "src/kdrx/runtime/store.py",
+      "sha256": "e377ac51cb2902f336abd3a2f68a39a1d7699e83feacf381da79862083206d1a",
+      "bytes": 34162
+    },
+    {
+      "path": "src/kdrx/scheduler.py",
+      "sha256": "549cd611f71727a88a079168c7191b82cbdc6908a035d8a1275df552167b241c",
+      "bytes": 12349
+    },
+    {
+      "path": "src/kdrx/schemas/__init__.py",
+      "sha256": "44679e157384e012c1047a3599758d935396e07acd10d13c3244fa9e8cc3ee56",
+      "bytes": 2490
+    },
+    {
+      "path": "src/kdrx/schemas/artifact.py",
+      "sha256": "33270bec703e6ced735a054c3c0315bfcfd7cb1519e1d29e588c71855a4c0bad",
+      "bytes": 1996
+    },
+    {
+      "path": "src/kdrx/schemas/claims.py",
+      "sha256": "a67fd90602a7b4b74108ace5bb8a7cb201fd6727f80b85f74ada2fc9b1013220",
+      "bytes": 3418
+    },
+    {
+      "path": "src/kdrx/schemas/corpus.py",
+      "sha256": "837a3aa24e36f1d821ecced489ec9987aecf241a81a852b35ccdc239470d270d",
+      "bytes": 3524
+    },
+    {
+      "path": "src/kdrx/schemas/plan.py",
+      "sha256": "94a4741fb915a597b358b966ff3c2dff7610da6d28a60fc24aed556240871d77",
+      "bytes": 8196
+    },
+    {
+      "path": "src/kdrx/schemas/request.py",
+      "sha256": "df73ca73ca5780a02a2acf0094fd3b53c95b7b1ae05a71c658a77c82bc0365cc",
+      "bytes": 2181
+    },
+    {
+      "path": "src/kdrx/schemas/versioning.py",
+      "sha256": "33bec1165eda4624bb66f9c91e83adab69a824e839cdf0d64cf953dbb578e8c7",
+      "bytes": 3463
+    },
+    {
+      "path": "src/kdrx/security.py",
+      "sha256": "6f082b7588429b2552a31803f3ac248ad7ee3bc0ef9ac2fe21922e6806272a70",
+      "bytes": 7411
+    },
+    {
+      "path": "src/kdrx/state.py",
+      "sha256": "4a645de69311a39ca9108deb846c5d48b7bd487562fa82cdca3853539e6b8173",
+      "bytes": 11875
+    },
+    {
+      "path": "src/kdrx/verification.py",
+      "sha256": "756de00c99be11e9c2e8493c20ded4e34d4e4df1d6a9834af5d3462c21a30311",
+      "bytes": 35830
+    },
+    {
+      "path": "tests/test_adapters.py",
+      "sha256": "bcc61a8ef1566209eb36f544feb659fb7d8516f3aaec37bb253fac1f14272a75",
+      "bytes": 5754
+    },
+    {
+      "path": "tests/test_dag_scheduler.py",
+      "sha256": "4614ab23f533670f44ec60871a53ddb9dca8da1b91d84f71cea0b3ec5f0c77ac",
+      "bytes": 8537
+    },
+    {
+      "path": "tests/test_delivery_policy.py",
+      "sha256": "0a2cd7ffd62ee6f1af092c9cd4da3f318df867db6f1d7183f0961369f5d3133e",
+      "bytes": 2387
+    },
+    {
+      "path": "tests/test_executor_registry.py",
+      "sha256": "98c850949a6e7182d716289887c91d6dcefa072e3debece24f4328b00d17aa75",
+      "bytes": 4489
+    },
+    {
+      "path": "tests/test_extractors.py",
+      "sha256": "e9deea994052b4c9040f05637aa94a99e52d1d1e2a6050fcb079ad7306b04015",
+      "bytes": 3892
+    },
+    {
+      "path": "tests/test_http_security.py",
+      "sha256": "915f56775e183f36b1c4405eb30962003d53e091e3c8fcb98ae0695253a581e8",
+      "bytes": 3971
+    },
+    {
+      "path": "tests/test_kernel_requests.py",
+      "sha256": "4ffd3a2194511fbb9fba8f77d411259ce0b5d981990e3e93b03c13d711080dba",
+      "bytes": 1755
+    },
+    {
+      "path": "tests/test_legacy_migration.py",
+      "sha256": "2660a24c631332c35ab34503fbc865461810c7b9e2b43eae77b38e44fa704ef2",
+      "bytes": 5666
+    },
+    {
+      "path": "tests/test_model_cli.py",
+      "sha256": "4fa9e397b73edaca78056f66d7390567fcc6d4a5259b74108050be855ae7be18",
+      "bytes": 5089
+    },
+    {
+      "path": "tests/test_native_hooks.py",
+      "sha256": "b1e6af9603b4da0ea7627c25b2880647c7f39a12ec27e802b0bbdc493e06a149",
+      "bytes": 30096
+    },
+    {
+      "path": "tests/test_phase4_resume.py",
+      "sha256": "b54ccd59f7cec8293b5f828672fff795e59e666f2e3c66e9410d382ce2255e81",
+      "bytes": 10029
+    },
+    {
+      "path": "tests/test_phase5_retrieval.py",
+      "sha256": "f9cdf0592b346f5b6b9b1c8efc4148bf83bdae9b0435a186543c3617d155bafb",
+      "bytes": 9440
+    },
+    {
+      "path": "tests/test_phase7_claims.py",
+      "sha256": "080d1559fbb73d66643735f5c209cd201c58a41c1c83098f0b3de89e55f4aa9b",
+      "bytes": 11850
+    },
+    {
+      "path": "tests/test_plan_regressions.py",
+      "sha256": "f05d243b79311c1c16f596ff383b248f0b450c98f80c938d97010bad39ee81e1",
+      "bytes": 8282
+    },
+    {
+      "path": "tests/test_plan_revisions.py",
+      "sha256": "ef3f3e668ff98e15011444904e7d826aa122c398d08cbb4f25747664ffbaf389",
+      "bytes": 10562
+    },
+    {
+      "path": "tests/test_plugin_cli.py",
+      "sha256": "5daaf61cba456cb14b34d3dd36a02c22b5247b7d56a0d59ede119005fecdadf7",
+      "bytes": 29647
+    },
+    {
+      "path": "tests/test_recoverable_publication.py",
+      "sha256": "58e418150b9c090e00d44e2b0fbe48a39585c3c1ef77f003125a720f083dcbaa",
+      "bytes": 12353
+    },
+    {
+      "path": "tests/test_repo_hygiene.py",
+      "sha256": "55345ab198c9b8cc9e9965dfa87df084a1e5333577db43293b4951940d2e37fc",
+      "bytes": 5495
+    },
+    {
+      "path": "tests/test_reporting_evals_analysis_artifact.py",
+      "sha256": "679457f2618097309b4c3992c20c89871557a5135e595e351ad9450a0227c3e5",
+      "bytes": 8328
+    },
+    {
+      "path": "tests/test_runner.py",
+      "sha256": "dc8ec3a913f021ebd22ee6bdfd82fb52677fb64b8399d450dfab092e8032850d",
+      "bytes": 11382
+    },
+    {
+      "path": "tests/test_runtime_leases.py",
+      "sha256": "edcad0cca1f347a98af2700c710864268711e3917c76913dc7301b6e8e53a6f6",
+      "bytes": 2303
+    },
+    {
+      "path": "tests/test_runtime_maintenance.py",
+      "sha256": "8a2b22592717d5e0f6b3c6dc62e55ac67e73d836dffc46d9fb8a09da4ff099fe",
+      "bytes": 1964
+    },
+    {
+      "path": "tests/test_runtime_store.py",
+      "sha256": "da63dc1d75a43ee5145a29fda9614afba5e54b1fac70663790675ac20ac9a77f",
+      "bytes": 4422
+    },
+    {
+      "path": "tests/test_scheduler_concurrency.py",
+      "sha256": "6060bc87517c1a7a7de810716f8c0f214b437041edb542f3a2f8e5a8f297ed4b",
+      "bytes": 2318
+    },
+    {
+      "path": "tests/test_schemas.py",
+      "sha256": "17fff01e3aaad7fff78226d58d2003c30050b29aca10a0ad894a931bd70d405b",
+      "bytes": 2400
+    },
+    {
+      "path": "tests/test_workflows.py",
+      "sha256": "3e5b5963df283b6797a44ececaaacb8a3e411e4804c3f4b33b1a5b6b930ab37c",
+      "bytes": 4511
+    }
+  ],
+  "original_plan_documents": {
+    "AUDITORIA_EVIDENCIAS.md": "ce301857376b1daca580bb75d5cf80c1acfc3a27765136467817c167c003ea61",
+    "BACKLOG_KIMISWARM.json": "26d669f4ae76dca3d1284eb008400d2c45de74752848c128ffb8925f6d920e48",
+    "PLANO_CIRURGICO_KIMISWARM.md": "1e193cc4ba3fbca5a307f125c10d7c2b03681032274c1ccf5a8bdad4bbe92df5"
+  },
+  "evidence_scope": "local validation of the listed file hashes, relative to base_commit; see git history for publication"
+}

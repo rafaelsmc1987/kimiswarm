@@ -30,6 +30,12 @@
   "additionalProperties": false,
   "description": "A cluster of claims/sources that disagree (plan \u00a725).",
   "properties": {
+    "schema_version": {
+      "const": "0.3",
+      "default": "0.3",
+      "title": "Schema Version",
+      "type": "string"
+    },
     "contradiction_id": {
       "title": "Contradiction Id",
       "type": "string"

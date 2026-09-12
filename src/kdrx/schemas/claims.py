@@ -6,6 +6,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .versioning import VersionedModel
+
 from .enums import (
     ClaimImportance,
     ClaimType,
@@ -27,7 +29,7 @@ class FalsificationCriteria(BaseModel):
     trigger_value: Any | None = None
 
 
-class Claim(BaseModel):
+class Claim(VersionedModel):
     """An atomic, falsifiable claim (plan §22).
 
     Compound sentences are decomposed into multiple atomic claims before
@@ -53,7 +55,7 @@ class Claim(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class ClaimEvidenceEdge(BaseModel):
+class ClaimEvidenceEdge(VersionedModel):
     """A directed relation between one claim and one evidence span (plan §23)."""
 
     model_config = ConfigDict(extra="forbid")
@@ -82,7 +84,7 @@ class ClaimEvidenceEdge(BaseModel):
         return self.relation == EdgeRelation.CONTRADICTS
 
 
-class ContradictionCluster(BaseModel):
+class ContradictionCluster(VersionedModel):
     """A cluster of claims/sources that disagree (plan §25)."""
 
     model_config = ConfigDict(extra="forbid")

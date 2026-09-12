@@ -1,0 +1,908 @@
+{
+  "schema_version": "1",
+  "method": "static file/manifest inspection; no plugin execution or legal determination",
+  "plugins": [
+    {
+      "plugin": "audio_generation",
+      "manifests": [
+        {
+          "path": "plugins/audio_generation/kimi.plugin.json",
+          "version": "0.2.1",
+          "author": "Moonshot AI",
+          "homepage": "https://kimi.com/",
+          "license": "UNLICENSED"
+        }
+      ],
+      "license_files": [],
+      "redistribution": "not established; excluded from kdr-x build",
+      "capability_state": "disabled",
+      "endpoint_hosts_observed": [
+        "avatar.moonshot.cn",
+        "catalog.msh.team",
+        "cdn.kimi.com",
+        "kimi.com"
+      ],
+      "dependency_markers": [
+        "agent_gw"
+      ],
+      "authentication": "provider-specific; availability not verified",
+      "data_sent": "tool arguments; inspect provider contracts before enabling",
+      "runtime_evidence": "none",
+      "risks": [
+        {
+          "file": "plugins/audio_generation/scripts/audio_generation_tool.py",
+          "kind": "subprocess",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/audio_generation/scripts/audio_generation_tool.py",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        }
+      ],
+      "files": [
+        {
+          "path": "plugins/audio_generation/bundle.zip",
+          "sha256": "ee43771e7ce769f02684fb21a6ef70468157c0e1fbc89bce548054af26bc078b",
+          "size": 8365
+        },
+        {
+          "path": "plugins/audio_generation/kimi.plugin.json",
+          "sha256": "02bcadee1ba2e39c6c014a18a37a6c83913ffd6b31e3a75b07a50b49c7e6f6e4",
+          "size": 1922
+        },
+        {
+          "path": "plugins/audio_generation/README.md",
+          "sha256": "6f182323e565fe4f0bab0eec70b03b5273b6206b88998b8a714b9b1a39ce2952",
+          "size": 1786
+        },
+        {
+          "path": "plugins/audio_generation/scripts/audio_generation_tool.py",
+          "sha256": "19ed39aa68ab82ed041b1036c4784c178151b3789476b9e8be7581234c0c6259",
+          "size": 10362
+        },
+        {
+          "path": "plugins/audio_generation/skills/audio_generation/SKILL.md",
+          "sha256": "e75a968fdb6e4cf0f6fdf5d605f083d03f047feb65a4a70f663ac572b954bb64",
+          "size": 5319
+        }
+      ]
+    },
+    {
+      "plugin": "github",
+      "manifests": [
+        {
+          "path": "plugins/github/kimi.plugin.json",
+          "version": "0.1.9",
+          "author": "Moonshot AI",
+          "homepage": "https://docs.github.com/en/copilot/how-tos/provide-context/use-mcp-in-your-ide/use-the-github-mcp-server",
+          "license": "MIT"
+        }
+      ],
+      "license_files": [],
+      "redistribution": "not established; excluded from kdr-x build",
+      "capability_state": "external-unverified",
+      "endpoint_hosts_observed": [
+        "api.githubcopilot.com",
+        "avatar.moonshot.cn",
+        "docs.github.com",
+        "github.com",
+        "kimi.com"
+      ],
+      "dependency_markers": [
+        "requests"
+      ],
+      "authentication": "provider-specific; availability not verified",
+      "data_sent": "tool arguments; inspect provider contracts before enabling",
+      "runtime_evidence": "none",
+      "risks": [],
+      "files": [
+        {
+          "path": "plugins/github/kimi.plugin.json",
+          "sha256": "88cc60d88e672eae21d2b70f94b9e149aa262d6bf6160386439ee86de0b78759",
+          "size": 3840
+        },
+        {
+          "path": "plugins/github/README.md",
+          "sha256": "5b3af3501faf998aa604672a6d24137e2599aa2f5cb94c9151f453b8fa3ca7cd",
+          "size": 1261
+        }
+      ]
+    },
+    {
+      "plugin": "image_generation",
+      "manifests": [
+        {
+          "path": "plugins/image_generation/kimi.plugin.json",
+          "version": "0.2.2",
+          "author": "Moonshot AI",
+          "homepage": "https://kimi.com/",
+          "license": "UNLICENSED"
+        }
+      ],
+      "license_files": [],
+      "redistribution": "not established; excluded from kdr-x build",
+      "capability_state": "disabled",
+      "endpoint_hosts_observed": [
+        "avatar.moonshot.cn",
+        "catalog.msh.team",
+        "cdn.kimi.com",
+        "example.com",
+        "kimi.com"
+      ],
+      "dependency_markers": [
+        "agent_gw"
+      ],
+      "authentication": "provider-specific; availability not verified",
+      "data_sent": "tool arguments; inspect provider contracts before enabling",
+      "runtime_evidence": "none",
+      "risks": [
+        {
+          "file": "plugins/image_generation/scripts/image_generation_tool.py",
+          "kind": "subprocess",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/image_generation/scripts/image_generation_tool.py",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        }
+      ],
+      "files": [
+        {
+          "path": "plugins/image_generation/bundle.zip",
+          "sha256": "812ca46502ae5ef5ad9f03f7c60c531ea50fc2f140e919087403e513395c8c1e",
+          "size": 9746
+        },
+        {
+          "path": "plugins/image_generation/kimi.plugin.json",
+          "sha256": "d4d305eb7fa697e70c422223fc54dcc43f2e30a2f559c068bcb4db0230b6842e",
+          "size": 2286
+        },
+        {
+          "path": "plugins/image_generation/README.md",
+          "sha256": "632ea5470dc6f19488d7252f254146d5954abca95eb805c818543b94f7ca3601",
+          "size": 1794
+        },
+        {
+          "path": "plugins/image_generation/scripts/image_generation_tool.py",
+          "sha256": "2a78e68b4f8f95827b9d3193a100201433fde9f228f948d977d05b1da7ef3429",
+          "size": 13204
+        },
+        {
+          "path": "plugins/image_generation/skills/image_generation/SKILL.md",
+          "sha256": "4acb2778cd50145b6f29d97cad221f176b176a1e77a7c9b45df40a38799ad510",
+          "size": 7176
+        }
+      ]
+    },
+    {
+      "plugin": "imf",
+      "manifests": [
+        {
+          "path": "plugins/imf/kimi.plugin.json",
+          "version": "0.1.8",
+          "author": "Moonshot AI",
+          "homepage": "https://www.imf.org/",
+          "license": "UNLICENSED"
+        }
+      ],
+      "license_files": [],
+      "redistribution": "not established; excluded from kdr-x build",
+      "capability_state": "external-unverified",
+      "endpoint_hosts_observed": [
+        "avatar.moonshot.cn",
+        "catalog.deva.msh.team",
+        "cdn.kimi.com",
+        "www.imf.org"
+      ],
+      "dependency_markers": [
+        "agent_gw"
+      ],
+      "authentication": "provider-specific; availability not verified",
+      "data_sent": "tool arguments; inspect provider contracts before enabling",
+      "runtime_evidence": "none",
+      "risks": [
+        {
+          "file": "plugins/imf/README.md",
+          "kind": "mutable_install_instruction",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/imf/README.md",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/imf/scripts/imf_tool.py",
+          "kind": "mutable_install_instruction",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/imf/scripts/imf_tool.py",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/imf/skills/imf/SKILL.md",
+          "kind": "mutable_install_instruction",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/imf/skills/imf/SKILL.md",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        }
+      ],
+      "files": [
+        {
+          "path": "plugins/imf/bundle.zip",
+          "sha256": "15326b616727d33ceacb708752f5f6c64e557f7322c8d2b1c1e248ef4a93a0ac",
+          "size": 5509
+        },
+        {
+          "path": "plugins/imf/kimi.plugin.json",
+          "sha256": "e28dc4018914bb35f45265895c079fa5fc4012fd8ebb25904e7cdda1f0956fa5",
+          "size": 2443
+        },
+        {
+          "path": "plugins/imf/README.md",
+          "sha256": "0b73ce92e8dd3a6419ac28e51ea2e9ce5326a499e213f7e4270a632ef9e95c75",
+          "size": 1195
+        },
+        {
+          "path": "plugins/imf/scripts/imf_tool.py",
+          "sha256": "c26be42da27e9f7ed16275dc917f61784ed3c0c8b2caf7ac05aa98f245381a0e",
+          "size": 4613
+        },
+        {
+          "path": "plugins/imf/skills/imf/SKILL.md",
+          "sha256": "ee2c0b3d564ccf54f8e139ef3fd1a00eff993a2fe684dd99993fa187c0deb1c8",
+          "size": 3622
+        }
+      ]
+    },
+    {
+      "plugin": "kdr-x",
+      "manifests": [
+        {
+          "path": "plugins/kdr-x/.claude-plugin/plugin.json",
+          "version": "0.3.0",
+          "author": {
+            "name": "KDR-X contributors"
+          },
+          "homepage": "https://github.com/rafaelsmc1987/kimiswarm",
+          "license": "MIT"
+        }
+      ],
+      "license_files": [],
+      "redistribution": "own package scope",
+      "capability_state": "implemented-offline",
+      "endpoint_hosts_observed": [
+        "github.com",
+        "keepachangelog.com"
+      ],
+      "dependency_markers": [
+        "claude",
+        "codex",
+        "pydantic",
+        "requests"
+      ],
+      "authentication": "local Claude Code or Codex login; no credentials in artifacts",
+      "data_sent": "local evidence context for explicitly enabled inference",
+      "runtime_evidence": "local suite; see execution-status.json",
+      "risks": [],
+      "files": [
+        {
+          "path": "plugins/kdr-x/.claude-plugin/plugin.json",
+          "sha256": "269fc8ed2bd9558cc90603e7c396967c1b039690b8b13b3f55c61fb88940a214",
+          "size": 1432
+        },
+        {
+          "path": "plugins/kdr-x/agents/claim-decomposer.md",
+          "sha256": "4da58706d899904294ebb2c84c5970e39f185fc21053b78e5dd954ed4f5fd05b",
+          "size": 1057
+        },
+        {
+          "path": "plugins/kdr-x/agents/claims.md",
+          "sha256": "a57ef89ed0a84915ae77ebcc69e22990e056f2da3dd5984db58b2ffe7ae7da95",
+          "size": 826
+        },
+        {
+          "path": "plugins/kdr-x/agents/coder.md",
+          "sha256": "33b5c241f1f30b20d54605a6b86b5641e49278258b19f120b4bbfdaddab3589d",
+          "size": 727
+        },
+        {
+          "path": "plugins/kdr-x/agents/counterevidence-researcher.md",
+          "sha256": "410de639d238b109ff04bd62b69e1533c8f3f4a47e509275d4560ee4d19f5222",
+          "size": 898
+        },
+        {
+          "path": "plugins/kdr-x/agents/devils-advocate.md",
+          "sha256": "f8151697f94131bc414c5389a859fae9b6fd3034f022d18d26aa2ab1a258be77",
+          "size": 944
+        },
+        {
+          "path": "plugins/kdr-x/agents/evidence.md",
+          "sha256": "40cb9a4edfa88cfb96579e6759deb7e021175e1212a09e3c23b2e620e6d12b54",
+          "size": 781
+        },
+        {
+          "path": "plugins/kdr-x/agents/explore.md",
+          "sha256": "9aa8501ff9dd40729cc8b542f84fed863e2384f1d11040d87384f0ae377d5270",
+          "size": 603
+        },
+        {
+          "path": "plugins/kdr-x/agents/final-integrity-auditor.md",
+          "sha256": "582ecac3d79b0cf501c9c90092ed0e5fa3f391cbe9f9d929c6c455b3d39bff21",
+          "size": 911
+        },
+        {
+          "path": "plugins/kdr-x/agents/general.md",
+          "sha256": "b560521826ce0b8cba5b3960bc77e1e189f525c0aeda0051cc2b7c38b9161d94",
+          "size": 844
+        },
+        {
+          "path": "plugins/kdr-x/agents/plan.md",
+          "sha256": "018c231b0edbe3e50c65615ea599e3902208014ef88b5584e154bf86e4066df1",
+          "size": 735
+        },
+        {
+          "path": "plugins/kdr-x/agents/planner-council.md",
+          "sha256": "bd9067ea4da35b21710ac799fe92442aedcb4102e47e66edb2e5492f752e7062",
+          "size": 1604
+        },
+        {
+          "path": "plugins/kdr-x/agents/reviewer.md",
+          "sha256": "061774aadd9a3c1e555948f485a18e2be80e25c456e0bc67fa76ce46b6b20e0f",
+          "size": 686
+        },
+        {
+          "path": "plugins/kdr-x/agents/role-resolution.json",
+          "sha256": "7f47d4ff0942f1713761816c7251736e5c786f8bdbd3f50663562300595cb93b",
+          "size": 2308
+        },
+        {
+          "path": "plugins/kdr-x/agents/search.md",
+          "sha256": "2fd9603f8a50a4943f2bd6e6477ff41c7d2c0cd36194a581e06d3f12c18b3979",
+          "size": 842
+        },
+        {
+          "path": "plugins/kdr-x/agents/source-verifier.md",
+          "sha256": "2c73c3b8976a2954900a1f79cabd718e7fe960048acf9177bd2ab4bafc4261d3",
+          "size": 1104
+        },
+        {
+          "path": "plugins/kdr-x/agents/verifier.md",
+          "sha256": "a3d36e4bfeb161a4cd66fa12da29a1f0deca2dda5d36ee277f9fab32dfbf6d6b",
+          "size": 579
+        },
+        {
+          "path": "plugins/kdr-x/agents/writing.md",
+          "sha256": "b3d568f763a18454fc658c586e99f85b2080637a8a9f0e00d2c6306138baadb9",
+          "size": 767
+        },
+        {
+          "path": "plugins/kdr-x/CHANGELOG.md",
+          "sha256": "d7e773a657af637aef32ec705d349a54f7745bed4d718fbddfefc36c7a09a64b",
+          "size": 2252
+        },
+        {
+          "path": "plugins/kdr-x/commands/doctor.md",
+          "sha256": "38b65243ed43c0e235c49bb63779dbe783a4b7a3d0ceba56f430ec06278ae0ee",
+          "size": 594
+        },
+        {
+          "path": "plugins/kdr-x/commands/eval.md",
+          "sha256": "a83a3887bfa0423550f8301c6f880398a1aa65195370c0df12a15bca5061971c",
+          "size": 787
+        },
+        {
+          "path": "plugins/kdr-x/commands/monitor.md",
+          "sha256": "2da83100f24f8801fa01a1e496dc5a229e42ce2a1cedaf0362dfdb01c7e838b1",
+          "size": 875
+        },
+        {
+          "path": "plugins/kdr-x/commands/plan.md",
+          "sha256": "040864cd326e79602d385b0f0974a114b8800673f60b91894dfb57fc1aef4210",
+          "size": 907
+        },
+        {
+          "path": "plugins/kdr-x/commands/report.md",
+          "sha256": "a7b10d5236de962cf88e9e60beb8c81635034601cd42246ebf98964bb391ecbf",
+          "size": 1002
+        },
+        {
+          "path": "plugins/kdr-x/commands/resume.md",
+          "sha256": "8ccbc8e8bd98a0e2bd52395b8330c515cd646219cf2e48c6e8e17b789c01ffe0",
+          "size": 667
+        },
+        {
+          "path": "plugins/kdr-x/commands/run.md",
+          "sha256": "ef4db0f429a616aaf606de5153262556bf3b717e5e6fcd9822224acb5ac9cd05",
+          "size": 958
+        },
+        {
+          "path": "plugins/kdr-x/commands/seal.md",
+          "sha256": "6ff6ef87f234fb7ca17bf57af3f8f6d981096e87bfd844e4321f55f923f9d5d0",
+          "size": 2734
+        },
+        {
+          "path": "plugins/kdr-x/commands/status.md",
+          "sha256": "acadf397f38de6bd35287ed168398bfbf6f2cadacff7d54b52f59b78e4e5de33",
+          "size": 561
+        },
+        {
+          "path": "plugins/kdr-x/commands/verify.md",
+          "sha256": "081e8025ec455481bdb74b12d2a94d7aa5ba2a0847d70ce7e030377eb7a877c8",
+          "size": 1087
+        },
+        {
+          "path": "plugins/kdr-x/hooks/hooks.json",
+          "sha256": "dcb800db3f18608edcf8d38191dd1e7bf816d56fd8d2787c215e20159476bfa2",
+          "size": 1126
+        },
+        {
+          "path": "plugins/kdr-x/hooks/kdr-hook",
+          "sha256": "ea69e3a10a8e733e56a2fee5d7262c6a224878b008a14d8342281977860fc035",
+          "size": 1177
+        },
+        {
+          "path": "plugins/kdr-x/schemas/AgentBrief.schema.json",
+          "sha256": "d5561f3f83e3b857b1b6773c7823de6650972dbef4f948687aa5befcaba4926a",
+          "size": 7531
+        },
+        {
+          "path": "plugins/kdr-x/schemas/AgentResult.schema.json",
+          "sha256": "9c8b01332fbffcee8511753147176108666ed0546eba5ddce6e4998b39de726b",
+          "size": 4635
+        },
+        {
+          "path": "plugins/kdr-x/schemas/ArtifactRecord.schema.json",
+          "sha256": "e9b3f7aef03975f7c1a612f35e79141781b3526605ada9814d5be241c540a8b2",
+          "size": 2101
+        },
+        {
+          "path": "plugins/kdr-x/schemas/Claim.schema.json",
+          "sha256": "f2c63b48ba49e0125f6e638245b09aaa8b1ef5cc6fd8476ba47ddc3d121f0066",
+          "size": 3890
+        },
+        {
+          "path": "plugins/kdr-x/schemas/ClaimEvidenceEdge.schema.json",
+          "sha256": "3c0ef7142e7cb622f567bbaa223b1ed5dc9245f546dbb4ff1e13c8f88b0be0a7",
+          "size": 2596
+        },
+        {
+          "path": "plugins/kdr-x/schemas/ContradictionCluster.schema.json",
+          "sha256": "3dc264c6bf121b6d209b57bba5a5659ff2df47f50267afa4c8667ebecb66fcaa",
+          "size": 2423
+        },
+        {
+          "path": "plugins/kdr-x/schemas/DeliveryManifest.schema.json",
+          "sha256": "04e53728eadeb3c4588775e7b17acbae839f8e3b222f19e73b7aecadb7209b72",
+          "size": 4426
+        },
+        {
+          "path": "plugins/kdr-x/schemas/EvidenceSpan.schema.json",
+          "sha256": "bfec21b414a2b16b62c5ea62336b94f1f1dcfe6e466c64ea7e796332dde54953",
+          "size": 5824
+        },
+        {
+          "path": "plugins/kdr-x/schemas/GateDecision.schema.json",
+          "sha256": "2464dd1d120269fa951653f84bcf65d89707e9eeffe809b4e4028865845a49ef",
+          "size": 2849
+        },
+        {
+          "path": "plugins/kdr-x/schemas/ResearchContract.schema.json",
+          "sha256": "6ebabbf62130546d5f382a2b57bb9ce0901afe2c309109f189b10385ed033094",
+          "size": 3971
+        },
+        {
+          "path": "plugins/kdr-x/schemas/ResearchPlan.schema.json",
+          "sha256": "54fe70d35c459c5956fba90306338a5b1a85eef8bba7183f9dbf1496c593ba32",
+          "size": 11505
+        },
+        {
+          "path": "plugins/kdr-x/schemas/ResearchRequest.schema.json",
+          "sha256": "ec00f1c234501fd9b3dd6765ee51eea36c6c28944850d02854fbdd940c29d2ae",
+          "size": 1939
+        },
+        {
+          "path": "plugins/kdr-x/schemas/RunManifest.schema.json",
+          "sha256": "30fe611b28d0cc3732ba309c1e515b4819bbe439856323c39d95d9a230a6b256",
+          "size": 2699
+        },
+        {
+          "path": "plugins/kdr-x/schemas/SourceRecord.schema.json",
+          "sha256": "7ed3e4e556c5894bbf3aa1e45d30d904efb9af92538a45bdd9344630cd307b57",
+          "size": 5186
+        },
+        {
+          "path": "plugins/kdr-x/schemas/TaskSpec.schema.json",
+          "sha256": "1355f90b8b8e98d982874ec5fd3ad542b4912ef055f2c91cbeaf0363adbf2f97",
+          "size": 8229
+        },
+        {
+          "path": "plugins/kdr-x/skills/claim-graph/SKILL.md",
+          "sha256": "59d01eaa6c8cd1df5a854ce44aa306da5081cac0cc6437d2c1af6ab27aaca186",
+          "size": 1066
+        },
+        {
+          "path": "plugins/kdr-x/skills/deep-research/SKILL.md",
+          "sha256": "1b8f51cb97f5c3b3e93a20a9c6bad721c19e7776ef7d256abd5765b44fd379a9",
+          "size": 1390
+        },
+        {
+          "path": "plugins/kdr-x/skills/source-trust/SKILL.md",
+          "sha256": "381d7fd514077dbd6a69622a7ad4aa554c07df3fe32cd17dda2b8d0cd4057868",
+          "size": 887
+        },
+        {
+          "path": "plugins/kdr-x/workflows/kdr-deep-research.js",
+          "sha256": "247bc63c83416da487e7f3850a44403f0c16b16478bc52a4ab536ad73dca6718",
+          "size": 2616
+        },
+        {
+          "path": "plugins/kdr-x/workflows/kdr-plan.js",
+          "sha256": "1f08507b55e5a9c1f5c4bb951a89f13958731e96748a6ec17dd03a4f36089009",
+          "size": 2594
+        },
+        {
+          "path": "plugins/kdr-x/workflows/kdr-run.js",
+          "sha256": "851e51f89ef178fc472f9992cb15f5654c15733d30f1c0de4a8136a17e6c7dee",
+          "size": 2591
+        },
+        {
+          "path": "plugins/kdr-x/workflows/kdr-verify.js",
+          "sha256": "30e84cd1dd9bc8755f8b11afedc8c0186885019b6ec6ac3b6a2e7dd2db802caf",
+          "size": 2600
+        }
+      ]
+    },
+    {
+      "plugin": "scholar",
+      "manifests": [
+        {
+          "path": "plugins/scholar/kimi.plugin.json",
+          "version": "0.1.4",
+          "author": "Moonshot AI",
+          "homepage": "https://kimi.moonshot.cn/",
+          "license": "UNLICENSED"
+        }
+      ],
+      "license_files": [],
+      "redistribution": "not established; excluded from kdr-x build",
+      "capability_state": "external-unverified",
+      "endpoint_hosts_observed": [
+        "avatar.moonshot.cn",
+        "catalog.deva.msh.team",
+        "cdn.kimi.com",
+        "kimi.moonshot.cn"
+      ],
+      "dependency_markers": [
+        "agent_gw"
+      ],
+      "authentication": "provider-specific; availability not verified",
+      "data_sent": "tool arguments; inspect provider contracts before enabling",
+      "runtime_evidence": "none",
+      "risks": [
+        {
+          "file": "plugins/scholar/README.md",
+          "kind": "mutable_install_instruction",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/scholar/README.md",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/scholar/scripts/scholar_tool.py",
+          "kind": "mutable_install_instruction",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/scholar/scripts/scholar_tool.py",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/scholar/skills/scholar/SKILL.md",
+          "kind": "mutable_install_instruction",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/scholar/skills/scholar/SKILL.md",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        }
+      ],
+      "files": [
+        {
+          "path": "plugins/scholar/bundle.zip",
+          "sha256": "bedf970056282e98db58edcdb9f1486347d4a5378c5685b079c8567694a5de4b",
+          "size": 5502
+        },
+        {
+          "path": "plugins/scholar/kimi.plugin.json",
+          "sha256": "28cf0466969a44aa16e98621bb8a48b1f266002be56ce53103f4c85e2c81f369",
+          "size": 3155
+        },
+        {
+          "path": "plugins/scholar/README.md",
+          "sha256": "d98987bbe4b62df4f388133b22cddf18cab18d7febcd1ffbea6595e9c525e4f3",
+          "size": 1229
+        },
+        {
+          "path": "plugins/scholar/scripts/scholar_tool.py",
+          "sha256": "ab866eb1688435ffd0025d262c81d0869a3ab52bfd636deba9aebcb754e84646",
+          "size": 4642
+        },
+        {
+          "path": "plugins/scholar/skills/scholar/SKILL.md",
+          "sha256": "98bf29cab5e7f1eb70daa35325ec15fedd4391c27d2bb600e944e939c0bb41a3",
+          "size": 3586
+        }
+      ]
+    },
+    {
+      "plugin": "sec_edgar",
+      "manifests": [
+        {
+          "path": "plugins/sec_edgar/kimi.plugin.json",
+          "version": "0.1.7",
+          "author": "Moonshot AI",
+          "homepage": "https://www.sec.gov/submit-filings",
+          "license": "UNLICENSED"
+        }
+      ],
+      "license_files": [],
+      "redistribution": "not established; excluded from kdr-x build",
+      "capability_state": "external-unverified",
+      "endpoint_hosts_observed": [
+        "avatar.moonshot.cn",
+        "catalog.msh.team",
+        "cdn.kimi.com",
+        "www.sec.gov"
+      ],
+      "dependency_markers": [
+        "agent_gw"
+      ],
+      "authentication": "provider-specific; availability not verified",
+      "data_sent": "tool arguments; inspect provider contracts before enabling",
+      "runtime_evidence": "none",
+      "risks": [
+        {
+          "file": "plugins/sec_edgar/README.md",
+          "kind": "mutable_install_instruction",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/sec_edgar/README.md",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/sec_edgar/scripts/sec_edgar_tool.py",
+          "kind": "mutable_install_instruction",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/sec_edgar/scripts/sec_edgar_tool.py",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/sec_edgar/skills/sec_edgar/SKILL.md",
+          "kind": "mutable_install_instruction",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/sec_edgar/skills/sec_edgar/SKILL.md",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        }
+      ],
+      "files": [
+        {
+          "path": "plugins/sec_edgar/bundle.zip",
+          "sha256": "815d26617b3f69b0ef00c7278491296970270572707c912d20e4473ce7d594ed",
+          "size": 5138
+        },
+        {
+          "path": "plugins/sec_edgar/kimi.plugin.json",
+          "sha256": "7dfef61eafa8f6c9f55a9471cbb98bf0f570822ad71bab5b4333166e0af8f532",
+          "size": 2209
+        },
+        {
+          "path": "plugins/sec_edgar/README.md",
+          "sha256": "53c8662dbee556cd030e3f2f1c65899e15e02039da3fbc39218b0b07f7f72597",
+          "size": 1227
+        },
+        {
+          "path": "plugins/sec_edgar/scripts/sec_edgar_tool.py",
+          "sha256": "63f41c21ea529baeb793e3395ffe66006671862bf402ad94098724264c09c75f",
+          "size": 4650
+        },
+        {
+          "path": "plugins/sec_edgar/skills/sec_edgar/SKILL.md",
+          "sha256": "fd4cf8fbe9df652088518f65338f245ca894a7d90c91b97bf34bbe2ff57ec016",
+          "size": 3183
+        }
+      ]
+    },
+    {
+      "plugin": "world_bank_open_data",
+      "manifests": [
+        {
+          "path": "plugins/world_bank_open_data/kimi.plugin.json",
+          "version": "0.1.6",
+          "author": "Moonshot AI",
+          "homepage": "https://data.worldbank.org/",
+          "license": "UNLICENSED"
+        }
+      ],
+      "license_files": [],
+      "redistribution": "not established; excluded from kdr-x build",
+      "capability_state": "external-unverified",
+      "endpoint_hosts_observed": [
+        "avatar.moonshot.cn",
+        "catalog.deva.msh.team",
+        "cdn.kimi.com",
+        "data.worldbank.org"
+      ],
+      "dependency_markers": [
+        "agent_gw"
+      ],
+      "authentication": "provider-specific; availability not verified",
+      "data_sent": "tool arguments; inspect provider contracts before enabling",
+      "runtime_evidence": "none",
+      "risks": [
+        {
+          "file": "plugins/world_bank_open_data/README.md",
+          "kind": "mutable_install_instruction",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/world_bank_open_data/README.md",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/world_bank_open_data/scripts/world_bank_open_data_tool.py",
+          "kind": "mutable_install_instruction",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/world_bank_open_data/scripts/world_bank_open_data_tool.py",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/world_bank_open_data/skills/world_bank_open_data/SKILL.md",
+          "kind": "mutable_install_instruction",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/world_bank_open_data/skills/world_bank_open_data/SKILL.md",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        }
+      ],
+      "files": [
+        {
+          "path": "plugins/world_bank_open_data/bundle.zip",
+          "sha256": "debad0b5f470855fa757de5f873bd0740cba5017573f643d6a8dc831be0aef8b",
+          "size": 5446
+        },
+        {
+          "path": "plugins/world_bank_open_data/kimi.plugin.json",
+          "sha256": "6e15edfa0bc3b0b501f5102e50a8659f80e3d3abf312d05b1a1c457961d3502a",
+          "size": 2214
+        },
+        {
+          "path": "plugins/world_bank_open_data/README.md",
+          "sha256": "e34e832158f67c9e7ed60dd1fbbd9f77a83fce05760e6622bd05447545f67269",
+          "size": 1306
+        },
+        {
+          "path": "plugins/world_bank_open_data/scripts/world_bank_open_data_tool.py",
+          "sha256": "3397e2725fc27a6bbfec88f64020e9167ba5dffb4ff89cc36fd56a98fe0352c5",
+          "size": 4694
+        },
+        {
+          "path": "plugins/world_bank_open_data/skills/world_bank_open_data/SKILL.md",
+          "sha256": "ccb0c43b560cdff4495e1f5740a6012a99fd13f6329e199393ea4e578467301f",
+          "size": 3729
+        }
+      ]
+    },
+    {
+      "plugin": "yahoo_finance",
+      "manifests": [
+        {
+          "path": "plugins/yahoo_finance/kimi.plugin.json",
+          "version": "0.1.8",
+          "author": "Moonshot AI",
+          "homepage": "https://finance.yahoo.com/",
+          "license": "UNLICENSED"
+        }
+      ],
+      "license_files": [],
+      "redistribution": "not established; excluded from kdr-x build",
+      "capability_state": "external-unverified",
+      "endpoint_hosts_observed": [
+        "avatar.moonshot.cn",
+        "catalog.deva.msh.team",
+        "cdn.kimi.com",
+        "finance.yahoo.com"
+      ],
+      "dependency_markers": [
+        "agent_gw"
+      ],
+      "authentication": "provider-specific; availability not verified",
+      "data_sent": "tool arguments; inspect provider contracts before enabling",
+      "runtime_evidence": "none",
+      "risks": [
+        {
+          "file": "plugins/yahoo_finance/README.md",
+          "kind": "mutable_install_instruction",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/yahoo_finance/README.md",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/yahoo_finance/scripts/yahoo_finance_tool.py",
+          "kind": "mutable_install_instruction",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/yahoo_finance/scripts/yahoo_finance_tool.py",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/yahoo_finance/skills/yahoo_finance/SKILL.md",
+          "kind": "mutable_install_instruction",
+          "inspection": "static marker; not a runtime verdict"
+        },
+        {
+          "file": "plugins/yahoo_finance/skills/yahoo_finance/SKILL.md",
+          "kind": "remote_gateway",
+          "inspection": "static marker; not a runtime verdict"
+        }
+      ],
+      "files": [
+        {
+          "path": "plugins/yahoo_finance/bundle.zip",
+          "sha256": "c39f453ae9b47bfd84df86b9243378f9987abec2ad86d0accd307b1cc79658a1",
+          "size": 5249
+        },
+        {
+          "path": "plugins/yahoo_finance/kimi.plugin.json",
+          "sha256": "7a05510cbce98baf352af64fa499bcc57e6eb41c7c63fa686497f9f1c93c5b8a",
+          "size": 2177
+        },
+        {
+          "path": "plugins/yahoo_finance/README.md",
+          "sha256": "282864cb53c5bedbb2cbaf77e0414d972704be84907c45bcedb32f9d926858a0",
+          "size": 1255
+        },
+        {
+          "path": "plugins/yahoo_finance/scripts/yahoo_finance_tool.py",
+          "sha256": "59ccde0b0dc0e4c7f751c9d0a12b368b23db08d46eaac15b775566e3c2bdec8a",
+          "size": 4666
+        },
+        {
+          "path": "plugins/yahoo_finance/skills/yahoo_finance/SKILL.md",
+          "sha256": "1cc230e5f00f6ecf8863305cef388af348525a1b136020e98731ba8fa72a0a89",
+          "size": 3437
+        }
+      ]
+    }
+  ]
+}

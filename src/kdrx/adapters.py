@@ -32,35 +32,18 @@ from kdrx.schemas.enums import SourceType
 from kdrx.security import egress_allowed
 
 
-class AdapterError(Exception):
-    """Falha explícita de adapter: egress negado, HTTP ou parse."""
+from kdrx.integrations.http import SafeHTTPTransport, TransportError
 
-
+AdapterError = TransportError
 Transport = Callable[[str, dict[str, str] | None], str]
 
 
-class UrllibTransport:
-    """Transporte HTTP real via stdlib (user-agent identificado, timeout)."""
-
-    def __init__(self, timeout: float = 20.0, user_agent: str = "kdr-x/0.1") -> None:
-        self.timeout = timeout
-        self.user_agent = user_agent
-
-    def __call__(self, url: str, headers: dict[str, str] | None = None) -> str:
-        req = urllib.request.Request(url)
-        req.add_header("User-Agent", self.user_agent)
-        for k, v in (headers or {}).items():
-            req.add_header(k, v)
-        try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-                charset = resp.headers.get_content_charset() or "utf-8"
-                return resp.read().decode(charset, errors="replace")
-        except urllib.error.URLError as exc:
-            raise AdapterError(f"HTTP falhou para {url}: {exc}") from exc
+class UrllibTransport(SafeHTTPTransport):
+    """Compatibility name for the shared, bounded transport."""
 
 
 def _host_of(url: str) -> str:
-    return urllib.parse.urlparse(url).netloc.lower()
+    return (urllib.parse.urlparse(url).hostname or "").lower()
 
 
 @dataclass
@@ -73,7 +56,9 @@ class BaseAdapter:
 
     def __post_init__(self) -> None:
         if self.transport is None:
-            self.transport = UrllibTransport()
+            self.transport = UrllibTransport(
+                allowlist=self.allowlist, denylist=self.denylist
+            )
 
     def _gate(self, url: str) -> None:
         host = _host_of(url)
@@ -148,9 +133,9 @@ class OpenAlexAdapter(BaseAdapter):
                     canonical_uri=item.get("doi") or item.get("id", ""),
                     title=item.get("title") or "untitled",
                     authors=[a for a in authors if a],
-                    publisher=(item.get("primary_location") or {})
-                    .get("source", {})
-                    .get("display_name"),
+                    publisher=(
+                        (item.get("primary_location") or {}).get("source") or {}
+                    ).get("display_name"),
                     date=self._parse_date(item.get("publication_date")),
                     source_type=SourceType.ACADEMIC_PAPER,
                     access_path=item.get("id"),
@@ -180,8 +165,8 @@ class CrossrefAdapter(BaseAdapter):
         ]
         issued = m.get("issued", {}).get("date-parts", [[None]])[0]
         date = None
-        if issued and issued[0]:
-            date = datetime(issued[0], 1, 1)
+        if len(issued) == 3 and all(issued):
+            date = datetime(*issued)
         return SourceRecord(
             source_id=f"doi:{doi.lower()}",
             canonical_uri=f"https://doi.org/{doi}",
@@ -190,7 +175,12 @@ class CrossrefAdapter(BaseAdapter):
             publisher=m.get("publisher"),
             date=date,
             source_type=SourceType.ACADEMIC_PAPER,
-            metadata={"adapter": "crossref", "type": m.get("type")},
+            metadata={
+                "adapter": "crossref",
+                "type": m.get("type"),
+                "publication_date_parts": issued,
+                "date_precision": {1: "year", 2: "month", 3: "day"}.get(len(issued)),
+            },
         )
 
 

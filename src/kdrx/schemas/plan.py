@@ -5,7 +5,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from .versioning import VersionedModel, validate_component
 
 from .enums import AgentRole, Criticality, TaskStage, TaskStatus
 
@@ -13,17 +15,17 @@ from .enums import AgentRole, Criticality, TaskStage, TaskStatus
 class RetryPolicy(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    max_retries: int = 2
-    backoff_seconds: float = 0.0
+    max_retries: int = Field(default=2, ge=0, le=20)
+    backoff_seconds: float = Field(default=0.0, ge=0)
     require_alternative_agent: bool = False
 
 
 class Budget(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    tokens: int = 0
-    queries: int = 0
-    wall_seconds: int = 0
+    tokens: int | None = Field(default=None, ge=0)
+    queries: int | None = Field(default=None, ge=0)
+    wall_seconds: int | None = Field(default=None, ge=0)
 
 
 class AcceptanceCriteria(BaseModel):
@@ -31,10 +33,10 @@ class AcceptanceCriteria(BaseModel):
 
     criteria: list[str] = Field(default_factory=list)
     output_schema: str | None = None
-    required_evidence_refs: int = 0
+    required_evidence_refs: int = Field(default=0, ge=0)
 
 
-class TaskSpec(BaseModel):
+class TaskSpec(VersionedModel):
     """A single node in the DAG (plan §15).
 
     The DAG compiler enforces: one mission, one owner per output, no dependent
@@ -43,7 +45,9 @@ class TaskSpec(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    kind: str | None = None
     task_id: str
+    _validate_task_id = field_validator("task_id")(validate_component)
     stage: TaskStage
     wave: int
     role: AgentRole
@@ -66,7 +70,7 @@ class TaskSpec(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class AgentBrief(BaseModel):
+class AgentBrief(VersionedModel):
     """The brief handed to an agent for exactly one task.
 
     Kimi contract parity (audit PR-03): o briefing autocontido é
@@ -77,6 +81,13 @@ class AgentBrief(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    run_id: str | None = None
+    plan_id: str | None = None
+    plan_revision: int = Field(default=0, ge=0)
+    attempt_id: str | None = None
+    kind: str | None = None
+    budget: Budget = Field(default_factory=Budget)
+    retry_policy: RetryPolicy = Field(default_factory=RetryPolicy)
     brief_id: str
     task_id: str
     role: AgentRole
@@ -92,7 +103,7 @@ class AgentBrief(BaseModel):
     context: dict[str, Any] = Field(default_factory=dict)
 
 
-class AgentResult(BaseModel):
+class AgentResult(VersionedModel):
     """The declared result of an agent for one task.
 
     ``outputs_produced`` must be a subset of the task's declared outputs; a
@@ -101,6 +112,10 @@ class AgentResult(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    run_id: str | None = None
+    plan_id: str | None = None
+    plan_revision: int = Field(default=0, ge=0)
+    attempt_id: str | None = None
     result_id: str
     task_id: str
     agent_role: AgentRole
@@ -145,11 +160,13 @@ class PlannerDisposition(BaseModel):
     rationale: str
 
 
-class ResearchPlan(BaseModel):
+class ResearchPlan(VersionedModel):
     """The full plan-first artifact (plan §14): plan.md + manifest + DAG + waves."""
 
     model_config = ConfigDict(extra="forbid")
 
+    execution_backend: Literal["offline", "codex", "claude-code"] = "offline"
+    plan_revision: int = Field(default=0, ge=0)
     plan_id: str
     contract_id: str
     route: str
@@ -168,12 +185,35 @@ class ResearchPlan(BaseModel):
         return None
 
 
-class RunManifest(BaseModel):
+class PlanPatch(VersionedModel):
+    """Explicit CAS revision request; budgets grant no provider credentials."""
+
+    base_revision: int = Field(ge=0)
+    reason: str = Field(min_length=1, max_length=4000)
+    add_tasks: list[TaskSpec] = Field(default_factory=list)
+    remove_tasks: list[str] = Field(default_factory=list)
+    dependencies: dict[str, list[str]] = Field(default_factory=dict)
+    task_budgets: dict[str, Budget] = Field(default_factory=dict)
+    required_budget: Budget = Field(default_factory=Budget)
+    invalidate_tasks: list[str] = Field(default_factory=list)
+
+    @field_validator("reason")
+    @classmethod
+    def meaningful_reason(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("patch reason must not be blank")
+        return value.strip()
+
+
+class RunManifest(VersionedModel):
     """Resumable run state (plan §31, §40 ``/kdr:resume``)."""
 
     model_config = ConfigDict(extra="forbid")
 
+    state_revision: int = Field(default=0, ge=0)
     run_id: str
+    _validate_run_id = field_validator("run_id")(validate_component)
+    plan_revision: int = Field(default=0, ge=0)
     plan_id: str
     contract_id: str
     route: str

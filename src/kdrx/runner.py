@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -120,6 +121,7 @@ def _retrieval_tasks(corpus_size: int) -> list[TaskSpec]:
     return [
         TaskSpec(
             task_id="T-RETRIEVE",
+            kind="retrieval",
             stage=TaskStage.RETRIEVAL,
             wave=0,
             role=AgentRole.PRIMARY_SOURCE_FINDER,
@@ -129,6 +131,13 @@ def _retrieval_tasks(corpus_size: int) -> list[TaskSpec]:
                 "corpus/sources.jsonl",
                 "corpus/dedup.json",
                 "retrieval/query_graph.json",
+                "corpus/source-id-map.json",
+                "claims/claims.jsonl",
+                "claims/standings.jsonl",
+                "claims/edges.jsonl",
+                "claims/contradictions.json",
+                "claims/counterevidence.jsonl",
+                "claims/unresolved.json",
             ],
             tools=["search"],
             read_only=True,
@@ -141,6 +150,7 @@ def _retrieval_tasks(corpus_size: int) -> list[TaskSpec]:
         ),
         TaskSpec(
             task_id="T-VERIFY",
+            kind="source_verification",
             stage=TaskStage.VERIFICATION,
             wave=0,
             role=AgentRole.SOURCE_VERIFIER,
@@ -159,12 +169,18 @@ def _retrieval_tasks(corpus_size: int) -> list[TaskSpec]:
         ),
         TaskSpec(
             task_id="T-SYNTHESIZE",
+            kind="synthesis",
             stage=TaskStage.SYNTHESIS,
             wave=1,
             role=AgentRole.SYNTHESIS_AGENT,
             mission="assemble the report from the evidence pack",
             dependencies=["T-RETRIEVE", "T-VERIFY"],
-            outputs=["delivery/report.md"],
+            outputs=[
+                "delivery/report.md",
+                "delivery/outline.json",
+                "delivery/section_dag.json",
+                "delivery/swarm_log.json",
+            ],
             tools=["write"],
             read_only=False,
             acceptance=acceptance("report assembled"),
@@ -176,6 +192,7 @@ def _retrieval_tasks(corpus_size: int) -> list[TaskSpec]:
         ),
         TaskSpec(
             task_id="T-INTEGRITY",
+            kind="integrity",
             stage=TaskStage.REVIEW,
             wave=2,
             role=AgentRole.FINAL_INTEGRITY_AUDITOR,
@@ -225,32 +242,47 @@ def prepare_run_dir(
     run_id: str | None = None,
 ) -> tuple[RunState, RunManifest]:
     """Scaffold the run dir and persist human- and machine-readable inputs."""
+    from kdrx.runtime.executors import EXECUTORS
+
+    issues = EXECUTORS.issues(plan)
+    if issues:
+        raise ValueError("plan capabilities unavailable: " + "; ".join(issues))
+    dag = compile_dag(plan.tasks)
+    if not dag.is_valid:
+        raise ValueError(
+            "invalid plan DAG: " + "; ".join(str(issue) for issue in dag.issues)
+        )
     rid = run_id or run_id_from_plan(plan.plan_id)
     state = RunState(runs_root, rid)
     manifest = RunManifest(
         run_id=rid,
         plan_id=plan.plan_id,
+        plan_revision=plan.plan_revision,
         contract_id=contract.contract_id,
         route=contract.route.value,
         root_dir="",
     )
     state.scaffold(manifest)
-    state.write_text("research_contract.yaml", _yaml_contract(contract))
-    state.write_text("research_contract.json", contract.model_dump_json(indent=2))
-    state.write_text("plan.md", plan.plan_md)
     plan_json = plan.model_dump_json(indent=2)
-    state.write_text("plan.json", plan_json)
     # D4: o scaffold também grava provenance — sha256 dos bytes EXATOS
     # persistidos em plan.json (relidos do disco; write_text traduz newlines
     # no Windows, então o hash canônico é o do arquivo, nunca do modelo).
     manifest.metadata["plan"] = {
-        "sha256": hash_file(state.run_dir / "plan.json"),
+        "sha256": hashlib.sha256(plan_json.encode("utf-8")).hexdigest(),
         "source": "scaffold-default",
         "review_approved": False,
-        "revision": 0,
+        "revision": plan.plan_revision,
         "imported_at": None,
     }
-    state.save_manifest(manifest)
+    state.commit_bundle(
+        manifest,
+        {
+            "research_contract.yaml": _yaml_contract(contract),
+            "research_contract.json": contract.model_dump_json(indent=2),
+            "plan.md": plan.plan_md,
+            "plan.json": plan_json,
+        },
+    )
     return state, manifest
 
 
@@ -349,33 +381,40 @@ def import_plan_into_run(
         raise PlanImportError(
             1,
             "plan gate blocked",
-            {"blocking_reasons": gate.blocking_reasons},
+            {
+                "blocking_reasons": gate.blocking_reasons,
+                "checks": [
+                    check.model_dump(mode="json")
+                    for check in gate.checks
+                    if not check.passed
+                ],
+            },
         )
 
-    # 10. persist (validate-then-write: tudo acima passou; cada write é atômico)
+    # The store rejects a stale revision before exporting any plan bytes.
+    previous = manifest.metadata.get("plan") or {}
+    revision = int(previous.get("revision", 0)) + 1
+    plan.plan_revision = revision
     plan_json = plan.model_dump_json(indent=2)
-    state.write_text("plan.json", plan_json)
-    state.write_text("plan.md", plan.plan_md)
+    files = {"plan.json": plan_json, "plan.md": plan.plan_md}
     if dispositions is not None:
-        state.write_text(
-            "planner-dispositions.json",
-            json.dumps([d.model_dump(mode="json") for d in dispositions], indent=2),
+        files["planner-dispositions.json"] = json.dumps(
+            [d.model_dump(mode="json") for d in dispositions], indent=2
         )
 
     # 11. provenance write-back + evento plan_imported
-    previous = manifest.metadata.get("plan") or {}
-    revision = int(previous.get("revision", 0)) + 1
     provenance = {
         # sha256 dos bytes EXATOS persistidos (canon D4; relido do disco para
         # valer por construção contra `kdr status --json.plan_hash_match`).
-        "sha256": hash_file(state.run_dir / "plan.json"),
+        "sha256": hashlib.sha256(plan_json.encode("utf-8")).hexdigest(),
         "source": source,
         "review_approved": review_approved,
         "revision": revision,
         "imported_at": datetime.now(timezone.utc).isoformat(),
     }
     manifest.metadata["plan"] = provenance
-    state.save_manifest(manifest)
+    manifest.plan_revision = revision
+    state.commit_bundle(manifest, files)
     state.append_event(
         {
             "kind": "plan_imported",
@@ -396,6 +435,7 @@ def execute_plan(
     state: RunState,
     precompleted: dict[str, AgentResult] | None = None,
     doi_resolver: Any | None = None,
+    model_config: Any | None = None,
 ) -> tuple[Any, "_FileResearchExecutor"]:
     """Run the wave scheduler over a persisted plan; return (result, executor).
 
@@ -407,20 +447,221 @@ def execute_plan(
     T-04-06: delivery-manifest.json é emitido com artifact reais + verdicts.
     """
     dag = compile_dag(plan.tasks)
-    executor = _FileResearchExecutor(corpus, state, contract.objective, doi_resolver)
     manifest = state.load_manifest()
+    persisted_plan = ResearchPlan.model_validate_json(state.read_text("plan.json"))
+    state.store.assert_writable(manifest.model_dump(mode="json"))
+    if manifest.status == TaskStatus.CANCELLED:
+        raise ValueError("cancelled run cannot be restarted; create a new run")
+    if (
+        plan != persisted_plan
+        or manifest.plan_id != plan.plan_id
+        or manifest.contract_id != contract.contract_id
+        or manifest.metadata.get("plan", {}).get("sha256")
+        != hash_file(state._resolve("plan.json"))
+    ):
+        raise ValueError("persisted plan identity/hash mismatch")
+    if not dag.is_valid:
+        raise ValueError("invalid plan DAG")
+    from kdrx.runtime.executors import EXECUTORS, capability_key
+
+    issues = EXECUTORS.issues(plan)
+    if issues:
+        raise ValueError("plan capabilities unavailable: " + "; ".join(issues))
+    executor = _FileResearchExecutor(corpus, state, contract.objective, doi_resolver)
+    if plan.execution_backend != "offline":
+        from kdrx.application.live import LiveFileExecutor
+
+        if model_config is None or model_config.provider != plan.execution_backend:
+            raise ValueError("live plan requires matching explicit model configuration")
+        config_hash = hashlib.sha256(
+            model_config.model_dump_json().encode()
+        ).hexdigest()
+        prior_config = manifest.metadata.get("model_config_sha256")
+        if prior_config and prior_config != config_hash:
+            raise ValueError("model configuration is immutable for an existing run")
+        manifest.metadata["model_config_sha256"] = config_hash
+        executor = LiveFileExecutor(executor, model_config)
+    elif model_config is not None:
+        raise ValueError(
+            "offline plan cannot silently switch to a live backend; create a live plan"
+        )
+    if precompleted:
+        executor.rehydrate()
     manifest.status = TaskStatus.RUNNING
     state.save_manifest(manifest)
+    state.store.register_tasks(state.run_id, [t.task_id for t in plan.tasks])
+    commit_lock = threading.RLock()
+    leases: dict[str, dict] = {}
+    workspaces: dict[str, Any] = {}
+    keepers: dict[str, Any] = {}
+
+    def inputs_for(task_id: str) -> list[str]:
+        task = plan.task_by_id(task_id)
+        paths = set(task.inputs) | {"plan.json", "research_contract.json"}
+        pending = list(task.dependencies)
+        visited = set()
+        while pending:
+            tid = pending.pop()
+            if tid in visited:
+                continue
+            visited.add(tid)
+            dependency = plan.task_by_id(tid)
+            paths.update(dependency.outputs)
+            pending.extend(dependency.dependencies)
+        return sorted(paths)
+
+    def authorized_execute(brief: AgentBrief) -> AgentResult:
+        lease = state.store.claim(
+            state.run_id,
+            brief.task_id,
+            "kernel",
+            expected_revision=plan.plan_revision,
+            seconds=max(
+                300, model_config.timeout_seconds + 30 if model_config else 300
+            ),
+        )
+        leases[brief.task_id] = lease
+        from kdrx.runtime.leases import LeaseKeeper
+
+        keeper = LeaseKeeper(state.store, lease).start()
+        keepers[brief.task_id] = keeper
+        brief = brief.model_copy(
+            update={
+                "run_id": state.run_id,
+                "plan_id": plan.plan_id,
+                "plan_revision": plan.plan_revision,
+                "attempt_id": lease["attempt_id"],
+            }
+        )
+        try:
+            from kdrx.runtime.staging import AttemptWorkspace
+
+            workspace = AttemptWorkspace(
+                state, lease["attempt_id"], brief.outputs, inputs_for(brief.task_id)
+            )
+            workspaces[brief.task_id] = workspace
+            workspace.cancelled = keeper.cancelled
+            local = _FileResearchExecutor(
+                corpus.fork(), workspace, contract.objective, doi_resolver
+            )
+            replay = manifest.metadata.get("retrieval_replay", {}).get(brief.task_id)
+            if capability_key(brief) == "retrieval" and replay:
+                from kdrx.runtime.blobs import BlobStore
+
+                blobs = BlobStore(state.root / ".blobs")
+                sources = [
+                    SourceRecord.model_validate_json(line)
+                    for line in blobs.get(replay).splitlines()
+                    if line.strip()
+                ]
+                local.corpus.bind_snapshots(sources, blobs)
+            if capability_key(brief) != "retrieval":
+                local.rehydrate()
+            if plan.execution_backend != "offline":
+                local = LiveFileExecutor(local, model_config, backend=executor.backend)
+            return local(brief)
+        except BaseException:
+            from kdrx.runtime.store import StateConflict
+
+            keeper.stop()
+            try:
+                state.store.finish(
+                    lease, {"error": "executor failed"}, [], success=False
+                )
+            except StateConflict:
+                pass
+            raise
 
     def emit(event: dict) -> None:
-        state.append_event(event)
-        _apply_manifest_transition(manifest, event)
-        state.save_manifest(manifest)
+        nonlocal manifest
+        with commit_lock:
+            state.append_event(event)
+            if event.get("kind") == "task_failed" and event.get("task_id") in leases:
+                from kdrx.runtime.store import StateConflict
 
-    result = WaveScheduler(executor, emit=emit).run(dag, precompleted=precompleted)
+                keepers[event["task_id"]].stop()
+
+                try:
+                    state.store.finish(
+                        leases[event["task_id"]],
+                        {"error": "validation failed"},
+                        [],
+                        success=False,
+                    )
+                except StateConflict:
+                    pass
+            manifest = RunManifest.model_validate(
+                state.store.transition(
+                    state.run_id, event, expected_revision=plan.plan_revision
+                )
+            )
+            state.flush_exports()
+
+    def validate_result(task: TaskSpec, outcome: AgentResult) -> None:
+        from kdrx.application.artifacts import validate_outputs
+
+        from kdrx.runtime.blobs import BlobStore
+
+        with commit_lock:
+            lease = leases[task.task_id]
+            keepers[task.task_id].check()
+            if (
+                outcome.run_id != state.run_id
+                or outcome.attempt_id != lease["attempt_id"]
+                or outcome.plan_id != plan.plan_id
+                or outcome.plan_revision != plan.plan_revision
+            ):
+                raise ValueError("result run/plan/attempt identity mismatch")
+            workspace = workspaces[task.task_id]
+            workspace.validate_boundary()
+            artifacts = validate_outputs(workspace, task, outcome)
+            if capability_key(task) == "retrieval":
+                from kdrx.application.checkpoints import load_checkpoint
+
+                load_checkpoint(workspace)
+            blobs = BlobStore(state.root / ".blobs")
+            for artifact in artifacts:
+                if (
+                    blobs.put(workspace._resolve(artifact["path"]).read_bytes())
+                    != artifact["sha256"]
+                ):
+                    raise ValueError("output changed before commit")
+            state.store.finish(
+                lease,
+                outcome.model_dump(mode="json"),
+                artifacts,
+                checkpoint={
+                    "plan_hash": manifest.metadata["plan"]["sha256"],
+                    "input_hashes": workspace.input_hashes,
+                },
+                staged_events=workspace.staged_events,
+            )
+            keepers[task.task_id].stop()
+            state.flush_exports()
+
+    try:
+        result = WaveScheduler(
+            authorized_execute, emit=emit, validate_result=validate_result
+        ).run(dag, precompleted=precompleted)
+    finally:
+        for keeper in keepers.values():
+            keeper.stop()
+    manifest = state.load_manifest()
+    if result.completed:
+        executor.rehydrate()
+
+    if manifest.metadata["plan"]["revision"] != plan.plan_revision:
+        from kdrx.runtime.store import StateConflict
+
+        raise StateConflict(
+            "plan revision changed before finalization; resume the current plan"
+        )
 
     # Selo final: status + gates + hashes (T-04-02/03) + delivery manifest (T-04-06)
-    manifest.status = TaskStatus.SUCCEEDED if not result.failed else TaskStatus.FAILED
+    if manifest.status != TaskStatus.CANCELLED:
+        manifest.status = (
+            TaskStatus.SUCCEEDED if not result.failed else TaskStatus.FAILED
+        )
     manifest.completed_tasks = list(result.completed)
     manifest.failed_tasks = list(result.failed)
     manifest.gate_results = {
@@ -429,13 +670,53 @@ def execute_plan(
     }
     manifest.artifact_hashes = _sealable_hashes(state)
     state.save_manifest(manifest)
+    from kdrx.application.delivery import POLICY_VERSION, verify_snapshot
+
+    try:
+        check = verify_snapshot(state)
+    except (ValueError, OSError):
+        check = None
+    if check is None or not check.deliverable:
+        manifest.gate_results["integrity"] = "fail"
+    state.save_manifest(manifest)
     seal_delivery(
         state,
         manifest,
         produced_by="runner:execute_plan",
         gate_timestamps={},
-        unresolved_critical=unresolved_critical_claims(state.run_dir),
+        unresolved_critical=list(check.unresolved_critical)
+        if check
+        else ["verification-incomplete"],
+        verified_report_bytes=check.report_bytes if check else None,
+        verification_context={
+            "policy_version": POLICY_VERSION,
+            "plan_hash": check.plan_hash,
+            "graph_revision": check.graph_hash,
+        }
+        if check
+        else {"incomplete": True},
     )
+    if check and any(
+        hash_file(state._resolve(rel)) != expected
+        for rel, expected in check.input_hashes.items()
+    ):
+        manifest.gate_results["integrity"] = "fail"
+        state.save_manifest(manifest)
+        delivery = DeliveryManifest.model_validate_json(
+            state.read_text("delivery-manifest.json")
+        )
+        delivery.final_integrity_pass = False
+        state.write_text("delivery-manifest.json", delivery.model_dump_json(indent=2))
+    manifest.artifact_hashes = _sealable_hashes(state)
+    state.save_manifest(manifest)
+    result.deliverable = bool(
+        check and check.deliverable and manifest.gate_results.get("integrity") == "pass"
+    )
+    result.blocking_reasons = (
+        list(check.blocking_reasons) if check else ["verification-incomplete"]
+    )
+    if not result.deliverable and not result.blocking_reasons:
+        result.blocking_reasons = ["input changed during publication"]
     return result, executor
 
 
@@ -476,32 +757,15 @@ def _sealable_hashes(state: RunState) -> dict[str, str]:
 
 
 def unresolved_critical_claims(run_dir: str | Path) -> list[str]:
-    """claim_ids com ``importance == CRITICAL`` e ``standing == UNRESOLVED`` (D7).
+    from kdrx.application.artifacts import load_jsonl
 
-    Port da lógica de ``native_hooks._unresolved_critical`` (sem tocar em
-    native_hooks — unificação em helper compartilhado fica para depois).
-    """
-    path = Path(run_dir) / "claims" / "claims.jsonl"
-    if not path.is_file():
-        return []
-    out: list[str] = []
-    try:
-        lines = path.read_text(encoding="utf-8").splitlines()
-    except OSError:
-        return []
-    for line in lines:
-        if not line.strip():
-            continue
-        try:
-            claim = Claim.model_validate_json(line)
-        except ValueError:
-            continue
-        if (
-            claim.importance == ClaimImportance.CRITICAL
-            and claim.standing == Standing.UNRESOLVED
-        ):
-            out.append(claim.claim_id)
-    return out
+    claims = load_jsonl(Path(run_dir) / "claims/claims.jsonl", Claim)
+    return [
+        c.claim_id
+        for c in claims
+        if c.importance == ClaimImportance.CRITICAL
+        and c.standing == Standing.UNRESOLVED
+    ]
 
 
 def seal_delivery(
@@ -511,6 +775,9 @@ def seal_delivery(
     produced_by: str,
     gate_timestamps: dict[str, str],
     unresolved_critical: list[str],
+    verified_report_bytes: bytes | None = None,
+    verification_context: dict | None = None,
+    verification_files: dict[str, str] | None = None,
 ) -> DeliveryManifest:
     """Persiste o DeliveryManifest com o hash dos bytes verificados (D1/D2/D7).
 
@@ -525,7 +792,11 @@ def seal_delivery(
     verified_report_hash: str | None = None
     if report_path.is_file():
         try:
-            data = report_path.read_bytes()
+            data = (
+                verified_report_bytes
+                if verified_report_bytes is not None
+                else report_path.read_bytes()
+            )
             open_ok = True
             verified_report_hash = hashlib.sha256(data).hexdigest()
             artifacts.append(
@@ -550,13 +821,33 @@ def seal_delivery(
         delivered_at=datetime.now(timezone.utc),
         verified_report_hash=verified_report_hash,
         gate_timestamps=gate_timestamps,
+        metadata=verification_context or {},
     )
-    state.write_text("delivery-manifest.json", dm.model_dump_json(indent=2))
+    files: dict[str, str | bytes] = {
+        **(verification_files or {}),
+        "delivery-manifest.json": dm.model_dump_json(indent=2),
+    }
+    for relative, content in (verification_files or {}).items():
+        manifest.artifact_hashes[relative] = hashlib.sha256(
+            content.encode("utf-8")
+        ).hexdigest()
+    if verified_report_bytes is not None and verified_report_hash is not None:
+        relative = f"delivery/revisions/{verified_report_hash}.md"
+        files[relative] = verified_report_bytes
+        manifest.artifact_hashes[relative] = verified_report_hash
+    manifest.metadata["seal"] = {
+        "eligible": dm.is_complete(),
+        "verified_report_hash": verified_report_hash,
+        "sealed_at": dm.delivered_at.isoformat(),
+        "revision": (verification_context or {}).get("revision", 0),
+        "policy_version": (verification_context or {}).get("policy_version"),
+    }
+    state.commit_bundle(manifest, files)
     return dm
 
 
 def resume_run(
-    state: RunState, corpus: FileCorpus
+    state: RunState, corpus: FileCorpus, model_config: Any | None = None
 ) -> tuple[Any, "_FileResearchExecutor"]:
     """Continua um run existente sem repetir tasks fechadas (T-04-04).
 
@@ -565,6 +856,12 @@ def resume_run(
     dependências contam como satisfeitas — e executa só a fila restante.
     """
     manifest = state.load_manifest()
+    bad = state.verify_hashes(manifest.artifact_hashes)
+    state.store.assert_writable(manifest.model_dump(mode="json"))
+    if bad:
+        raise ValueError(f"resume integrity hash mismatch: {bad}")
+    if state.store.reconcile_expired(state.run_id):
+        state.flush_exports()
     plan = ResearchPlan.model_validate(json.loads(state.read_text("plan.json")))
     contract = ResearchContract.model_validate(
         json.loads(state.read_text("research_contract.json"))
@@ -573,13 +870,44 @@ def resume_run(
     completed = set(manifest.completed_tasks)
     for task in plan.tasks:
         if task.task_id in completed:
-            precompleted[task.task_id] = AgentResult(
-                result_id=f"resumed-{task.task_id}",
-                task_id=task.task_id,
-                agent_role=task.role,
-                outputs_produced=list(task.outputs),
+            path = state._resolve(f"tasks/{task.task_id}/result.json")
+            if not path.is_file() or task.task_id not in manifest.metadata.get(
+                "task_commits", {}
+            ):
+                raise ValueError(
+                    f"missing verified task receipt for {task.task_id}; legacy run requires explicit migration"
+                )
+            precompleted[task.task_id] = AgentResult.model_validate_json(
+                path.read_bytes()
             )
-    return execute_plan(plan, contract, corpus, state, precompleted=precompleted)
+            WaveScheduler._validate_outcome(task, precompleted[task.task_id])
+    from kdrx.application.checkpoints import validate_task_receipts
+
+    validate_task_receipts(state, plan, manifest, precompleted)
+    if len(precompleted) == len(plan.tasks) and manifest.status == TaskStatus.SUCCEEDED:
+        from kdrx.application.delivery import verify_delivery
+        from kdrx.scheduler import ScheduleResult
+
+        # A fully published run is a read-only replay. If publication was
+        # interrupted before its transaction, finalize below without inference.
+        path = state._resolve("delivery-manifest.json")
+        if path.is_file() and path.stat().st_size:
+            verification = verify_delivery(state.run_dir)
+            executor = _FileResearchExecutor(corpus, state, contract.objective)
+            executor.rehydrate()
+            return ScheduleResult(
+                completed=[t.task_id for t in plan.tasks],
+                deliverable=verification["deliverable"],
+                blocking_reasons=verification["blocking_reasons"],
+            ), executor
+    return execute_plan(
+        plan,
+        contract,
+        corpus,
+        state,
+        precompleted=precompleted,
+        model_config=model_config,
+    )
 
 
 class _FileResearchExecutor:
@@ -601,20 +929,34 @@ class _FileResearchExecutor:
         self.claims: list[Claim] = []
         self.report_text = ""
 
+    def rehydrate(self) -> None:
+        from kdrx.application.checkpoints import load_checkpoint
+
+        checkpoint = load_checkpoint(self.state)
+        self.sources = checkpoint.sources
+        self.spans = checkpoint.spans
+        self.claims = checkpoint.claims
+        self.report_text = checkpoint.report
+        from kdrx.runtime.blobs import BlobStore
+
+        self.corpus.bind_snapshots(self.sources, BlobStore(self.state.root / ".blobs"))
+
     def __call__(self, brief: AgentBrief) -> AgentResult:
-        task_id = brief.task_id
-        if task_id == "T-RETRIEVE":
-            return self._retrieve(brief)
-        if task_id == "T-VERIFY":
-            return self._verify(brief)
-        if task_id == "T-SYNTHESIZE":
-            return self._synthesize(brief)
-        if task_id == "T-INTEGRITY":
-            return self._integrity(brief)
-        raise RuntimeError(f"unknown task {task_id}")
+        from kdrx.runtime.executors import EXECUTORS
+
+        outcome = EXECUTORS.execute(self, brief)
+        return outcome.model_copy(
+            update={
+                "run_id": brief.run_id,
+                "plan_id": brief.plan_id,
+                "plan_revision": brief.plan_revision,
+                "attempt_id": brief.attempt_id,
+            }
+        )
 
     def _retrieve(self, brief: AgentBrief) -> AgentResult:
         docs = self.corpus.scan()
+        original_sources = {doc.doc_id: doc.source for doc in docs}
         # T-05-06: dedup por fingerprint de conteúdo — cópias idênticas do
         # mesmo texto colapsam para a fonte CANÔNICA (1a ocorrência). Spans das
         # cópias citam a fonte canônica, então o standing mede independência
@@ -634,6 +976,28 @@ class _FileResearchExecutor:
                 duplicates[s.source_id] = canon.source_id
                 d.source = canon
         self.sources = list(canon_by_fp.values())
+        from kdrx.runtime.blobs import BlobStore
+
+        blobs = BlobStore(self.state.root / ".blobs")
+        for doc in docs:
+            if doc.source is not None:
+                blobs.put(doc.text.encode("utf-8"))
+                raw = self.corpus.raw_bytes(doc)
+                if hashlib.sha256(raw).hexdigest() != original_sources[
+                    doc.doc_id
+                ].metadata.get("raw_bytes_hash"):
+                    raise ValueError("source changed before snapshot")
+                blobs.put(raw)
+        self.state.write_text(
+            "corpus/source-id-map.json",
+            json.dumps(
+                {
+                    s.metadata.get("legacy_source_id"): s.source_id
+                    for s in original_sources.values()
+                    if s
+                }
+            ),
+        )
         families = independence_families(self.sources)
         self.state.write_text(
             "corpus/dedup.json",
@@ -697,10 +1061,10 @@ class _FileResearchExecutor:
             coverage = len(covered_terms) / max(1, len(objective_terms))
             decision = stopping.evaluate(
                 SaturationState(
-                    critical_claim_coverage=coverage,
+                    critical_claim_coverage=0.0,
                     marginal_source_gain=gain_src,
                     marginal_evidence_gain=gain_ev,
-                    unresolved_blockers=0,
+                    unresolved_blockers=len(graph.nodes),
                     diversity_sources=len(known_sources),
                     queries_issued=queries_issued,
                 )
@@ -737,6 +1101,8 @@ class _FileResearchExecutor:
                 {
                     "objective": self.objective,
                     "queries_issued": queries_issued,
+                    "lexical_query_coverage": coverage if queries_issued else 0.0,
+                    "research_coverage": None,
                     "decision": decision,
                     "nodes": [
                         {
@@ -755,6 +1121,7 @@ class _FileResearchExecutor:
             + "\n",
         )
         self._extract_claims()
+        self._compute_standings()
         return AgentResult(
             result_id="r-retrieve",
             task_id=brief.task_id,
@@ -778,7 +1145,6 @@ class _FileResearchExecutor:
         evidence span do seu documento para o loop claim -> evidence -> standing.
         """
         objective_tokens = set(tokenize(self.objective))
-        span_by_source = {sp.source_id: sp for sp in self.spans}
         seen_claims: set[tuple[str, str]] = set()
         for doc in self.corpus._docs:
             source_id = doc.source.source_id if doc.source else doc.doc_id
@@ -793,7 +1159,35 @@ class _FileResearchExecutor:
                     if key in seen_claims:
                         continue
                     seen_claims.add(key)
-                    ev = span_by_source.get(source_id)
+                    start = doc.text.find(sent)
+                    ev = next(
+                        (
+                            sp
+                            for sp in self.spans
+                            if sp.source_id == source_id
+                            and sp.locator.char_start is not None
+                            and sp.locator.char_end is not None
+                            and sp.locator.char_start <= start
+                            and sp.locator.char_end >= start + len(sent)
+                            and sent in sp.verbatim_span
+                        ),
+                        None,
+                    )
+                    if ev is None and start >= 0:
+                        ev = EvidenceSpan(
+                            evidence_id=f"EV-exact-{len(self.spans)}",
+                            source_id=source_id,
+                            locator=Locator(
+                                char_start=start, char_end=start + len(sent)
+                            ),
+                            verbatim_span=sent,
+                            verified=True,
+                            content_hash=hashlib.sha256(doc.text.encode()).hexdigest(),
+                            extractor="file-corpus",
+                            extraction_method="exact-sentence",
+                        )
+                        self.spans.append(ev)
+                    claim.metadata["origin_statement"] = sent
                     claim.claim_type = ClaimType.DESCRIPTIVE
                     claim.importance = ClaimImportance.MAJOR
                     claim.support_edges = [ev.evidence_id] if ev else []
@@ -801,6 +1195,10 @@ class _FileResearchExecutor:
         self.state.write_text(
             "claims/claims.jsonl",
             "\n".join(c.model_dump_json() for c in self.claims) + "\n",
+        )
+        self.state.write_text(
+            "evidence/spans.jsonl",
+            "\n".join(s.model_dump_json() for s in self.spans) + "\n",
         )
 
     def _compute_standings(self) -> dict[str, dict]:
@@ -845,17 +1243,80 @@ class _FileResearchExecutor:
             own_span = next(
                 (span_by_id[e] for e in c.support_edges if e in span_by_id), None
             )
-            own_doc = (
-                own_span.source_id.removeprefix("file:")
-                if own_span is not None
-                else None
+            own_source = (
+                source_by_id.get(own_span.source_id) if own_span is not None else None
             )
+            own_doc = own_source.metadata.get("original_path") if own_source else None
             counter_hits.extend(
                 search_counterevidence(c, self.corpus, own_source_id=own_doc)
             )
         self.state.write_text(
             "claims/counterevidence.jsonl",
             "".join(json.dumps(h.__dict__) + "\n" for h in counter_hits),
+        )
+        counter_edges: dict[str, list[ClaimEvidenceEdge]] = {}
+        assessed_hits = []
+        docs_by_id = {doc.doc_id: doc for doc in self.corpus._docs}
+        for hit in counter_hits:
+            doc = docs_by_id.get(hit.doc_id)
+            claim = claim_by_id[hit.claim_id]
+            if doc is None or doc.source is None:
+                assessed_hits.append(
+                    {**hit.__dict__, "assessment": "source_unavailable"}
+                )
+                continue
+            source = doc.source
+            if source.source_id not in source_by_id:
+                self.sources.append(source)
+                source_by_id[source.source_id] = source
+            relations = []
+            for sentence in split_sentences(doc.text):
+                start = doc.text.find(sentence)
+                span = EvidenceSpan(
+                    evidence_id="EV-counter-"
+                    + hashlib.sha256(
+                        (claim.claim_id + source.source_id + sentence).encode()
+                    ).hexdigest()[:24],
+                    source_id=source.source_id,
+                    verbatim_span=sentence,
+                    locator=Locator(char_start=start, char_end=start + len(sentence)),
+                    verified=True,
+                    content_hash=hashlib.sha256(doc.text.encode()).hexdigest(),
+                    extraction_method="counterevidence-exact-sentence",
+                )
+                edge = derive_edge(
+                    claim,
+                    span,
+                    source=source,
+                    family_size=family_size.get(source.source_id, 1),
+                )
+                if edge.relation in {EdgeRelation.CONTRADICTS, EdgeRelation.QUALIFIES}:
+                    if span.evidence_id not in span_by_id:
+                        self.spans.append(span)
+                        span_by_id[span.evidence_id] = span
+                        evidence_source[span.evidence_id] = source.source_id
+                    counter_edges.setdefault(claim.claim_id, []).append(edge)
+                    relations.append(edge.relation.value)
+            assessed_hits.append(
+                {
+                    **hit.__dict__,
+                    "relations": relations,
+                    "assessment": "assessed"
+                    if relations
+                    else "irrelevant_or_insufficient",
+                }
+            )
+        self.state.write_text(
+            "claims/counterevidence.jsonl",
+            "".join(json.dumps(item) + "\n" for item in assessed_hits),
+        )
+        self.state.write_text(
+            "evidence/spans.jsonl",
+            "".join(span.model_dump_json() + "\n" for span in self.spans),
+        )
+        self.state.write_text(
+            "corpus/sources.jsonl",
+            "".join(source.model_dump_json() + "\n" for source in self.sources),
         )
 
         standings: dict[str, dict] = {}
@@ -874,7 +1335,7 @@ class _FileResearchExecutor:
                 for e in c.support_edges
                 if e in span_by_id
             ]
-            contra: list[ClaimEvidenceEdge] = []
+            contra: list[ClaimEvidenceEdge] = list(counter_edges.get(c.claim_id, []))
             for other_id in contra_claims.get(c.claim_id, []):
                 other = claim_by_id[other_id]
                 for e in other.support_edges:
@@ -904,6 +1365,11 @@ class _FileResearchExecutor:
                 source_family=source_family,
             )
             c.standing = res.standing
+            c.contradiction_edges = [
+                edge.evidence_id
+                for edge in contra
+                if edge.relation == EdgeRelation.CONTRADICTS
+            ]
             c.confidence = res.confidence
             c.calibration_basis = res.calibration_basis
             standings[c.claim_id] = res.as_dict()
@@ -980,15 +1446,71 @@ class _FileResearchExecutor:
             limitations=[f"{len(gates)} sources graded"],
         )
 
+    def _analyze_claims(self, brief: AgentBrief) -> AgentResult:
+        self.state.write_text(
+            brief.outputs[0],
+            json.dumps(
+                {
+                    "method": "persisted-deterministic-standing",
+                    "claims": [
+                        {
+                            "claim_id": c.claim_id,
+                            "standing": c.standing.value,
+                            "confidence": c.confidence,
+                            "calibration_basis": c.calibration_basis,
+                            "support": c.support_edges,
+                            "counterevidence": c.contradiction_edges,
+                        }
+                        for c in self.claims
+                    ],
+                    "limitations": [
+                        "heuristic standing; no independently calibrated entailment model"
+                    ],
+                },
+                indent=2,
+            ),
+        )
+        return AgentResult(
+            result_id="r-claim-analysis",
+            task_id=brief.task_id,
+            agent_role=brief.role,
+            outputs_produced=brief.outputs,
+            evidence_refs=[s.evidence_id for s in self.spans],
+        )
+
+    def _export_evidence(self, brief: AgentBrief) -> AgentResult:
+        if len(brief.outputs) != 1 or not brief.outputs[0].endswith(".json"):
+            raise ValueError(
+                "artifact_export currently supports one JSON evidence pack"
+            )
+        self.state.write_text(
+            brief.outputs[0],
+            json.dumps(
+                {
+                    "schema_version": "0.3",
+                    "sources": [s.model_dump(mode="json") for s in self.sources],
+                    "spans": [s.model_dump(mode="json") for s in self.spans],
+                    "claims": [c.model_dump(mode="json") for c in self.claims],
+                },
+                indent=2,
+            ),
+        )
+        return AgentResult(
+            result_id="r-evidence-export",
+            task_id=brief.task_id,
+            agent_role=brief.role,
+            outputs_produced=brief.outputs,
+            evidence_refs=[s.evidence_id for s in self.spans],
+        )
+
     def _synthesize(self, brief: AgentBrief) -> AgentResult:
-        self._compute_standings()  # persiste standings/edges do run
         # T-08-01..06: o report nasce do SWARM — council de outline, section
         # DAG (uma task por seção), packs mínimos, writer/reviewer/fixer/
         # transition editor separados, summary/conclusion tardios e citation
         # manager (references = só citadas).
         swarm = run_report_swarm(self.objective, self.claims, self.sources, self.spans)
         self.report_text = swarm.report_text
-        self.state.write_text("delivery/report.md", self.report_text)
+        self.state.write_text(brief.outputs[0], self.report_text)
         self.state.write_text(
             "delivery/outline.json",
             json.dumps(
@@ -1133,7 +1655,9 @@ def run_file_research(
         "completed_tasks": result.completed,
         "failed_tasks": result.failed,
         "events": len(result.events),
-        "exit_code": 0 if not result.failed else 1,
+        "deliverable": result.deliverable,
+        "blocking_reasons": result.blocking_reasons,
+        "exit_code": 0 if result.deliverable else 1,
     }
 
 

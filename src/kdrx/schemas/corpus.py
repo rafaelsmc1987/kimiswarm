@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .versioning import VersionedModel
+
 from .enums import (
     ExtractionStatus,
     EvidenceType,
@@ -37,7 +39,7 @@ class Locator(BaseModel):
     uri_fragment: str | None = None
 
 
-class SourceRecord(BaseModel):
+class SourceRecord(VersionedModel):
     """Canonical, normalized representation of one document (plan §19).
 
     A ``SourceRecord`` is the identity anchor of the corpus layer. Every piece of
@@ -75,7 +77,7 @@ class SourceRecord(BaseModel):
         return other_id in self.dependencies
 
 
-class EvidenceSpan(BaseModel):
+class EvidenceSpan(VersionedModel):
     """The minimum unit of evidence: an exact, locatable span (plan §21).
 
     Exact verbatim spans are kept separate from summaries on purpose — a

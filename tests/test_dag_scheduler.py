@@ -29,6 +29,7 @@ def _task(
     if outputs is None:
         outputs = (f"out-{tid}",)
     return TaskSpec(
+        kind="writing",
         task_id=tid,
         stage=TaskStage.RETRIEVAL,
         wave=0,

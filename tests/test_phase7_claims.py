@@ -266,7 +266,7 @@ def test_source_quality_score_derived():
 # --------------------------------------------------------------------------- #
 # T-07-07: unresolved registry / disclosure
 # --------------------------------------------------------------------------- #
-def test_unresolved_registry_and_report_disclosure(tmp_path):
+def test_claim_outside_query_window_gets_exact_support(tmp_path):
     corpus = tmp_path / "corpus"
     corpus.mkdir()
     # doc retrieved (overlap com o objetivo) + doc com claim mas sem span
@@ -278,10 +278,33 @@ def test_unresolved_registry_and_report_disclosure(tmp_path):
     registry = json.loads(
         (run_dir / "claims" / "unresolved.json").read_text(encoding="utf-8")
     )
-    assert registry, "claim sem span deveria ir para o registry"
-    entry = [r for r in registry if "latency" in r["statement"].lower()]
-    if entry:
-        assert entry[0]["reason"] == "no_evidence_span"
+    claims = [
+        json.loads(line)
+        for line in (run_dir / "claims/claims.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    ]
+    spans = {
+        item["evidence_id"]: item
+        for item in [
+            json.loads(line)
+            for line in (run_dir / "evidence/spans.jsonl")
+            .read_text(encoding="utf-8")
+            .splitlines()
+            if line.strip()
+        ]
+    }
+    latency = next(c for c in claims if "Latency" in c["statement"])
+    assert any(
+        latency["statement"] in spans[ref]["verbatim_span"]
+        for ref in latency["support_edges"]
+    )
+    assert not [
+        r
+        for r in registry
+        if r["claim_id"] == latency["claim_id"] and r["reason"] == "no_evidence_span"
+    ]
     report = (run_dir / "delivery" / "report.md").read_text(encoding="utf-8")
-    assert "Unresolved Claims" in report
+    assert latency["statement"] in report
     assert "claims/unresolved.json" in report

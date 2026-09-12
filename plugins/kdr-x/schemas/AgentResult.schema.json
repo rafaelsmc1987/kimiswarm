@@ -67,6 +67,54 @@
   "additionalProperties": false,
   "description": "The declared result of an agent for one task.\n\n``outputs_produced`` must be a subset of the task's declared outputs; a\ncompleted result with missing outputs fails the SubagentStop gate.",
   "properties": {
+    "schema_version": {
+      "const": "0.3",
+      "default": "0.3",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Id"
+    },
+    "plan_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Plan Id"
+    },
+    "plan_revision": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Plan Revision",
+      "type": "integer"
+    },
+    "attempt_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Attempt Id"
+    },
     "result_id": {
       "title": "Result Id",
       "type": "string"

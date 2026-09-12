@@ -8,10 +8,12 @@ that a malformed plan cannot reach the scheduler.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from collections import deque
 from typing import Iterable
 
 from kdrx.schemas.plan import OwnershipEntry, TaskSpec
 from kdrx.schemas.enums import Criticality
+from kdrx.schemas.versioning import validate_task_output
 
 # Tool names that a read-only research worker must never receive.
 DESTRUCTIVE_TOOL_MARKERS = (
@@ -85,31 +87,26 @@ def _detect_cycle(tasks: list[TaskSpec]) -> list[str]:
     by_id = {t.task_id: t for t in tasks}
     WHITE, GRAY, BLACK = 0, 1, 2
     color: dict[str, int] = {t.task_id: WHITE for t in tasks}
-    stack: list[str] = []
-
-    def dfs(node: str) -> list[str] | None:
-        color[node] = GRAY
-        stack.append(node)
-        for dep in by_id[node].dependencies:
-            if dep not in by_id:
-                continue  # unresolved dep is reported separately
-            if color[dep] == GRAY:
-                # cycle: dep ... node ... dep
-                idx = stack.index(dep)
-                return stack[idx:] + [dep]
-            if color[dep] == WHITE:
-                found = dfs(dep)
-                if found:
-                    return found
-        stack.pop()
-        color[node] = BLACK
-        return None
-
     for t in tasks:
-        if color[t.task_id] == WHITE:
-            found = dfs(t.task_id)
-            if found:
-                return found
+        if color[t.task_id] != WHITE:
+            continue
+        path = [t.task_id]
+        color[t.task_id] = GRAY
+        stack = [(t.task_id, iter(t.dependencies))]
+        while stack:
+            node, deps = stack[-1]
+            dep = next(deps, None)
+            if dep is None:
+                color[node] = BLACK
+                stack.pop()
+                path.pop()
+            elif dep in by_id:
+                if color[dep] == GRAY:
+                    return path[path.index(dep) :] + [dep]
+                if color[dep] == WHITE:
+                    color[dep] = GRAY
+                    path.append(dep)
+                    stack.append((dep, iter(by_id[dep].dependencies)))
     return []
 
 
@@ -121,28 +118,23 @@ def assign_waves(tasks: Iterable[TaskSpec]) -> dict[int, list[str]]:
     """
     tasks = list(tasks)
     by_id = {t.task_id: t for t in tasks}
-    wave_of: dict[str, int] = {}
-
-    def resolve(task_id: str, visiting: set[str]) -> int:
-        if task_id in wave_of:
-            return wave_of[task_id]
-        if task_id in visiting:
-            # Cycle guard: a cycle is already reported by the compiler; return a
-            # large number so callers get a stable (if meaningless) ordering.
-            return 0
-        visiting.add(task_id)
-        task = by_id.get(task_id)
-        deps = task.dependencies if task else []
-        w = 0
-        for dep in deps:
-            if dep in by_id:
-                w = max(w, resolve(dep, visiting))
-        visiting.remove(task_id)
-        wave_of[task_id] = w + 1 if deps else 0
-        return wave_of[task_id]
-
-    for t in tasks:
-        resolve(t.task_id, set())
+    wave_of = {t.task_id: 0 for t in tasks}
+    remaining = {
+        t.task_id: sum(dep in by_id for dep in set(t.dependencies)) for t in tasks
+    }
+    children: dict[str, list[str]] = {t.task_id: [] for t in tasks}
+    for task in tasks:
+        for dep in set(task.dependencies):
+            if dep in children:
+                children[dep].append(task.task_id)
+    ready = deque(tid for tid, count in remaining.items() if count == 0)
+    while ready:
+        tid = ready.popleft()
+        for child in children[tid]:
+            wave_of[child] = max(wave_of[child], wave_of[tid] + 1)
+            remaining[child] -= 1
+            if remaining[child] == 0:
+                ready.append(child)
 
     waves: dict[int, list[str]] = {}
     for t in tasks:
@@ -162,11 +154,11 @@ def compile_dag(tasks: list[TaskSpec]) -> CompiledDAG:
     # Duplicate ids
     seen: set[str] = set()
     for t in tasks:
-        if t.task_id in seen:
+        if t.task_id.casefold() in seen:
             issues.append(
                 DAGIssue("DUP_ID", f"duplicate task id {t.task_id}", [t.task_id])
             )
-        seen.add(t.task_id)
+        seen.add(t.task_id.casefold())
 
     # Missing mission / dependencies resolve
     for t in tasks:
@@ -191,6 +183,16 @@ def compile_dag(tasks: list[TaskSpec]) -> CompiledDAG:
     output_owner: dict[str, str] = {}
     for t in tasks:
         for out in t.outputs:
+            original = out
+            try:
+                out = validate_task_output(t.task_id, out).casefold()
+            except ValueError:
+                issues.append(
+                    DAGIssue(
+                        "UNSAFE_OUTPUT", f"unsafe output {original!r}", [t.task_id]
+                    )
+                )
+                continue
             if out in output_owner:
                 issues.append(
                     DAGIssue(
@@ -201,6 +203,19 @@ def compile_dag(tasks: list[TaskSpec]) -> CompiledDAG:
                 )
             else:
                 output_owner[out] = t.task_id
+
+    for out, owner in output_owner.items():
+        parts = out.split("/")
+        for length in range(1, len(parts)):
+            ancestor = "/".join(parts[:length])
+            if ancestor in output_owner:
+                issues.append(
+                    DAGIssue(
+                        "OUTPUT_ANCESTOR",
+                        f"output {out!r} conflicts with file output {ancestor!r}",
+                        [owner, output_owner[ancestor]],
+                    )
+                )
 
     # Output schema present (acceptance.output_schema or explicit outputs)
     for t in tasks:
@@ -237,7 +252,10 @@ def compile_dag(tasks: list[TaskSpec]) -> CompiledDAG:
 
     # Budget valid
     for t in tasks:
-        if t.budget.tokens < 0 or t.budget.queries < 0 or t.budget.wall_seconds < 0:
+        if any(
+            value is not None and value < 0
+            for value in (t.budget.tokens, t.budget.queries, t.budget.wall_seconds)
+        ):
             issues.append(
                 DAGIssue(
                     "BAD_BUDGET", "budget values must be non-negative", [t.task_id]

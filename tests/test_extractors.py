@@ -21,7 +21,7 @@ def test_markdown_extractor_strips_syntax(tmp_path):
     assert "#" not in text and "**" not in text
     assert "Resultado" in text and "accuracy de 90%" in text
     assert "link texto" in text and "https://x.org" not in text
-    assert "code block" not in text  # fence removido (não é prosa citável)
+    assert "```\ncode block\n```" in text  # software evidence must survive extraction
 
 
 def test_html_extractor_strips_tags_and_script(tmp_path):

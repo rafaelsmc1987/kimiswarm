@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="10" skipped="0" tests="10" time="0.990" timestamp="2026-09-12T06:12:28.386546-03:00" hostname="DESKTOP-AA6P1ID"><testcase classname="tests.test_executor_registry" name="test_task_cannot_own_kernel_control_paths[manifest.json]" time="0.085"><failure message="Failed: DID NOT RAISE ValueError">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-80/test_task_cannot_own_kernel_co0')
+path = 'manifest.json'
+
+    @pytest.mark.parametrize("path", [
+        "manifest.json", "EVENTS.JSONL", "plan.json", "history/plan-patches/1.json",
+        "delivery/revisions/old.md", "tasks", "tasks/T-RETRIEVE/result.json",
+        "tasks/T-VERIFY/provider-receipt.json", "verification/seal",
+    ])
+    def test_task_cannot_own_kernel_control_paths(tmp_path, path):
+        contract = build_contract("objective")
+        plan = build_plan(contract)
+        plan.tasks[0].outputs = [path]
+&gt;       with pytest.raises(ValueError, match="invalid plan DAG"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_executor_registry.py:104: Failed</failure></testcase><testcase classname="tests.test_executor_registry" name="test_task_cannot_own_kernel_control_paths[EVENTS.JSONL]" time="0.076"><failure message="Failed: DID NOT RAISE ValueError">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-80/test_task_cannot_own_kernel_co1')
+path = 'EVENTS.JSONL'
+
+    @pytest.mark.parametrize("path", [
+        "manifest.json", "EVENTS.JSONL", "plan.json", "history/plan-patches/1.json",
+        "delivery/revisions/old.md", "tasks", "tasks/T-RETRIEVE/result.json",
+        "tasks/T-VERIFY/provider-receipt.json", "verification/seal",
+    ])
+    def test_task_cannot_own_kernel_control_paths(tmp_path, path):
+        contract = build_contract("objective")
+        plan = build_plan(contract)
+        plan.tasks[0].outputs = [path]
+&gt;       with pytest.raises(ValueError, match="invalid plan DAG"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_executor_registry.py:104: Failed</failure></testcase><testcase classname="tests.test_executor_registry" name="test_task_cannot_own_kernel_control_paths[plan.json]" time="0.084"><failure message="Failed: DID NOT RAISE ValueError">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-80/test_task_cannot_own_kernel_co2')
+path = 'plan.json'
+
+    @pytest.mark.parametrize("path", [
+        "manifest.json", "EVENTS.JSONL", "plan.json", "history/plan-patches/1.json",
+        "delivery/revisions/old.md", "tasks", "tasks/T-RETRIEVE/result.json",
+        "tasks/T-VERIFY/provider-receipt.json", "verification/seal",
+    ])
+    def test_task_cannot_own_kernel_control_paths(tmp_path, path):
+        contract = build_contract("objective")
+        plan = build_plan(contract)
+        plan.tasks[0].outputs = [path]
+&gt;       with pytest.raises(ValueError, match="invalid plan DAG"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_executor_registry.py:104: Failed</failure></testcase><testcase classname="tests.test_executor_registry" name="test_task_cannot_own_kernel_control_paths[history/plan-patches/1.json]" time="0.079"><failure message="Failed: DID NOT RAISE ValueError">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-80/test_task_cannot_own_kernel_co3')
+path = 'history/plan-patches/1.json'
+
+    @pytest.mark.parametrize("path", [
+        "manifest.json", "EVENTS.JSONL", "plan.json", "history/plan-patches/1.json",
+        "delivery/revisions/old.md", "tasks", "tasks/T-RETRIEVE/result.json",
+        "tasks/T-VERIFY/provider-receipt.json", "verification/seal",
+    ])
+    def test_task_cannot_own_kernel_control_paths(tmp_path, path):
+        contract = build_contract("objective")
+        plan = build_plan(contract)
+        plan.tasks[0].outputs = [path]
+&gt;       with pytest.raises(ValueError, match="invalid plan DAG"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_executor_registry.py:104: Failed</failure></testcase><testcase classname="tests.test_executor_registry" name="test_task_cannot_own_kernel_control_paths[delivery/revisions/old.md]" time="0.078"><failure message="Failed: DID NOT RAISE ValueError">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-80/test_task_cannot_own_kernel_co4')
+path = 'delivery/revisions/old.md'
+
+    @pytest.mark.parametrize("path", [
+        "manifest.json", "EVENTS.JSONL", "plan.json", "history/plan-patches/1.json",
+        "delivery/revisions/old.md", "tasks", "tasks/T-RETRIEVE/result.json",
+        "tasks/T-VERIFY/provider-receipt.json", "verification/seal",
+    ])
+    def test_task_cannot_own_kernel_control_paths(tmp_path, path):
+        contract = build_contract("objective")
+        plan = build_plan(contract)
+        plan.tasks[0].outputs = [path]
+&gt;       with pytest.raises(ValueError, match="invalid plan DAG"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_executor_registry.py:104: Failed</failure></testcase><testcase classname="tests.test_executor_registry" name="test_task_cannot_own_kernel_control_paths[tasks]" time="0.085"><failure message="Failed: DID NOT RAISE ValueError">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-80/test_task_cannot_own_kernel_co5')
+path = 'tasks'
+
+    @pytest.mark.parametrize("path", [
+        "manifest.json", "EVENTS.JSONL", "plan.json", "history/plan-patches/1.json",
+        "delivery/revisions/old.md", "tasks", "tasks/T-RETRIEVE/result.json",
+        "tasks/T-VERIFY/provider-receipt.json", "verification/seal",
+    ])
+    def test_task_cannot_own_kernel_control_paths(tmp_path, path):
+        contract = build_contract("objective")
+        plan = build_plan(contract)
+        plan.tasks[0].outputs = [path]
+&gt;       with pytest.raises(ValueError, match="invalid plan DAG"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_executor_registry.py:104: Failed</failure></testcase><testcase classname="tests.test_executor_registry" name="test_task_cannot_own_kernel_control_paths[tasks/T-RETRIEVE/result.json]" time="0.078"><failure message="Failed: DID NOT RAISE ValueError">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-80/test_task_cannot_own_kernel_co6')
+path = 'tasks/T-RETRIEVE/result.json'
+
+    @pytest.mark.parametrize("path", [
+        "manifest.json", "EVENTS.JSONL", "plan.json", "history/plan-patches/1.json",
+        "delivery/revisions/old.md", "tasks", "tasks/T-RETRIEVE/result.json",
+        "tasks/T-VERIFY/provider-receipt.json", "verification/seal",
+    ])
+    def test_task_cannot_own_kernel_control_paths(tmp_path, path):
+        contract = build_contract("objective")
+        plan = build_plan(contract)
+        plan.tasks[0].outputs = [path]
+&gt;       with pytest.raises(ValueError, match="invalid plan DAG"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_executor_registry.py:104: Failed</failure></testcase><testcase classname="tests.test_executor_registry" name="test_task_cannot_own_kernel_control_paths[tasks/T-VERIFY/provider-receipt.json]" time="0.076"><failure message="Failed: DID NOT RAISE ValueError">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-80/test_task_cannot_own_kernel_co7')
+path = 'tasks/T-VERIFY/provider-receipt.json'
+
+    @pytest.mark.parametrize("path", [
+        "manifest.json", "EVENTS.JSONL", "plan.json", "history/plan-patches/1.json",
+        "delivery/revisions/old.md", "tasks", "tasks/T-RETRIEVE/result.json",
+        "tasks/T-VERIFY/provider-receipt.json", "verification/seal",
+    ])
+    def test_task_cannot_own_kernel_control_paths(tmp_path, path):
+        contract = build_contract("objective")
+        plan = build_plan(contract)
+        plan.tasks[0].outputs = [path]
+&gt;       with pytest.raises(ValueError, match="invalid plan DAG"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_executor_registry.py:104: Failed</failure></testcase><testcase classname="tests.test_executor_registry" name="test_task_cannot_own_kernel_control_paths[verification/seal]" time="0.076"><failure message="Failed: DID NOT RAISE ValueError">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-80/test_task_cannot_own_kernel_co8')
+path = 'verification/seal'
+
+    @pytest.mark.parametrize("path", [
+        "manifest.json", "EVENTS.JSONL", "plan.json", "history/plan-patches/1.json",
+        "delivery/revisions/old.md", "tasks", "tasks/T-RETRIEVE/result.json",
+        "tasks/T-VERIFY/provider-receipt.json", "verification/seal",
+    ])
+    def test_task_cannot_own_kernel_control_paths(tmp_path, path):
+        contract = build_contract("objective")
+        plan = build_plan(contract)
+        plan.tasks[0].outputs = [path]
+&gt;       with pytest.raises(ValueError, match="invalid plan DAG"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_executor_registry.py:104: Failed</failure></testcase><testcase classname="tests.test_executor_registry" name="test_task_ids_cannot_alias_on_case_insensitive_filesystems" time="0.075"><failure message="Failed: DID NOT RAISE ValueError">tmp_path = WindowsPath('C:/Users/WORK/AppData/Local/Temp/pytest-of-WORK/pytest-80/test_task_ids_cannot_alias_on_0')
+
+    def test_task_ids_cannot_alias_on_case_insensitive_filesystems(tmp_path):
+        contract = build_contract("objective")
+        plan = build_plan(contract)
+        plan.tasks.append(plan.tasks[0].model_copy(update={"task_id": "t-retrieve", "outputs": ["other.json"]}))
+&gt;       with pytest.raises(ValueError, match="invalid plan DAG"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_executor_registry.py:113: Failed</failure></testcase></testsuite></testsuites>
