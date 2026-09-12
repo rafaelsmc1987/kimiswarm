@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Preserve original planning documents and captured audit bytes across platforms.
+.plano/** -text -whitespace
+audit/** -text -whitespace

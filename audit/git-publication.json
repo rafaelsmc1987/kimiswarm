@@ -1,0 +1,13 @@
+{
+  "branch": "codex/execute-kimiswarm-plan",
+  "validated_implementation_commit": "b5c9feb4f44b0ae896558b8ff010842fd1fc60da",
+  "push_verified": true,
+  "pull_request": "https://github.com/rafaelsmc1987/kimiswarm/pull/1",
+  "draft": true,
+  "merged": false,
+  "release_published": false,
+  "local_validation": "audit/validation.json",
+  "staged_tree_hygiene": "audit/pre-push-hygiene.xml",
+  "secret_scan": "audit/pre-push-secrets.json",
+  "scope": "498 tests per local Python version; full Linux CI is tracked on the pull request"
+}
